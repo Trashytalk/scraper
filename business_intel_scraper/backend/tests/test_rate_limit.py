@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from business_intel_scraper.backend.api.rate_limit import RateLimitMiddleware
+from business_intel_scraper.backend.security.rate_limit import RateLimitMiddleware
 
 
 def create_test_app(limit: int = 2) -> TestClient:

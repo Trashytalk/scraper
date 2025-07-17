@@ -13,11 +13,11 @@ app = api.app
 def test_launch_and_check_task():
     client = TestClient(app)
 
-    resp = client.post('/scrape')
+    resp = client.post('/scrape/start')
     assert resp.status_code == 200
     task_id = resp.json()['task_id']
     assert isinstance(task_id, str)
 
-    status_resp = client.get(f'/tasks/{task_id}')
+    status_resp = client.get(f'/scrape/status/{task_id}')
     assert status_resp.status_code == 200
     assert status_resp.json()['status'] in {'running', 'completed'}
