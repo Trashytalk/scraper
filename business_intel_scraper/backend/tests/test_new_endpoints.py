@@ -4,6 +4,7 @@ import os
 import sys
 import pytest
 from fastapi.testclient import TestClient
+from business_intel_scraper.backend.security import create_token
 
 # Ensure package root is on the path
 sys.path.insert(
@@ -24,9 +25,13 @@ def test_root_endpoint() -> None:
 
 
 def test_job_endpoints() -> None:
+    os.environ["JWT_SECRET"] = "secret"
+    os.environ["JWT_ALGORITHM"] = "HS256"
+    token = create_token("1", "analyst")
     client = TestClient(app)
+    headers = {"Authorization": f"Bearer {token}"}
 
-    resp = client.post("/scrape")
+    resp = client.post("/scrape", headers=headers)
     assert resp.status_code == 200
     job_id = resp.json()["task_id"]
 
@@ -34,16 +39,21 @@ def test_job_endpoints() -> None:
     # response validation succeeds
     api.jobs[job_id] = {"status": "running"}
 
-    jobs = client.get("/jobs").json()
+    jobs = client.get("/jobs", headers={"Authorization": f"Bearer {token}"}).json()
     assert job_id in jobs
 
-    job_resp = client.get(f"/jobs/{job_id}")
+    job_resp = client.get(
+        f"/jobs/{job_id}", headers={"Authorization": f"Bearer {token}"}
+    )
     assert job_resp.status_code == 200
     assert "status" in job_resp.json()
 
 
 def test_data_endpoint() -> None:
+    os.environ["JWT_SECRET"] = "secret"
+    os.environ["JWT_ALGORITHM"] = "HS256"
+    token = create_token("1", "analyst")
     client = TestClient(app)
-    resp = client.get("/data")
+    resp = client.get("/data", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)

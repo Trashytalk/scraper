@@ -16,7 +16,8 @@ from pydantic import BaseModel
 from business_intel_scraper.settings import settings
 
 from .auth import router as auth_router
-from .dependencies import require_role
+from fastapi import Depends
+from ..security import require_token, require_role
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from .schemas import (
@@ -101,7 +102,9 @@ async def root() -> HealthCheckResponse:
     )
 
 
-@app.post("/scrape", response_model=TaskCreateResponse)
+@app.post(
+    "/scrape", response_model=TaskCreateResponse, dependencies=[Depends(require_token)]
+)
 async def start_scrape() -> TaskCreateResponse:
     """Launch a background scraping task using the example spider."""
 
@@ -110,7 +113,11 @@ async def start_scrape() -> TaskCreateResponse:
     return TaskCreateResponse(task_id=task_id)
 
 
-@app.get("/tasks/{task_id}", response_model=TaskStatusResponse)
+@app.get(
+    "/tasks/{task_id}",
+    response_model=TaskStatusResponse,
+    dependencies=[Depends(require_token)],
+)
 async def task_status(task_id: str) -> TaskStatusResponse:
     """Return the current status of a scraping task."""
 
@@ -131,7 +138,7 @@ async def notifications(websocket: WebSocket) -> None:
         manager.disconnect(websocket)
 
 
-@app.get("/logs/stream")
+@app.get("/logs/stream", dependencies=[Depends(require_token)])
 async def stream_logs() -> EventSourceResponse:
     """Stream the application log file using SSE."""
 
@@ -150,28 +157,34 @@ async def stream_logs() -> EventSourceResponse:
     return EventSourceResponse(event_generator())
 
 
-@app.get("/data")
+@app.get("/data", dependencies=[Depends(require_token)])
 async def get_data() -> list[dict[str, str]]:
     """Return scraped data."""
 
     return scraped_data
 
 
-@app.get("/jobs", dependencies=[require_role(UserRole.ADMIN)])
+@app.get(
+    "/jobs",
+    dependencies=[Depends(require_token), require_role(UserRole.ADMIN)],
+)
 async def get_jobs() -> dict[str, JobStatus]:
     """Return job statuses."""
 
     return {jid: JobStatus(status=get_task_status(jid)) for jid in list(jobs)}
 
 
-@app.get("/jobs/{job_id}", dependencies=[require_role(UserRole.ADMIN)])
+@app.get(
+    "/jobs/{job_id}",
+    dependencies=[Depends(require_token), require_role(UserRole.ADMIN)],
+)
 async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
 
     return jobs.get(job_id, {"status": "unknown"})
 
 
-@app.post("/nlp/process")
+@app.post("/nlp/process", dependencies=[Depends(require_token)])
 async def process_text(payload: NLPRequest) -> NLPResponse:
     """Extract entities from provided text."""
 
