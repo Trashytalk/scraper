@@ -1,17 +1,48 @@
 """Main FastAPI application entry point."""
 
+from __future__ import annotations
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from sse_starlette.sse import EventSourceResponse
+from pathlib import Path
+import asyncio
+from fastapi import Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from .notifications import ConnectionManager
-
+from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
-
+from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
+from ..db.models import Company
+from ..db import SessionLocal
+from pydantic import BaseModel
 
 app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)
 
 manager = ConnectionManager()
+
+scraped_data: list[dict[str, str]] = []
+jobs: dict[str, dict[str, str]] = {}
+
+
+class CompanyCreate(BaseModel):
+    name: str
+
+
+class CompanyRead(BaseModel):
+    id: int
+    name: str
+
+
+def get_db() -> Session:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
