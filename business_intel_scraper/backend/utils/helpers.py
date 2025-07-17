@@ -18,38 +18,37 @@ def setup_logging(
     max_bytes: int = 10 * 1024 * 1024,
     backup_count: int = 5,
 ) -> None:
-    """Configure application logging."""
+    """Configure application logging.
+
+    Parameters
+    ----------
+    level : int, optional
+        Logging level, by default ``logging.INFO``.
+    log_file : str | Path, optional
+        Path to the log file, by default ``"logs/backend.log"``.
+    max_bytes : int, optional
+        Maximum bytes before rotating the log file, by default ``10 * 1024 * 1024``.
+    backup_count : int, optional
+        Number of rotated log files to keep, by default ``5``.
+    """
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-    handlers = [
-        logging.StreamHandler(),
-        RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count),
-    ]
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=handlers,
-    )
 
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    root_logger = logging.getLogger()
-    root_logger.setLevel(level)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    file_handler = RotatingFileHandler(
-        log_path, maxBytes=max_bytes, backupCount=backup_count
-    )
+    file_handler = RotatingFileHandler(log_path, maxBytes=max_bytes, backupCount=backup_count)
     file_handler.setFormatter(formatter)
-    root_logger.addHandler(file_handler)
 
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    root_logger.handlers.clear()
+    root_logger.addHandler(file_handler)
     root_logger.addHandler(stream_handler)
 
 
