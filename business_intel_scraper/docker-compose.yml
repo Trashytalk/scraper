@@ -1,7 +1,12 @@
 version: '3.8'
 services:
   api:
-    build: ./backend
-    command: uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+    build: ..
+    command: uvicorn business_intel_scraper.backend.api.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
+  worker:
+    build: ..
+    command: celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
+    depends_on:
+      - api

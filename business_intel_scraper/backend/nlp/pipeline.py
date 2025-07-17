@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover - direct execution
     spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
     clean_text = cleaning.clean_text  # type: ignore[attr-defined]
 
+
 try:
     import spacy
     from spacy.language import Language
@@ -28,7 +29,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         """Fallback type used when SpaCy is unavailable."""
 
         pass
-
 
 _NLP_MODEL: Language | None = None
 
@@ -47,13 +47,8 @@ def _get_nlp() -> Language | None:
     return _NLP_MODEL
 
 
-def extract_entities(texts: Iterable[str]) -> list[str]:
-    """Extract named entities from text collection.
-
-    Parameters
-    ----------
-    texts : Iterable[str]
-        List or generator of text strings.
+def preprocess(texts: Iterable[str]) -> list[str]:
+    """Clean and normalize raw text strings."""
 
     Returns
     -------
@@ -61,25 +56,26 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
         Extracted entities. When SpaCy or its English model is not
         available, the returned entities will simply be whitespace
         separated tokens from the input text.
-    """
+        
     cleaned = [clean_text(t) for t in texts]
 
-    nlp = _get_nlp()
-    entities: list[str] = []
 
+    
+    nlp = _get_nlp()
+    cleaned = preprocess(texts)
     if nlp is None:
         for text in cleaned:
             entities.extend(text.split())
         return entities
 
+
     for doc in nlp.pipe(cleaned):
         if getattr(doc, "ents", None):
-            found = [ent.text for ent in doc.ents]
+            found = [ent.text for ent in doc.ents if ent.text]
             if found:
                 entities.extend(found)
                 continue
         entities.extend(doc.text.split())
-
     return entities
 
 

@@ -114,6 +114,9 @@ Getting Started
 
     Review ``settings.py`` for available configuration options such as API
     credentials, database connection, and proxy settings.
+    Set ``USE_HTTPS=true`` in production to enforce HTTPS.
+    Enable proxy rotation with ``PROXY_ROTATE=true``.
+    Adjust request limits via ``RATE_LIMIT`` and ``RATE_LIMIT_WINDOW``.
 
     Bring up infra stack (docker-compose up or kubernetes deploy)
 
