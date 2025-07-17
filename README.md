@@ -59,4 +59,3 @@ If background tasks are used, run a Celery worker in a separate terminal:
 celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
 ```
 
-
