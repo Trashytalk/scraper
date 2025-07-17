@@ -25,6 +25,21 @@ Use this route from the frontend to monitor running jobs or debug output.
 This project contains various modules for business intelligence scraping.
 The NLP backend now provides text-cleaning helpers for stripping HTML and
 normalizing whitespace.
+
+## Development
+
+Formatting and linting are handled by **black** and **ruff**. Install both
+tools and run them from the repository root before committing changes.
+
+```bash
+pip install black ruff
+
+black .
+ruff .
+```
+
+Use `ruff --fix .` to automatically apply suggested fixes.
+
 ## Installation
 
 1. Create and activate a Python virtual environment.
