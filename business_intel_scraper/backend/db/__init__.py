@@ -1,3 +1,17 @@
+"""Database utilities and ORM models."""
+
+from .models import Base, Company
+from .utils import ENGINE, SessionLocal, init_db, save_companies
+
+__all__ = [
+    "Base",
+    "Company",
+    "ENGINE",
+    "SessionLocal",
+    "init_db",
+    "save_companies",
+]
+
 """Database engine setup for the backend."""
 
 from __future__ import annotations
