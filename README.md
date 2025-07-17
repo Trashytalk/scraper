@@ -105,9 +105,19 @@ Common settings include:
 - `API_KEY` – credentials for external APIs.
 - `DATABASE_URL` – SQLAlchemy connection string (default `sqlite:///data.db`).
 - `PROXY_URL` – proxy server address if scraping through a proxy.
+- `PROXY_ROTATE` – set to `true` to rotate proxies on each request.
+- `PROXY_PROVIDER_ENDPOINTS` – comma-separated API endpoints for commercial providers.
+- `PROXY_API_KEY` – API key used with commercial proxy services.
 - `CELERY_BROKER_URL` – broker URL for Celery tasks (`redis://localhost:6379/0` by default).
 - `CELERY_RESULT_BACKEND` – result backend for Celery (defaults to the broker URL).
 - `ALLOWED_ORIGINS` – comma-separated list of origins allowed for CORS (default `*`).
+
+## Proxy Configuration
+
+Configure proxy rotation using provider classes. Supply one or more providers to
+`ProxyManager` for automatic fallback when a proxy fails. Commercial services
+can be used via `CommercialProxyAPIProvider` together with the
+`PROXY_PROVIDER_ENDPOINTS` and `PROXY_API_KEY` variables.
 
 ## Running the Server
 
