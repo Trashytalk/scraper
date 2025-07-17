@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .cleaning import clean_text
+try:
+    from .cleaning import clean_text
+except ImportError:  # pragma: no cover - fallback when executed as script
+    from business_intel_scraper.backend.nlp.cleaning import clean_text
 
 try:
     import spacy
