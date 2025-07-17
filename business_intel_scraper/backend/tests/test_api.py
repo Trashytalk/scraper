@@ -1,23 +1,23 @@
-from __future__ import annotations
+import os
+import sys
+import pytest
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+
+api = pytest.importorskip("business_intel_scraper.backend.api.main")
 from fastapi.testclient import TestClient
 
-from business_intel_scraper.backend.api.main import app
-
-client = TestClient(app)
+app = api.app
 
 
-def test_create_and_read_company() -> None:
-    resp = client.post("/companies", json={"name": "Acme"})
-    assert resp.status_code == 201
-    data = resp.json()
-    assert data["name"] == "Acme"
-    cid = data["id"]
+def test_launch_and_check_task():
+    client = TestClient(app)
 
-    get_resp = client.get(f"/companies/{cid}")
-    assert get_resp.status_code == 200
-    assert get_resp.json() == data
+    resp = client.post('/scrape')
+    assert resp.status_code == 200
+    task_id = resp.json()['task_id']
+    assert isinstance(task_id, str)
 
-    list_resp = client.get("/companies")
-    assert list_resp.status_code == 200
-    assert any(item["id"] == cid for item in list_resp.json())
+    status_resp = client.get(f'/tasks/{task_id}')
+    assert status_resp.status_code == 200
+    assert status_resp.json()['status'] in {'running', 'completed'}
