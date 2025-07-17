@@ -9,7 +9,7 @@ import json
 import time
 import urllib.parse
 import urllib.request
-from sqlalchemy import create_engine
+
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -92,6 +92,7 @@ def geocode_addresses(
     if not fetch_remote:
         return results
 
+
     final_results: list[Tuple[str, float | None, float | None]] = []
     for address, lat, lon in results:
         query = urllib.parse.urlencode({"q": address, "format": "json"})
@@ -100,16 +101,15 @@ def geocode_addresses(
             headers={"User-Agent": "business-intel-scraper/1.0"},
         )
 
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.load(resp)
-            if data:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-        except Exception:  # pragma: no cover - network issues
-            pass
 
-        final_results.append((address, lat, lon))
+    for address in addresses:
+        lat, lon = (
+            _nominatim_lookup(address)
+            if use_nominatim
+            else _deterministic_coords(address)
+        )
+        results.append((address, lat, lon))
+
         time.sleep(1)
 
-    return final_results
+    return results
