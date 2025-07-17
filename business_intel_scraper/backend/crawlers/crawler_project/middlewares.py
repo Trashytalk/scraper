@@ -7,7 +7,6 @@ from scrapy import signals
 from typing import Iterable, AsyncIterable
 
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
 
 
 class CrawlerProjectSpiderMiddleware:

@@ -26,12 +26,8 @@ def fake_urlopen_factory(response_json: str):
 
 
 def test_geocode_addresses(monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_response = json.dumps([
-        {"lat": "51.5074", "lon": "-0.1278"}
-    ])
-    monkeypatch.setattr(
-        urllib.request, "urlopen", fake_urlopen_factory(mock_response)
-    )
+    mock_response = json.dumps([{"lat": "51.5074", "lon": "-0.1278"}])
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen_factory(mock_response))
     monkeypatch.setattr("time.sleep", lambda _x: None)
 
     results = geocode_addresses(["London"])
@@ -41,18 +37,12 @@ def test_geocode_addresses(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_geocode_addresses_google(monkeypatch: pytest.MonkeyPatch) -> None:
     mock_response = json.dumps(
         {
-            "results": [
-                {"geometry": {"location": {"lat": 40.0, "lng": -75.0}}}
-            ],
+            "results": [{"geometry": {"location": {"lat": 40.0, "lng": -75.0}}}],
             "status": "OK",
         }
     )
-    monkeypatch.setattr(
-        urllib.request, "urlopen", fake_urlopen_factory(mock_response)
-    )
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen_factory(mock_response))
     monkeypatch.setattr("time.sleep", lambda _x: None)
 
-    results = geocode_addresses(
-        ["Philly"], use_nominatim=False, google_api_key="dummy"
-    )
+    results = geocode_addresses(["Philly"], use_nominatim=False, google_api_key="dummy")
     assert results == [("Philly", 40.0, -75.0)]

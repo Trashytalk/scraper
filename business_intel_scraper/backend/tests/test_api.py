@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import os
 import sys
 import jwt
@@ -17,7 +18,7 @@ def test_launch_and_check_task():
     secret = "secret"
     os.environ["JWT_SECRET"] = secret
     os.environ["JWT_ALGORITHM"] = "HS256"
-    token = jwt.encode({"sub": "user"}, secret, algorithm="HS256")
+    jwt.encode({"sub": "user"}, secret, algorithm="HS256")
 
     client = TestClient(app)
 

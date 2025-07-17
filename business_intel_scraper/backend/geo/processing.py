@@ -30,7 +30,6 @@ def _deterministic_coords(address: str) -> tuple[float, float]:
     return latitude, longitude
 
 
-
 def _parse_nominatim_response(
     data: list[dict[str, str]],
 ) -> tuple[float | None, float | None]:
@@ -138,4 +137,4 @@ def geocode_addresses(
         final_results.append((address, lat, lon))
         time.sleep(1)
 
-    return results
+    return final_results

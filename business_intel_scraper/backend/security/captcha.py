@@ -51,7 +51,9 @@ class HTTPCaptchaSolver(CaptchaSolver):
         return str(result["solution"])
 
 
-def solve_captcha(image: bytes, solver: CaptchaSolver | None = None, **kwargs: Any) -> str:
+def solve_captcha(
+    image: bytes, solver: CaptchaSolver | None = None, **kwargs: Any
+) -> str:
     """Solve ``image`` using either the provided solver or an HTTP service.
 
     Parameters

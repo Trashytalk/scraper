@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Tests for ProxyPoolManager utility."""
+
+from __future__ import annotations
 
 from business_intel_scraper.backend.proxy.proxy_manager import ProxyPoolManager
 
