@@ -42,7 +42,10 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    username: Mapped[str] = mapped_column(
+        String, unique=True, nullable=False, index=True
+    )
+    
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     tasks: Mapped[list["ScrapeTask"]] = relationship(
         back_populates="user",
@@ -62,12 +65,7 @@ class ScrapeTask(Base):
         nullable=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
-    user: Mapped["User"] = relationship(back_populates="tasks")
-    company: Mapped["Company"] = relationship(back_populates="tasks")
-    results: Mapped[list["OsintResult"]] = relationship(
-        back_populates="task",
-        cascade="all, delete-orphan",
-    )
+    company: Mapped[Company | None] = relationship("Company", back_populates="tasks")
 
 
 class OsintResult(Base):
