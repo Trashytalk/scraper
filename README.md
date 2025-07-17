@@ -2,6 +2,9 @@
 
 This project provides a modular framework for scraping and analyzing business intelligence data.
 
+## Overview
+The Business Intelligence Scraper is an experimental platform for collecting business data from the web and open-source intelligence (OSINT) tools. It combines Scrapy-based spiders, optional browser automation, and a FastAPI backend with Celery workers for asynchronous jobs.
+
 ## API
 
 The backend is built with FastAPI and exposes a simple health check at `/`.
@@ -79,12 +82,20 @@ Use `ruff --fix .` to automatically apply suggested fixes.
 
 ## Installation
 
-1. Create and activate a Python virtual environment.
-2. Install the main dependencies:
+1. Clone the repository and create a Python virtual environment:
    ```bash
-   pip install fastapi uvicorn celery sqlalchemy scrapy httpx spacy
+   git clone <repo-url>
+   cd scraper
+   python -m venv .venv
+   source .venv/bin/activate
    ```
-   Additional packages may be required depending on your use case.
+2. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   The optional frontend requires Node.js. Run `npm install` inside
+   `business_intel_scraper/frontend` if you want the demo UI.
+3. Copy `.env.example` to `.env` and adjust values to match your environment.
 
 ## Environment Variables
 
@@ -111,4 +122,33 @@ If background tasks are used, run a Celery worker in a separate terminal:
 ```bash
 celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
 ```
+
+With the services running you can interact with the API:
+
+```bash
+curl http://localhost:8000/              # health check
+curl -X POST http://localhost:8000/scrape # launch the example spider
+```
+
+Task progress can be queried at `/tasks/<task_id>` and log messages stream from `/logs/stream`.
+
+The repository also provides a `docker-compose.yml` in `business_intel_scraper/` for launching Redis, the API and a worker together:
+
+```bash
+docker run -d -p 6379:6379 --name redis redis:7
+cd business_intel_scraper
+docker compose up --build
+```
+
+## Roadmap and Incomplete Features
+
+The repository contains working examples for scraping, simple NLP and OSINT tasks, but several pieces are intentionally stubbed out or incomplete:
+
+- **Captcha solving** – `business_intel_scraper.backend.security.captcha` only provides a placeholder interface.
+- **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
+- **Geocoding helpers** – the geocoding pipeline currently returns deterministic coordinates and does not fully use online providers.
+- **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
+- **Additional OSINT tools** – future releases will integrate more external tools and reporting features.
+
+Contributions are welcome to help flesh out these areas.
 
