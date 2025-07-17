@@ -139,6 +139,7 @@ docker run -d -p 6379:6379 --name redis redis:7
 cd business_intel_scraper
 docker compose up --build
 ```
+See `docs/deployment.md` for Kubernetes deployment instructions.
 
 ## Roadmap and Incomplete Features
 
