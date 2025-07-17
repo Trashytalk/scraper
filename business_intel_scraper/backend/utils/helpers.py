@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import logging.config
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -37,20 +38,32 @@ def setup_logging(
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    config = {
+        "version": 1,
+        "formatters": {
+            "default": {
+                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            }
+        },
+        "handlers": {
+            "file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": str(log_path),
+                "maxBytes": max_bytes,
+                "backupCount": backup_count,
+                "formatter": "default",
+            },
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "default",
+            },
+        },
+        "root": {
+            "level": level,
+            "handlers": ["file", "console"],
+        },
+    }
 
-    file_handler = RotatingFileHandler(log_path, maxBytes=max_bytes, backupCount=backup_count)
-    file_handler.setFormatter(formatter)
-
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-
-    root_logger = logging.getLogger()
-    root_logger.setLevel(level)
-    root_logger.handlers.clear()
-    root_logger.addHandler(file_handler)
-    root_logger.addHandler(stream_handler)
-
-
+    logging.config.dictConfig(config)
     logger.debug("Logging configured")
 
