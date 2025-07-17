@@ -5,9 +5,10 @@ scrapy
 sqlalchemy
 requests
 httpx
-sqlalchemy
 spacy
-celery
 playwright
 PyJWT
+passlib
+PyJWT
+prometheus-client
 
