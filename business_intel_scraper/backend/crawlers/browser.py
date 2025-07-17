@@ -29,20 +29,40 @@ class BrowserCrawler:
         """Fetch page content after scripts execute."""
         if sync_playwright is not None:
             with sync_playwright() as pw:
-                browser = pw.chromium.launch(headless=self.headless)
-                page = browser.new_page()
-                page.goto(url)
-                content = page.content()
-                browser.close()
-                return content
+                browser = None
+                try:
+                    browser = pw.chromium.launch(headless=self.headless)
+                    page = browser.new_page()
+                    page.goto(url)
+                    content = page.content()
+                    return content
+                except Exception:
+                    logger.exception("Playwright failed to fetch %s", url)
+                    raise
+                finally:
+                    if browser is not None:
+                        try:
+                            browser.close()
+                        except Exception:
+                            logger.exception("Failed to close Playwright browser")
         if webdriver is not None and ChromeOptions is not None:
             options = ChromeOptions()
             if self.headless:
                 options.add_argument("--headless")
-            driver = webdriver.Chrome(options=options)
-            driver.get(url)
-            content = driver.page_source
-            driver.quit()
-            return content
+            driver = None
+            try:
+                driver = webdriver.Chrome(options=options)
+                driver.get(url)
+                content = driver.page_source
+                return content
+            except Exception:
+                logger.exception("Selenium failed to fetch %s", url)
+                raise
+            finally:
+                if driver is not None:
+                    try:
+                        driver.quit()
+                    except Exception:
+                        logger.exception("Failed to quit Selenium driver")
         raise RuntimeError("Playwright or Selenium is required to fetch dynamic pages")
 
