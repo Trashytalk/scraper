@@ -18,7 +18,8 @@ from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
 from ..db.models import Company, UserRole
 from ..db import SessionLocal
-from .dependencies import require_role
+from .auth import router as auth_router
+
 from pydantic import BaseModel
 import asyncio
 from pathlib import Path
@@ -56,6 +57,8 @@ app.add_middleware(
     limit=settings.rate_limit.limit,
     window=settings.rate_limit.window,
 )
+app.include_router(auth_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.api.allowed_origins,
