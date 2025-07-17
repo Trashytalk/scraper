@@ -3,26 +3,21 @@
 from __future__ import annotations
 
 import uuid
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
+import time
 
 try:
     from gevent.pool import Pool
     from gevent import sleep as async_sleep
+
     GEVENT_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
 from business_intel_scraper.backend.osint.integrations import run_spiderfoot
-from business_intel_scraper.backend.db.utils import (
-    Base,
-    ENGINE,
-    SessionLocal,
-    init_db,
-    save_companies,
-)
-from business_intel_scraper.backend.db.models import Company
 
 try:
     from celery import Celery
@@ -43,6 +38,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
         def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
             return func
+
 
 celery_app = Celery("business_intel_scraper")
 
@@ -66,8 +62,11 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             raise RuntimeError("Scrapy is required to run this task")
 
     class TextResponse:  # type: ignore[no-redef]
-        def __init__(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - simple stub
+        def __init__(
+            self, *args: object, **kwargs: object
+        ) -> None:  # pragma: no cover - simple stub
             pass
+
 
 # In the test environment Celery may not be installed. To provide basic
 # asynchronous behaviour without requiring external services we also manage
@@ -82,6 +81,7 @@ if GEVENT_AVAILABLE:
 else:  # pragma: no cover - fallback when gevent is missing
     _executor = ThreadPoolExecutor()
     _tasks: Dict[str, Future] = {}
+
 
 def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
     """Submit a callable to the underlying executor."""
@@ -159,16 +159,21 @@ def get_task_status(task_id: str) -> str:
             return "completed"
     return "running"
 
+
 @celery_app.task
-def run_spider_task(spider: str = "example", html: str | None = None) -> list[dict[str, str]]:
+def run_spider_task(
+    spider: str = "example", html: str | None = None
+) -> list[dict[str, str]]:
+
     """Run a Scrapy spider.
 
     Parameters
     ----------
-    spider : str, optional
+    spider_name : str, optional
         Name of the spider to run. Only ``"example"`` is supported.
-    html : str, optional
-        Optional HTML body to parse instead of fetching from the network.
+    **kwargs : object
+        Additional arguments passed to the spider. Currently only ``html`` is
+        recognised and used when provided.
 
     Returns
     -------
@@ -177,14 +182,16 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
     """
     from importlib import import_module
 
-    if spider != "example":
-        raise ValueError(f"Unknown spider '{spider}'")
+    if spider_name != "example":
+        raise ValueError(f"Unknown spider '{spider_name}'")
 
     try:
         module = import_module("business_intel_scraper.backend.crawlers.spider")
         spider_cls = getattr(module, "ExampleSpider")
     except Exception:  # pragma: no cover - unexpected import failure
         return []
+
+    html = kwargs.get("html")
 
     if html is not None:
         spider_instance = spider_cls()
@@ -204,6 +211,7 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
     process.start(stop_after_crawl=True)
 
     return items
+
 
 @celery_app.task
 def spiderfoot_scan(domain: str) -> dict[str, str]:
