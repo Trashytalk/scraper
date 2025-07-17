@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Any, Mapping
 
 import requests
 
@@ -88,6 +88,50 @@ class APIProxyProvider(ProxyProvider):
         """Retrieve a new proxy from the configured endpoint."""
 
         return fetch_fresh_proxy(self.endpoint, self.api_key)
+
+    def get_proxy(self) -> str:
+        if not self.current_proxy:
+            self.current_proxy = self._request_proxy()
+        return self.current_proxy
+
+    def rotate(self) -> str:
+        self.current_proxy = self._request_proxy()
+        return self.current_proxy
+
+
+class CommercialProxyAPIProvider(ProxyProvider):
+    """Provider for commercial proxy APIs returning JSON data.
+
+    The API is expected to respond with a JSON object containing a ``proxy``
+    field. Additional query parameters can be supplied via ``params`` and the
+    API key is passed using the ``Authorization`` header.
+    """
+
+    def __init__(
+        self,
+        endpoint: str,
+        api_key: str,
+        params: Optional[Mapping[str, Any]] = None,
+    ) -> None:
+        self.endpoint = endpoint
+        self.api_key = api_key
+        self.params = params or {}
+        self.current_proxy: Optional[str] = None
+
+    def _request_proxy(self) -> str:
+        headers = {"Authorization": self.api_key}
+        resp = requests.get(
+            self.endpoint,
+            headers=headers,
+            params=self.params,
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        proxy = data.get("proxy")
+        if not proxy:
+            raise RuntimeError("Proxy not returned from API")
+        return proxy
 
     def get_proxy(self) -> str:
         if not self.current_proxy:
