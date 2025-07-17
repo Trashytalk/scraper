@@ -19,6 +19,8 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 from business_intel_scraper.backend.osint.integrations import (
     run_spiderfoot,
     run_theharvester,
+    run_sherlock,
+    run_subfinder,
 )
 from business_intel_scraper.backend.nlp import pipeline
 from business_intel_scraper.backend.geo.processing import geocode_addresses
@@ -277,6 +279,20 @@ def theharvester_scan(domain: str) -> dict[str, str]:
     return run_theharvester(domain)
 
 
+@celery_app.task
+def sherlock_scan(username: str) -> dict[str, str]:
+    """Run Sherlock username search."""
+
+    return run_sherlock(username)
+
+
+@celery_app.task
+def subfinder_scan(domain: str) -> dict[str, str]:
+    """Run subfinder subdomain enumeration."""
+
+    return run_subfinder(domain)
+
+
 def queue_spiderfoot_scan(
     domain: str, *, queue: str | None = None, countdown: int | None = None
 ) -> str:
@@ -332,4 +348,32 @@ def queue_theharvester_scan(
     if countdown is not None:
         options["countdown"] = countdown
     result = theharvester_scan.apply_async(args=[domain], **options)
+    return result.id
+
+
+def queue_sherlock_scan(
+    username: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`sherlock_scan` via Celery."""
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = sherlock_scan.apply_async(args=[username], **options)
+    return result.id
+
+
+def queue_subfinder_scan(
+    domain: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`subfinder_scan` via Celery."""
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = subfinder_scan.apply_async(args=[domain], **options)
     return result.id
