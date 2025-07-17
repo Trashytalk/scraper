@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from sqlalchemy import String, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import String, ForeignKey, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Optional
 
@@ -82,4 +84,17 @@ class OsintResult(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"))
     data: Mapped[str] = mapped_column(String, nullable=False)
-    task: Mapped["ScrapeTask"] = relationship(back_populates="results")
+    # Relationship omitted
+
+
+class JobEvent(Base):
+    """Record of job lifecycle events."""
+
+    __tablename__ = "job_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    event: Mapped[str] = mapped_column(String, nullable=False)
+    message: Mapped[str | None] = mapped_column(String, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
