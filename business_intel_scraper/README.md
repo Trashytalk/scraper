@@ -105,6 +105,9 @@ Getting Started
 
     Clone repository and configure .env
 
+    Review ``settings.py`` for available configuration options such as API
+    credentials, database connection, and proxy settings.
+
     Bring up infra stack (docker-compose up or kubernetes deploy)
 
     Configure proxy providers, scraping targets, and compliance rules
