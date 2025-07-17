@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bi-scraper-worker
+  namespace: bi-scraper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bi-scraper-worker
+  template:
+    metadata:
+      labels:
+        app: bi-scraper-worker
+    spec:
+      containers:
+      - name: worker
+        image: your-registry/bi-scraper-worker:latest
+        command: ["celery", "-A", "business_intel_scraper.backend.workers.tasks.celery_app", "worker", "--loglevel=info"]
+        env:
+        - name: CELERY_BROKER_URL
+          value: redis://redis:6379/0
