@@ -50,4 +50,5 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
 
 def preprocess(texts: Iterable[str]) -> list[str]:
     """Clean and normalize raw text strings."""
+
     return [clean_text(t) for t in texts]
