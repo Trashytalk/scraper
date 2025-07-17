@@ -34,6 +34,14 @@ class ProxyMiddleware:
         # rotate proxy on failure
         self.proxy_manager.rotate_proxy()
 
+"""Downloader middleware for anti-bot measures."""
+
+import random
+import time
+from typing import Iterable
+
+
+
 
 class RandomUserAgentMiddleware:
     """Set a random ``User-Agent`` header for each request."""

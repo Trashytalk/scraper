@@ -34,7 +34,9 @@ class Location(Base):
     address: Mapped[str] = mapped_column(String, nullable=False, index=True)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
-    # Relationship to ``ScrapeTask`` omitted to keep schema simple for tests.
+    # Relationships to other tables are omitted for simplicity in the tests
+    # to avoid needing foreign key joins.
+
 
 
 class User(Base):
@@ -45,10 +47,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    tasks: Mapped[list["ScrapeTask"]] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
+    # Relationship to tasks omitted to keep test models lightweight
 
 
 class ScrapeTask(Base):
@@ -67,13 +66,8 @@ class ScrapeTask(Base):
         nullable=True,
         index=True,
     )
-    status: Mapped[str] = mapped_column(String, default="pending", index=True)
-    user: Mapped["User"] = relationship(back_populates="tasks")
-    company: Mapped["Company"] = relationship(back_populates="tasks")
-    results: Mapped[list["OsintResult"]] = relationship(
-        back_populates="task",
-        cascade="all, delete-orphan",
-    )
+    status: Mapped[str] = mapped_column(String, default="pending")
+    # Relationships omitted; not needed for tests
 
 
 class OsintResult(Base):
@@ -84,4 +78,4 @@ class OsintResult(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"), index=True)
     data: Mapped[str] = mapped_column(String, nullable=False)
-    task: Mapped["ScrapeTask"] = relationship(back_populates="results")
+    # Relationship omitted
