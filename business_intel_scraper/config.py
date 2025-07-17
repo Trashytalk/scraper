@@ -13,9 +13,9 @@ def _load_env_file(path: Path) -> None:
         return
     for line in path.read_text().splitlines():
         line = line.strip()
-        if not line or line.startswith('#') or '=' not in line:
+        if not line or line.startswith("#") or "=" not in line:
             continue
-        key, value = line.split('=', 1)
+        key, value = line.split("=", 1)
         os.environ.setdefault(key, value)
 
 
@@ -28,6 +28,7 @@ class Settings:
     """Container for application settings."""
 
     api_key: str = os.getenv("API_KEY", "")
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///data.db")
     use_https: bool = os.getenv("USE_HTTPS", "false").lower() == "true"
     rate_limit: int = int(os.getenv("RATE_LIMIT", "60"))
     rate_limit_window: int = int(os.getenv("RATE_LIMIT_WINDOW", "60"))
