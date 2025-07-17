@@ -2,6 +2,25 @@
 
 from __future__ import annotations
 
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from sse_starlette.sse import EventSourceResponse
+from pathlib import Path
+import asyncio
+from fastapi import Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from fastapi.responses import Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from business_intel_scraper.infra.monitoring.prometheus_exporter import record_scrape
+
+from .notifications import ConnectionManager
+from .rate_limit import RateLimitMiddleware
+from ..workers.tasks import get_task_status, launch_scraping_task
+from ..utils.helpers import LOG_FILE
+from business_intel_scraper.settings import settings
+from ..db.models import Company
+from ..db import SessionLocal
+from pydantic import BaseModel
 import asyncio
 from pathlib import Path
 from typing import AsyncGenerator
@@ -71,6 +90,7 @@ async def enqueue_scrape() -> dict[str, str]:
     """
     task_id = launch_scraping_task()
     jobs[task_id] = "running"
+    record_scrape()
     return {"task_id": task_id}
 
 
@@ -135,6 +155,12 @@ async def get_jobs() -> dict[str, JobStatus]:
 @app.get("/jobs/{job_id}", response_model=JobStatus)
 async def get_job(job_id: str) -> JobStatus:
     """Return a single job status."""
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    """Expose Prometheus metrics for scraping."""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     return JobStatus(status=jobs.get(job_id, "unknown"))
 

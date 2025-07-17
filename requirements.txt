@@ -7,5 +7,4 @@ requests
 httpx
 spacy
 playwright
-pyjwt
-gevent
+prometheus-client
