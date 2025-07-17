@@ -1,17 +1,67 @@
 """Main FastAPI application entry point."""
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    WebSocket,
+    WebSocketDisconnect,
+    Depends,
+    HTTPException,
+    status,
+    Query,
+)
+from pathlib import Path
+import asyncio
+
+from sse_starlette import EventSourceResponse
 
 from .notifications import ConnectionManager
-
+from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
-
 from business_intel_scraper.settings import settings
+from ..db import SessionLocal
+from ..db.models import Company
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from ..utils.helpers import LOG_FILE
+
+from pydantic import BaseModel
+
+
+class CompanyCreate(BaseModel):
+    """Schema for creating companies."""
+
+    name: str
+
+
+class CompanyRead(BaseModel):
+    """Schema for reading companies."""
+
+    id: int
+    name: str
+      
 
 app = FastAPI(title="Business Intelligence Scraper")
-app.add_middleware(RateLimitMiddleware)
+if settings.require_https:
+    app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(
+    RateLimitMiddleware,
+    limit=settings.rate_limit.limit,
+    window=settings.rate_limit.window,
+)
 
 manager = ConnectionManager()
+
+scraped_data: list[dict[str, str]] = []
+jobs: dict[str, dict[str, str]] = {}
+
+
+def get_db() -> Session:
+    """Yield a database session."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
@@ -27,24 +77,28 @@ async def root() -> dict[str, str]:
         "message": "API is running",
         "database_url": settings.database.url,
     }
-    return {"message": "API is running"}
 
 
 @app.post("/scrape")
 async def start_scrape() -> dict[str, str]:
     """Launch a background scraping task using the example spider."""
-
     task_id = launch_scraping_task()
+    jobs[task_id] = "running"
     return {"task_id": task_id}
 
 
 @app.get("/tasks/{task_id}")
 async def task_status(task_id: str) -> dict[str, str]:
     """Return the current status of a scraping task."""
+    status_ = get_task_status(task_id)
+    return {"status": status_}
 
+  
     status = get_task_status(task_id)
+    jobs[task_id] = status
     return {"status": status}
 
+  
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
     """Handle WebSocket connections for real-time notifications."""
@@ -60,7 +114,7 @@ async def notifications(websocket: WebSocket) -> None:
 async def stream_logs() -> EventSourceResponse:
     """Stream log file updates using Server-Sent Events."""
 
-    async def event_generator():
+    async def event_generator() -> AsyncGenerator[dict[str, str], None]:
         path = Path(LOG_FILE)
         path.touch(exist_ok=True)
         with path.open() as f:
@@ -82,7 +136,7 @@ async def get_data() -> list[dict[str, str]]:
 @app.get("/jobs")
 async def get_jobs() -> dict[str, dict[str, str]]:
     """Return job statuses."""
-    return jobs
+    return {jid: {"status": get_task_status(jid)} for jid in list(jobs)}
 
 
 @app.get("/jobs/{job_id}")
@@ -113,8 +167,14 @@ def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
 
 
 @app.get("/companies", response_model=list[CompanyRead])
-def list_companies(db: Session = Depends(get_db)) -> list[Company]:
-    """List all ``Company`` records."""
+def list_companies(
+    *,
+    limit: int = Query(100, ge=1),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[Company]:
+    """List ``Company`` records with pagination."""
 
-    stmt = select(Company)
+    stmt = select(Company).offset(offset).limit(limit)
     return list(db.execute(stmt).scalars())
+
