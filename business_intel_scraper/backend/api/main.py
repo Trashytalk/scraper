@@ -131,13 +131,29 @@ async def start_scrape() -> dict[str, str]:
     return {"task_id": task_id}
 
 
+@app.post("/scrape/start")
+async def enqueue_scrape() -> dict[str, str]:
+    """Enqueue a new scraping task.
+
+    This simply wraps :func:`launch_scraping_task` from ``workers.tasks`` and
+    stores the task identifier in the in-memory ``jobs`` registry so it can be
+    queried later.
+    """
+    task_id = launch_scraping_task()
+    jobs[task_id] = "running"
+    return {"task_id": task_id}
+
+
 @app.get("/tasks/{task_id}")
 async def task_status(task_id: str) -> dict[str, str]:
     """Return the current status of a scraping task."""
     status_ = get_task_status(task_id)
     return {"status": status_}
 
-  
+
+@app.get("/scrape/status/{task_id}")
+async def scrape_status(task_id: str) -> dict[str, str]:
+    """Return the status of a previously enqueued scraping task."""
     status = get_task_status(task_id)
     jobs[task_id] = status
     return {"status": status}
