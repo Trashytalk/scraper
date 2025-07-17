@@ -17,6 +17,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
         pass
 
+
 _NLP_MODEL: Language | None = None
 
 
@@ -36,15 +37,15 @@ def _get_nlp() -> Language | None:
 def extract_entities(texts: Iterable[str]) -> list[str]:
     """Extract named entities from text collection."""
 
-
+    processed = preprocess(texts)
     nlp = _get_nlp()
     entities: list[str] = []
     if nlp is None:
-        for text in texts:
+        for text in processed:
             entities.extend(text.split())
         return entities
 
-    for doc in nlp.pipe(texts):
+    for doc in nlp.pipe(processed):
         found = [ent.text for ent in getattr(doc, "ents", [])]
         if found:
             entities.extend(found)

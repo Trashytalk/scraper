@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
 
-
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 GOOGLE_GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 
@@ -121,9 +120,7 @@ def geocode_addresses(
             latitude, longitude = _deterministic_coords(address)
 
             session.add(
-                Location(
-                    address=address, latitude=latitude, longitude=longitude
-                )
+                Location(address=address, latitude=latitude, longitude=longitude)
             )
             local_results.append((address, latitude, longitude))
 
@@ -141,4 +138,4 @@ def geocode_addresses(
         final_results.append((address, lat, lon))
         time.sleep(1)
 
-    return final_results
+    return results

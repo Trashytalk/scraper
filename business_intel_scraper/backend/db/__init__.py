@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-import os
+from settings import settings
 
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./development.db")
+DATABASE_URL = settings.database.url
 
 engine = create_engine(DATABASE_URL, echo=True)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -22,5 +23,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
