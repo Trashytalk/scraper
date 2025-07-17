@@ -5,10 +5,12 @@ from __future__ import annotations
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
+import time
 
 try:
     from gevent.pool import Pool
     from gevent import sleep as async_sleep
+
     GEVENT_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
@@ -44,6 +46,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
             return func
 
+
 celery_app = Celery("business_intel_scraper")
 
 try:  # pragma: no cover - optional dependency
@@ -66,8 +69,11 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             raise RuntimeError("Scrapy is required to run this task")
 
     class TextResponse:  # type: ignore[no-redef]
-        def __init__(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - simple stub
+        def __init__(
+            self, *args: object, **kwargs: object
+        ) -> None:  # pragma: no cover - simple stub
             pass
+
 
 # In the test environment Celery may not be installed. To provide basic
 # asynchronous behaviour without requiring external services we also manage
@@ -82,6 +88,7 @@ if GEVENT_AVAILABLE:
 else:  # pragma: no cover - fallback when gevent is missing
     _executor = ThreadPoolExecutor()
     _tasks: Dict[str, Future] = {}
+
 
 def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
     """Submit a callable to the underlying executor."""
@@ -123,7 +130,10 @@ def _run_example_spider() -> str:
     if init_db and save_companies:
         try:
             init_db()
-            save_companies(item.get("url", "") for item in items)
+            from business_intel_scraper.backend.db.pipeline import normalize_names
+
+            names = normalize_names(item.get("url", "") for item in items)
+            save_companies(names)
         except Exception:  # pragma: no cover - database failure
             pass
 
@@ -159,8 +169,11 @@ def get_task_status(task_id: str) -> str:
             return "completed"
     return "running"
 
+
 @celery_app.task
-def run_spider_task(spider: str = "example", html: str | None = None) -> list[dict[str, str]]:
+def run_spider_task(
+    spider: str = "example", html: str | None = None
+) -> list[dict[str, str]]:
     """Run a Scrapy spider.
 
     Parameters
@@ -204,6 +217,7 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
     process.start(stop_after_crawl=True)
 
     return items
+
 
 @celery_app.task
 def spiderfoot_scan(domain: str) -> dict[str, str]:
