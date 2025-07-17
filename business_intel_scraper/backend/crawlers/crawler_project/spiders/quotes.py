@@ -1,11 +1,12 @@
 import scrapy
+from typing import Iterable
 
 class QuotesSpider(scrapy.Spider):
     name = "quotes"
     allowed_domains = ["quotes.toscrape.com"]
     start_urls = ["https://quotes.toscrape.com/"]
 
-    def parse(self, response):
+    def parse(self, response: scrapy.http.Response) -> Iterable[dict[str, str]]:
         for quote in response.css("div.quote"):
             yield {
                 "text": quote.css("span.text::text").get(),
