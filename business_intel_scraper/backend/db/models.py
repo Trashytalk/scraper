@@ -32,8 +32,9 @@ class Location(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     address: Mapped[str] = mapped_column(String, nullable=False)
-    latitude: Mapped[float | None] = mapped_column(nullable=True)
-    longitude: Mapped[float | None] = mapped_column(nullable=True)
+    latitude: Mapped[float] = mapped_column(nullable=False)
+    longitude: Mapped[float] = mapped_column(nullable=False)
+    # Relationship to scraping tasks is defined on :class:`ScrapeTask`.
 
 
 class User(Base):
