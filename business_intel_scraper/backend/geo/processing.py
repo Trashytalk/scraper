@@ -82,6 +82,12 @@ def geocode_addresses(
     results: list[Tuple[str, float | None, float | None]] = []
     with Session(engine) as session:
         for address in addresses:
+            if use_nominatim:
+                lat, lon = _nominatim_lookup(address)
+                if lat is None or lon is None:
+                    lat, lon = _deterministic_coords(address)
+            else:
+                lat, lon = _deterministic_coords(address)
             digest = hashlib.sha1(address.encode()).hexdigest()
             num = int(digest[:8], 16)
             hashed_lat = float((num % 180) - 90)
