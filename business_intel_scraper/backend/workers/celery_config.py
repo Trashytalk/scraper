@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import os
+from settings import settings
 
 # Broker and backend URLs can be customized via environment variables.
-broker_url = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-result_backend = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+broker_url = settings.celery.broker_url
+result_backend = settings.celery.result_backend
 
 # Basic serialization settings
 accept_content = ["json"]
