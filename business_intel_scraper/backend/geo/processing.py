@@ -37,29 +37,27 @@ def geocode_addresses(
         Tuples containing address and latitude/longitude.
     """
 
-    if engine is None:
-        engine = create_engine("sqlite:///geo.db")
+    if engine is not None:
+        Base.metadata.create_all(engine)
+        results: list[Tuple[str, float, float]] = []
+        with Session(engine) as session:
+            for address in addresses:
+                digest = hashlib.sha1(address.encode()).hexdigest()
+                num = int(digest[:8], 16)
+                latitude = float((num % 180) - 90)
+                longitude = float(((num // 180) % 360) - 180)
 
-    Base.metadata.create_all(engine)
+                session.add(
+                    Location(
+                        address=address, latitude=latitude, longitude=longitude
+                    )
+                )
+                results.append((address, latitude, longitude))
+
+            session.commit()
+        return results
 
     results: list[Tuple[str, float, float]] = []
-    with Session(engine) as session:
-        for address in addresses:
-            digest = hashlib.sha1(address.encode()).hexdigest()
-            num = int(digest[:8], 16)
-            latitude = float((num % 180) - 90)
-            longitude = float(((num // 180) % 360) - 180)
-
-            session.add(
-                Location(
-                    address=address, latitude=latitude, longitude=longitude
-                )
-            )
-            results.append((address, latitude, longitude))
-
-        session.commit()
-    results: list[Tuple[str, float | None, float | None]] = []
-
     for address in addresses:
         query = urllib.parse.urlencode({"q": address, "format": "json"})
         req = urllib.request.Request(
