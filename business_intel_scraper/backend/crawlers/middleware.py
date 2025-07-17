@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-"""Scrapy middleware for proxy rotation."""
+"""Scrapy middleware components."""
+
+import random
+import time
+from typing import Iterable
 
 from scrapy import Request
 from scrapy.crawler import Spider
@@ -29,13 +33,6 @@ class ProxyMiddleware:
         self.proxy_manager.rotate_proxy()
 
 """Downloader middleware for anti-bot measures."""
-
-from __future__ import annotations
-
-import random
-import time
-from typing import Iterable
-
 
 
 class RandomUserAgentMiddleware:
