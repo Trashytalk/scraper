@@ -17,7 +17,7 @@ from ..workers.tasks import get_task_status, launch_scraping_task
 from ..security import require_token
 from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
-from ..db.models import Company, UserRole
+from ..db.models import Company, Location
 from ..db import SessionLocal
 from .auth import router as auth_router
 
@@ -216,3 +216,18 @@ async def get_job(job_id: str) -> dict[str, str]:
 
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
+
+
+@app.get("/locations/{company_id}")
+def get_locations(company_id: int, db: Session = Depends(get_db)) -> list[dict[str, object]]:
+    """Return stored location data for a company."""
+    locations = db.execute(select(Location)).scalars().all()
+    return [
+        {
+            "id": loc.id,
+            "address": loc.address,
+            "latitude": loc.latitude,
+            "longitude": loc.longitude,
+        }
+        for loc in locations
+    ]
