@@ -25,3 +25,15 @@ Use this route from the frontend to monitor running jobs or debug output.
 This project contains various modules for business intelligence scraping.
 The NLP backend now provides text-cleaning helpers for stripping HTML and
 normalizing whitespace.
+
+## Database Migrations
+
+Alembic is used to manage schema versions. To apply migrations run:
+
+```bash
+cd business_intel_scraper/backend/db
+PYTHONPATH=../../.. alembic upgrade head
+```
+
+The command uses `alembic.ini` (or `DATABASE_URL`) to connect to the
+database and upgrades it to the latest schema.
