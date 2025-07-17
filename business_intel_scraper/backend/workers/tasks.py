@@ -7,6 +7,14 @@ import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
 from business_intel_scraper.backend.osint.integrations import run_spiderfoot
+from business_intel_scraper.backend.db.utils import (
+    Base,
+    ENGINE,
+    SessionLocal,
+    init_db,
+    save_companies,
+)
+from business_intel_scraper.backend.db.models import Company
 
 try:
     from celery import Celery
