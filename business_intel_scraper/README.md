@@ -81,6 +81,8 @@ Project Structure
 │
 ├── backend/
 │   ├── crawlers/
+│   │   ├── spider.py  - Scrapy spider
+│   │   └── browser.py - Playwright/Selenium crawler
 │   ├── osint/
 │   ├── nlp/
 │   ├── geo/
@@ -112,6 +114,7 @@ Getting Started
     Run sample pipeline:
 
         Launch crawler via API or CLI
+        Use ``BrowserCrawler`` for dynamic pages requiring JavaScript rendering
 
         Monitor dashboards for block/ban rates
 
