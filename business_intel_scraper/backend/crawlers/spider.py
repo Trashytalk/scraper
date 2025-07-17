@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import scrapy
 
-from .middleware import ProxyMiddleware
+from ..security import solve_captcha
+
 from ..proxy.provider import DummyProxyProvider
 from .browser import BrowserCrawler
 
@@ -56,4 +57,8 @@ class ExampleSpider(scrapy.Spider):
         scrapy.Item | dict[str, str]
             Parsed item from the page.
         """
+        if "captcha" in response.text.lower():
+            solve_captcha(b"dummy")
+            return {}
+
         return {"url": response.url}
