@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
 from sse_starlette.sse import EventSourceResponse
 from pathlib import Path
 import asyncio
@@ -154,11 +154,12 @@ async def task_status(task_id: str) -> dict[str, str]:
 @app.get("/scrape/status/{task_id}")
 async def scrape_status(task_id: str) -> dict[str, str]:
     """Return the status of a previously enqueued scraping task."""
+
     status = get_task_status(task_id)
     jobs[task_id] = status
     return {"status": status}
 
-  
+
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
     """Handle WebSocket connections for real-time notifications."""
@@ -169,6 +170,7 @@ async def notifications(websocket: WebSocket) -> None:
             await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
 
 @app.get("/logs/stream")
 async def stream_logs() -> EventSourceResponse:
@@ -187,6 +189,8 @@ async def stream_logs() -> EventSourceResponse:
                     await asyncio.sleep(0.5)
 
     return EventSourceResponse(event_generator())
+
+
 @app.get("/data")
 async def get_data() -> list[dict[str, str]]:
     """Return scraped data."""
@@ -204,3 +208,40 @@ async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
 
+
+@app.post(
+    "/companies/", response_model=CompanyRead, status_code=status.HTTP_201_CREATED
+)
+async def create_company(
+    company: CompanyCreate, db: Session = Depends(get_db)
+) -> Company:
+    """Create a new company."""
+    db_company = Company(name=company.name)
+    db.add(db_company)
+    db.commit()
+    db.refresh(db_company)
+    return db_company
+
+
+@app.get("/companies/{company_id}", response_model=CompanyRead)
+async def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
+    """Retrieve a company by ID."""
+    db_company = db.get(Company, company_id)
+    if not db_company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
+        )
+    return db_company
+
+
+@app.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_company(company_id: int, db: Session = Depends(get_db)) -> Response:
+    """Delete a company by ID."""
+    db_company = db.get(Company, company_id)
+    if not db_company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
+        )
+    db.delete(db_company)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
