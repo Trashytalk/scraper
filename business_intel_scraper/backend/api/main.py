@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
+from ..security import require_token
 from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
 from ..db.models import Company
@@ -124,7 +125,7 @@ async def root() -> dict[str, str]:
 
 
 @app.post("/scrape")
-async def start_scrape() -> dict[str, str]:
+async def start_scrape(token: str = Depends(require_token)) -> dict[str, str]:
     """Launch a background scraping task using the example spider."""
     task_id = launch_scraping_task()
     jobs[task_id] = "running"
