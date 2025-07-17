@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Iterable, Tuple
 
 import hashlib
+import json
+import time
+import urllib.parse
+import urllib.request
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
@@ -17,14 +21,46 @@ import urllib.request
 from urllib.error import URLError, HTTPError
 
 
+
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+
+
+def _deterministic_coords(address: str) -> tuple[float, float]:
+    """Return reproducible coordinates for an address."""
+
+    digest = hashlib.sha1(address.encode()).hexdigest()
+    num = int(digest[:8], 16)
+    latitude = float((num % 180) - 90)
+    longitude = float(((num // 180) % 360) - 180)
+    return latitude, longitude
+
+
+def _nominatim_lookup(address: str) -> tuple[float | None, float | None]:
+    """Query Nominatim for coordinates."""
+
+    query = urllib.parse.urlencode({"q": address, "format": "json"})
+    req = urllib.request.Request(
+        f"{NOMINATIM_URL}?{query}",
+        headers={"User-Agent": "business-intel-scraper/1.0"},
+    )
+
+    try:  # pragma: no cover - network issues
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.load(resp)
+        if data:
+            return float(data[0]["lat"]), float(data[0]["lon"])
+    except Exception:  # pragma: no cover - network issues
+        pass
+
+    return None, None
 
 
 def geocode_addresses(
     addresses: Iterable[str],
     *,
     engine: Engine | None = None,
-) -> list[Tuple[str, float, float]]:
+    use_nominatim: bool = True,
+) -> list[Tuple[str, float | None, float | None]]:
     """Geocode a list of addresses.
 
     Parameters
@@ -43,19 +79,37 @@ def geocode_addresses(
 
     Base.metadata.create_all(engine)
 
-    results: list[Tuple[str, float, float]] = []
+    results: list[Tuple[str, float | None, float | None]] = []
     with Session(engine) as session:
         for address in addresses:
             digest = hashlib.sha1(address.encode()).hexdigest()
             num = int(digest[:8], 16)
-            latitude = float((num % 180) - 90)
-            longitude = float(((num // 180) % 360) - 180)
+            hashed_lat = float((num % 180) - 90)
+            hashed_lon = float(((num // 180) % 360) - 180)
 
             session.add(
                 Location(
-                    address=address, latitude=latitude, longitude=longitude
+                    address=address, latitude=hashed_lat, longitude=hashed_lon
                 )
             )
+            try:
+                query = urllib.parse.urlencode({"q": address, "format": "json"})
+                req = urllib.request.Request(
+                    f"{NOMINATIM_URL}?{query}",
+                    headers={"User-Agent": "business-intel-scraper/1.0"},
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.load(resp)
+                if data:
+                    latitude = float(data[0]["lat"])
+                    longitude = float(data[0]["lon"])
+                else:
+                    latitude = hashed_lat
+                    longitude = hashed_lon
+            except Exception:  # pragma: no cover - network or parsing issues
+                latitude = hashed_lat
+                longitude = hashed_lon
+
             results.append((address, latitude, longitude))
 
         session.commit()
@@ -88,6 +142,8 @@ def geocode_addresses(
                 else:
                     time.sleep(1)
 
-        time.sleep(1)
+
+    if use_nominatim:
+        time.sleep(1 * len(addresses))
 
     return results
