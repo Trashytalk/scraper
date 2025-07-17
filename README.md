@@ -25,3 +25,14 @@ Use this route from the frontend to monitor running jobs or debug output.
 This project contains various modules for business intelligence scraping.
 The NLP backend now provides text-cleaning helpers for stripping HTML and
 normalizing whitespace.
+
+## Installation
+
+Create a virtual environment and install the dependencies:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
