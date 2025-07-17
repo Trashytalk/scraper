@@ -31,3 +31,4 @@ def setup_logging(
         handlers=handlers,
     )
     logger.debug("Logging configured")
+
