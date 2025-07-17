@@ -9,6 +9,9 @@ import asyncio
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from fastapi.responses import Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from business_intel_scraper.infra.monitoring.prometheus_exporter import record_scrape
 
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
@@ -128,6 +131,7 @@ async def start_scrape() -> dict[str, str]:
     """Launch a background scraping task using the example spider."""
     task_id = launch_scraping_task()
     jobs[task_id] = "running"
+    record_scrape()
     return {"task_id": task_id}
 
 
@@ -187,4 +191,10 @@ async def get_jobs() -> dict[str, dict[str, str]]:
 async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    """Expose Prometheus metrics for scraping."""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

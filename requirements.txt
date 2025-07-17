@@ -9,4 +9,5 @@ sqlalchemy
 spacy
 celery
 playwright
+prometheus-client
 
