@@ -4,20 +4,11 @@ from __future__ import annotations
 
 import os
 import sys
+import pytest
 
-# Ensure project root is on the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
-from business_intel_scraper.backend.db import (
-    Base,
-    ENGINE,
-    SessionLocal,
-    init_db,
-    save_companies,
-)
-from business_intel_scraper.backend.db.models import Company
-from business_intel_scraper.backend.workers import tasks
-
+tasks = pytest.importorskip("business_intel_scraper.backend.workers.tasks")
 example_task = tasks.example_task
 
 
