@@ -1,6 +1,10 @@
+"""Scrapy middleware for proxy rotation and basic anti-bot measures."""
+
 from __future__ import annotations
 
-"""Scrapy middleware for proxy rotation."""
+import random
+import time
+from typing import Iterable
 
 from scrapy import Request
 from scrapy.crawler import Spider
@@ -27,14 +31,6 @@ class ProxyMiddleware:
     def process_exception(self, request: Request, exception: Exception, spider: Spider) -> None:
         # rotate proxy on failure
         self.proxy_manager.rotate_proxy()
-
-"""Downloader middleware for anti-bot measures."""
-
-from __future__ import annotations
-
-import random
-import time
-from typing import Iterable
 
 
 
