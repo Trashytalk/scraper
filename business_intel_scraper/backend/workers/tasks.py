@@ -11,22 +11,43 @@ import time
 try:
     from gevent.pool import Pool
     from gevent import sleep as async_sleep
+
     GEVENT_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
 from business_intel_scraper.backend.osint.integrations import run_spiderfoot
-from business_intel_scraper.backend.db.utils import (
-    Base,
-    ENGINE,
-    SessionLocal,
-    init_db,
-    save_companies,
-)
-from business_intel_scraper.backend.db.models import Company
 
-from . import celery_app
+try:
+    from celery import Celery
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+
+    from typing import Callable, TypeVar, Any
+
+    F = TypeVar("F", bound=Callable[..., Any])
+
+    class Celery:  # type: ignore
+        """Fallback Celery replacement."""
+
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        def config_from_object(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
+            return func
+
+
+celery_app = Celery("business_intel_scraper")
+
+try:  # pragma: no cover - optional dependency
+    celery_app.config_from_object(
+        "business_intel_scraper.backend.workers.celery_config", namespace="CELERY"
+    )
+except ModuleNotFoundError:
+    pass
 
 
 try:
@@ -41,8 +62,11 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             raise RuntimeError("Scrapy is required to run this task")
 
     class TextResponse:  # type: ignore[no-redef]
-        def __init__(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - simple stub
+        def __init__(
+            self, *args: object, **kwargs: object
+        ) -> None:  # pragma: no cover - simple stub
             pass
+
 
 # In the test environment Celery may not be installed. To provide basic
 # asynchronous behaviour without requiring external services we also manage
@@ -57,6 +81,7 @@ if GEVENT_AVAILABLE:
 else:  # pragma: no cover - fallback when gevent is missing
     _executor = ThreadPoolExecutor()
     _tasks: Dict[str, Future] = {}
+
 
 def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
     """Submit a callable to the underlying executor."""
@@ -134,8 +159,12 @@ def get_task_status(task_id: str) -> str:
             return "completed"
     return "running"
 
+
 @celery_app.task
-def run_spider_task(spider_name: str = "example", **kwargs: object) -> list[dict[str, str]]:
+def run_spider_task(
+    spider: str = "example", html: str | None = None
+) -> list[dict[str, str]]:
+
     """Run a Scrapy spider.
 
     Parameters
@@ -182,6 +211,7 @@ def run_spider_task(spider_name: str = "example", **kwargs: object) -> list[dict
     process.start(stop_after_crawl=True)
 
     return items
+
 
 @celery_app.task
 def spiderfoot_scan(domain: str) -> dict[str, str]:

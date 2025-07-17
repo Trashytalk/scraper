@@ -10,12 +10,14 @@ import time
 import urllib.parse
 import urllib.request
 
-from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
-from urllib.error import HTTPError, URLError
+import urllib.parse
+import urllib.request
+
+
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
@@ -56,47 +58,28 @@ def geocode_addresses(
     engine: Engine | None = None,
     use_nominatim: bool = True,
 ) -> list[Tuple[str, float | None, float | None]]:
-    """Geocode a list of addresses.
+    """Geocode a list of addresses."""
 
-    Parameters
-    ----------
-    addresses : Iterable[str]
-        Addresses to geocode.
+    results: list[Tuple[str, float | None, float | None]] = []
 
-    Returns
-    -------
-    list[Tuple[str, float, float]]
-        Tuples containing address and latitude/longitude.
-    """
-
-    fetch_remote = engine is None
-    if engine is None:
-        engine = create_engine("sqlite:///geo.db")
-
-    Base.metadata.create_all(engine)
-
-    results: list[Tuple[str, float, float]] = []
-    with Session(engine) as session:
-        for address in addresses:
-            digest = hashlib.sha1(address.encode()).hexdigest()
-            num = int(digest[:8], 16)
-            latitude = float((num % 180) - 90)
-            longitude = float(((num // 180) % 360) - 180)
-
-            session.add(
-                Location(address=address, latitude=latitude, longitude=longitude)
-            )
-            results.append((address, latitude, longitude))
-
-        session.commit()
-
-    if not fetch_remote or not use_nominatim:
+    if engine is not None:
+        Base.metadata.create_all(engine)
+        with Session(engine) as session:
+            for address in addresses:
+                lat, lon = _deterministic_coords(address)
+                session.add(Location(address=address, latitude=lat, longitude=lon))
+                results.append((address, lat, lon))
+            session.commit()
         return results
 
-    final_results: list[Tuple[str, float | None, float | None]] = []
-    for address, _lat, _lon in results:
-        lat, lon = _nominatim_lookup(address)
-        final_results.append((address, lat, lon))
+    for address in addresses:
+        lat, lon = (
+            _nominatim_lookup(address)
+            if use_nominatim
+            else _deterministic_coords(address)
+        )
+        results.append((address, lat, lon))
+
         time.sleep(1)
 
-    return final_results
+    return results
