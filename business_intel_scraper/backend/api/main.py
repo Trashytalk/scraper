@@ -1,5 +1,3 @@
-"""Main FastAPI application entry point."""
-
 from __future__ import annotations
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -31,6 +29,11 @@ from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from sse_starlette.sse import EventSourceResponse
 
 from business_intel_scraper.settings import settings
+
+from .notifications import ConnectionManager
+from .rate_limit import RateLimitMiddleware
+from ..utils.helpers import LOG_FILE
+from ..workers.tasks import get_task_status, launch_scraping_task
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from .schemas import (
@@ -43,8 +46,10 @@ from ..workers.tasks import get_task_status, launch_scraping_task
 from ..utils.helpers import LOG_FILE
 
 app = FastAPI(title="Business Intelligence Scraper")
+
 if settings.require_https:
     app.add_middleware(HTTPSRedirectMiddleware)
+
 app.add_middleware(
     RateLimitMiddleware,
     limit=settings.rate_limit.limit,
@@ -54,6 +59,22 @@ app.add_middleware(
 manager = ConnectionManager()
 
 scraped_data: list[dict[str, str]] = []
+jobs: dict[str, str] = {}
+
+
+async def monitor_job(job_id: str) -> None:
+    """Watch a background job and broadcast status changes."""
+    previous = None
+    while True:
+        status = get_task_status(job_id)
+        if status != previous:
+            jobs[job_id] = status
+            await manager.broadcast_json({"job_id": job_id, "status": status})
+            previous = status
+        if status in {"completed", "not_found"}:
+            break
+        await asyncio.sleep(1)
+
 # Track job status information in memory
 jobs: dict[str, str] = {}
 
@@ -76,14 +97,25 @@ async def start_scrape() -> TaskCreateResponse:
     jobs[task_id] = "running"
     return TaskCreateResponse(task_id=task_id)
 
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Basic health check."""
+    return {"message": "API is running", "database_url": settings.database.url}
 
 @app.get("/tasks/{task_id}", response_model=TaskStatusResponse)
 async def task_status(task_id: str) -> TaskStatusResponse:
 
 @app.post("/scrape/start")
 async def enqueue_scrape() -> dict[str, str]:
-    """Enqueue a new scraping task.
+    """Enqueue a new scraping task."""
 
+@app.post("/scrape")
+async def start_scrape() -> dict[str, str]:
+    """Launch a background scraping task."""
+    task_id = launch_scraping_task()
+    jobs[task_id] = "running"
+    asyncio.create_task(monitor_job(task_id))
+    """
     This simply wraps :func:`launch_scraping_task` from ``workers.tasks`` and
     stores the task identifier in the in-memory ``jobs`` registry so it can be
     queried later.
@@ -98,13 +130,10 @@ async def enqueue_scrape() -> dict[str, str]:
 async def task_status(task_id: str) -> dict[str, str]:
     """Return the current status of a scraping task."""
 
-@app.get("/scrape/status/{task_id}")
-async def scrape_status(task_id: str) -> dict[str, str]:
-    """Return the status of a previously enqueued scraping task."""
-
     status = get_task_status(task_id)
     jobs[task_id] = status
     return TaskStatusResponse(status=status)
+
 
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
@@ -113,15 +142,15 @@ async def notifications(websocket: WebSocket) -> None:
     await manager.connect(websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            await manager.broadcast(data)
+            # Keep the connection alive; ignore incoming messages
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
 
 @app.get("/logs/stream")
 async def stream_logs() -> EventSourceResponse:
-    """Stream log file updates using Server-Sent Events."""
+    """Stream the application log file using SSE."""
 
     async def event_generator() -> AsyncGenerator[dict[str, str], None]:
         path = Path(LOG_FILE)
@@ -155,6 +184,7 @@ async def get_jobs() -> dict[str, JobStatus]:
 @app.get("/jobs/{job_id}", response_model=JobStatus)
 async def get_job(job_id: str) -> JobStatus:
     """Return a single job status."""
+    return jobs.get(job_id, {"status": "unknown"})
 
 
 @app.get("/metrics")
