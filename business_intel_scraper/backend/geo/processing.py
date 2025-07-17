@@ -21,7 +21,6 @@ import urllib.request
 from urllib.error import URLError, HTTPError
 
 
-
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 
@@ -83,15 +82,10 @@ def geocode_addresses(
     results: list[Tuple[str, float, float]] = []
     with Session(engine) as session:
         for address in addresses:
-            digest = hashlib.sha1(address.encode()).hexdigest()
-            num = int(digest[:8], 16)
-            latitude = float((num % 180) - 90)
-            longitude = float(((num // 180) % 360) - 180)
+            latitude, longitude = _deterministic_coords(address)
 
             session.add(
-                Location(
-                    address=address, latitude=latitude, longitude=longitude
-                )
+                Location(address=address, latitude=latitude, longitude=longitude)
             )
             results.append((address, latitude, longitude))
 
@@ -100,24 +94,12 @@ def geocode_addresses(
     if not fetch_remote:
         return results
 
-    results: list[Tuple[str, float | None, float | None]] = []
-
     final_results: list[Tuple[str, float | None, float | None]] = []
     for address, lat, lon in results:
-        query = urllib.parse.urlencode({"q": address, "format": "json"})
-        req = urllib.request.Request(
-            f"{NOMINATIM_URL}?{query}",
-            headers={"User-Agent": "business-intel-scraper/1.0"},
-        )
-
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.load(resp)
-            if data:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-        except Exception:  # pragma: no cover - network issues
-            pass
+        if use_nominatim:
+            remote_lat, remote_lon = _nominatim_lookup(address)
+            if remote_lat is not None and remote_lon is not None:
+                lat, lon = remote_lat, remote_lon
 
         final_results.append((address, lat, lon))
         time.sleep(1)

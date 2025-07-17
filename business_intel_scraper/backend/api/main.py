@@ -18,6 +18,7 @@ from business_intel_scraper.settings import settings
 from ..db.models import Company
 from ..db import SessionLocal
 from pydantic import BaseModel
+from ..nlp import pipeline
 import asyncio
 from pathlib import Path
 
@@ -74,6 +75,14 @@ class CompanyCreate(BaseModel):
 class CompanyRead(BaseModel):
     id: int
     name: str
+
+
+class NLPRequest(BaseModel):
+    text: str
+
+
+class NLPResponse(BaseModel):
+    entities: list[str]
 
 
 app = FastAPI(title="Business Intelligence Scraper")
@@ -137,12 +146,11 @@ async def task_status(task_id: str) -> dict[str, str]:
     status_ = get_task_status(task_id)
     return {"status": status_}
 
-  
     status = get_task_status(task_id)
     jobs[task_id] = status
     return {"status": status}
 
-  
+
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
     """Handle WebSocket connections for real-time notifications."""
@@ -153,6 +161,7 @@ async def notifications(websocket: WebSocket) -> None:
             await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
 
 @app.get("/logs/stream")
 async def stream_logs() -> EventSourceResponse:
@@ -171,6 +180,8 @@ async def stream_logs() -> EventSourceResponse:
                     await asyncio.sleep(0.5)
 
     return EventSourceResponse(event_generator())
+
+
 @app.get("/data")
 async def get_data() -> list[dict[str, str]]:
     """Return scraped data."""
@@ -188,3 +199,10 @@ async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
 
+
+@app.post("/nlp/process", response_model=NLPResponse)
+async def process_text(payload: NLPRequest) -> NLPResponse:
+    """Extract entities from provided text."""
+    cleaned = pipeline.preprocess([payload.text])
+    entities = pipeline.extract_entities(cleaned)
+    return NLPResponse(entities=entities)
