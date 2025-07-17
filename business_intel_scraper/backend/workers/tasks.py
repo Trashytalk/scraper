@@ -14,11 +14,20 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def __init__(self, *args: object, **kwargs: object) -> None:
             pass
 
+        def config_from_object(self, *args: object, **kwargs: object) -> None:
+            return None
+
         def task(self, func):  # type: ignore[no-untyped-def]
             return func
 
+celery_app = Celery("business_intel_scraper")
 
-celery_app = Celery("tasks")
+try:  # pragma: no cover - optional dependency
+    celery_app.config_from_object(
+        "business_intel_scraper.backend.workers.celery_config", namespace="CELERY"
+    )
+except ModuleNotFoundError:
+    pass
 
 
 try:
