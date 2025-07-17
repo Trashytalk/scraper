@@ -108,6 +108,8 @@ Common settings include:
 - `CELERY_BROKER_URL` – broker URL for Celery tasks (`redis://localhost:6379/0` by default).
 - `CELERY_RESULT_BACKEND` – result backend for Celery (defaults to the broker URL).
 - `ALLOWED_ORIGINS` – comma-separated list of origins allowed for CORS (default `*`).
+- `CAPTCHA_API_KEY` – API token for the CAPTCHA solving service (e.g. 2Captcha).
+- `CAPTCHA_API_URL` – base URL for the CAPTCHA provider (defaults to `https://2captcha.com`).
 
 ## Running the Server
 
@@ -144,7 +146,7 @@ docker compose up --build
 
 The repository contains working examples for scraping, simple NLP and OSINT tasks, but several pieces are intentionally stubbed out or incomplete:
 
-- **Captcha solving** – `business_intel_scraper.backend.security.captcha` only provides a placeholder interface.
+- **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
 - **Geocoding helpers** – the geocoding pipeline currently returns deterministic coordinates and does not fully use online providers.
 - **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
