@@ -14,11 +14,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
-import json
-import time
 import urllib.parse
 import urllib.request
-from urllib.error import URLError, HTTPError
 
 
 
@@ -100,24 +97,12 @@ def geocode_addresses(
     if not fetch_remote:
         return results
 
-    results: list[Tuple[str, float | None, float | None]] = []
-
     final_results: list[Tuple[str, float | None, float | None]] = []
     for address, lat, lon in results:
-        query = urllib.parse.urlencode({"q": address, "format": "json"})
-        req = urllib.request.Request(
-            f"{NOMINATIM_URL}?{query}",
-            headers={"User-Agent": "business-intel-scraper/1.0"},
-        )
-
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.load(resp)
-            if data:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-        except Exception:  # pragma: no cover - network issues
-            pass
+        if use_nominatim:
+            n_lat, n_lon = _nominatim_lookup(address)
+            if n_lat is not None and n_lon is not None:
+                lat, lon = n_lat, n_lon
 
         final_results.append((address, lat, lon))
         time.sleep(1)
