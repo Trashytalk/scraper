@@ -97,6 +97,7 @@ Project Structure
 │   ├── k8s/
 │   ├── docker/
 │   ├── ci_cd/
+│   ├── monitoring/
 │   └── cloud/
 │
 └── docs/
