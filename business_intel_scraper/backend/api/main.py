@@ -137,12 +137,11 @@ async def task_status(task_id: str) -> dict[str, str]:
     status_ = get_task_status(task_id)
     return {"status": status_}
 
-  
     status = get_task_status(task_id)
     jobs[task_id] = status
     return {"status": status}
 
-  
+
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
     """Handle WebSocket connections for real-time notifications."""
@@ -153,6 +152,7 @@ async def notifications(websocket: WebSocket) -> None:
             await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
 
 @app.get("/logs/stream")
 async def stream_logs() -> EventSourceResponse:
@@ -171,6 +171,27 @@ async def stream_logs() -> EventSourceResponse:
                     await asyncio.sleep(0.5)
 
     return EventSourceResponse(event_generator())
+
+
+@app.websocket("/logs/stream")
+async def stream_logs_ws(websocket: WebSocket) -> None:
+    """Stream log file updates over a WebSocket connection."""
+    await websocket.accept()
+    path = Path(LOG_FILE)
+    path.touch(exist_ok=True)
+    async with aiofiles.open(path, "r") as f:
+        await f.seek(0, 2)
+        try:
+            while True:
+                line = await f.readline()
+                if line:
+                    await websocket.send_text(line.rstrip())
+                else:
+                    await asyncio.sleep(0.5)
+        except WebSocketDisconnect:
+            pass
+
+
 @app.get("/data")
 async def get_data() -> list[dict[str, str]]:
     """Return scraped data."""
@@ -187,4 +208,3 @@ async def get_jobs() -> dict[str, dict[str, str]]:
 async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
-
