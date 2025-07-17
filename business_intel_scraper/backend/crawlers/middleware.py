@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Scrapy middleware for proxy rotation."""
+"""Scrapy middleware components."""
 
 from scrapy import Request
 from scrapy.crawler import Spider
