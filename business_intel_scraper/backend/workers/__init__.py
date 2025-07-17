@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Callable, TypeVar, Any
 
-from business_intel_scraper.settings import settings
+from settings import settings
+
 
 try:
     from celery import Celery
@@ -28,4 +29,3 @@ result_backend = settings.celery.result_backend
 celery_app = Celery("tasks", broker=broker_url, backend=result_backend)
 
 __all__ = ["celery_app"]
-
