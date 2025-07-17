@@ -6,8 +6,13 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+import scrapy
 
 
 class CrawlerProjectPipeline:
-    def process_item(self, item, spider):
+    def process_item(
+        self,
+        item: dict[str, object],
+        spider: "scrapy.Spider",
+    ) -> dict[str, object]:
         return item
