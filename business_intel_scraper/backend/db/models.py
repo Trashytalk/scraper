@@ -68,7 +68,7 @@ class ScrapeTask(Base):
         nullable=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
-    company: Mapped[Company | None] = relationship(back_populates="tasks")
+    company: Mapped["Company"] = relationship(back_populates="tasks")
 
 
 
