@@ -1,11 +1,21 @@
 """Main FastAPI application entry point."""
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
 import asyncio
 from pathlib import Path
 
-from .rate_limit import RateLimitMiddleware
+from fastapi import (
+    FastAPI,
+    WebSocket,
+    WebSocketDisconnect,
+    Depends,
+    HTTPException,
+    status,
+)
+from sse_starlette.sse import EventSourceResponse
+
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+
 
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
@@ -20,6 +30,8 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     EventSourceResponse = StreamingResponse  # type: ignore
 
+from .rate_limit import RateLimitMiddleware
+
 from ..workers.tasks import get_task_status, launch_scraping_task
 
 from sse_starlette.sse import EventSourceResponse
@@ -28,6 +40,22 @@ from pathlib import Path
 import aiofiles
 from business_intel_scraper.settings import settings
 from business_intel_scraper.backend.utils.helpers import LOG_FILE
+
+
+from ..db.models import Company
+from ..db import get_db
+from ..utils.helpers import LOG_FILE
+
+from pydantic import BaseModel
+
+
+class CompanyCreate(BaseModel):
+    name: str
+
+
+class CompanyRead(BaseModel):
+    id: int
+    name: str
 
 
 app = FastAPI(title="Business Intelligence Scraper")

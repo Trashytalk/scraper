@@ -89,40 +89,29 @@ def geocode_addresses(
                         address=address, latitude=latitude, longitude=longitude
                     )
                 )
-                results.append((address, latitude, longitude))
-            session.commit()
-        return results
+            )
+            results.append((address, latitude, longitude))
 
-    results: list[Tuple[str, float, float]] = []
-    for address in addresses:
+        session.commit()
+
+    final_results: list[Tuple[str, float | None, float | None]] = []
+    for address, lat, lon in results:
         query = urllib.parse.urlencode({"q": address, "format": "json"})
         req = urllib.request.Request(
             f"{NOMINATIM_URL}?{query}",
             headers={"User-Agent": "business-intel-scraper/1.0"},
         )
 
-        attempts = 0
-        while attempts < 3:
-            try:
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    data = json.load(resp)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.load(resp)
+            if data:
+                lat = float(data[0]["lat"])
+                lon = float(data[0]["lon"])
+        except Exception:  # pragma: no cover - network issues
+            pass
 
-                if data:
-                    lat = float(data[0]["lat"])
-                    lon = float(data[0]["lon"])
-                    results.append((address, lat, lon))
-                else:
-                    results.append((address, None, None))
-                break
-            except (HTTPError, URLError, TimeoutError, ValueError):
-                attempts += 1
-                if attempts >= 3:
-                    results.append((address, None, None))
-                else:
-                    time.sleep(1)
+        final_results.append((address, lat, lon))
+        time.sleep(1)
 
-
-    if use_nominatim:
-        time.sleep(1 * len(addresses))
-
-    return results
+    return final_results

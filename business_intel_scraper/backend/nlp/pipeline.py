@@ -4,7 +4,19 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from business_intel_scraper.backend.nlp.cleaning import clean_text
+try:
+    from .cleaning import clean_text
+except Exception:  # pragma: no cover - fallback for direct execution
+    import importlib.util
+    import pathlib
+
+    module_path = pathlib.Path(__file__).resolve().parent / "cleaning.py"
+    spec = importlib.util.spec_from_file_location("cleaning", module_path)
+    cleaning = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
+    clean_text = cleaning.clean_text  # type: ignore
+
 
 try:
     import spacy
@@ -34,7 +46,9 @@ def _get_nlp() -> Language | None:
 
 
 def extract_entities(texts: Iterable[str]) -> list[str]:
-    """Extract named entities from the provided ``texts``."""
+    """Extract named entities from text collection."""
+
+
     nlp = _get_nlp()
     entities: list[str] = []
     if nlp is None:
@@ -44,7 +58,10 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
 
     for doc in nlp.pipe(texts):
         found = [ent.text for ent in getattr(doc, "ents", [])]
-        entities.extend(found or doc.text.split())
+        if found:
+            entities.extend(found)
+        else:
+            entities.extend(doc.text.split())
     return entities
 
 
