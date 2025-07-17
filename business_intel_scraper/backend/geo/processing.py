@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 from business_intel_scraper.backend.db.models import Base, Location
 from urllib.error import HTTPError, URLError
 
-
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 
@@ -79,10 +78,15 @@ def geocode_addresses(
     results: list[Tuple[str, float, float]] = []
     with Session(engine) as session:
         for address in addresses:
-            lat, lon = _deterministic_coords(address)
-            session.add(Location(address=address, latitude=lat, longitude=lon))
-            results.append((address, lat, lon))
+            digest = hashlib.sha1(address.encode()).hexdigest()
+            num = int(digest[:8], 16)
+            latitude = float((num % 180) - 90)
+            longitude = float(((num // 180) % 360) - 180)
 
+            session.add(
+                Location(address=address, latitude=latitude, longitude=longitude)
+            )
+            results.append((address, latitude, longitude))
 
         session.commit()
 
