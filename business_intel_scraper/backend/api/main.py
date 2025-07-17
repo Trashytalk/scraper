@@ -1,12 +1,23 @@
 """Main FastAPI application entry point."""
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
+import asyncio
+from pathlib import Path
+
+from .rate_limit import RateLimitMiddleware
 
 from .notifications import ConnectionManager
+
+try:
+    from sse_starlette.sse import EventSourceResponse
+except Exception:  # pragma: no cover - optional dependency
+    EventSourceResponse = StreamingResponse  # type: ignore
 
 from ..workers.tasks import get_task_status, launch_scraping_task
 
 from business_intel_scraper.settings import settings
+from business_intel_scraper.backend.utils.helpers import LOG_FILE
 
 app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)
@@ -27,7 +38,6 @@ async def root() -> dict[str, str]:
         "message": "API is running",
         "database_url": settings.database.url,
     }
-    return {"message": "API is running"}
 
 
 @app.post("/scrape")
@@ -90,31 +100,3 @@ async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
 
-@app.post("/companies", response_model=CompanyRead, status_code=status.HTTP_201_CREATED)
-def create_company(company: CompanyCreate, db: Session = Depends(get_db)) -> Company:
-    """Create a new ``Company`` record."""
-
-    db_company = Company(name=company.name)
-    db.add(db_company)
-    db.commit()
-    db.refresh(db_company)
-    return db_company
-
-
-@app.get("/companies/{company_id}", response_model=CompanyRead)
-def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
-    """Retrieve a ``Company`` by ID."""
-
-    stmt = select(Company).where(Company.id == company_id)
-    result = db.execute(stmt).scalar_one_or_none()
-    if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
-    return result
-
-
-@app.get("/companies", response_model=list[CompanyRead])
-def list_companies(db: Session = Depends(get_db)) -> list[Company]:
-    """List all ``Company`` records."""
-
-    stmt = select(Company)
-    return list(db.execute(stmt).scalars())
