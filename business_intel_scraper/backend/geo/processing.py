@@ -14,11 +14,6 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
-import json
-import time
-import urllib.parse
-import urllib.request
-from urllib.error import URLError, HTTPError
 
 
 
@@ -99,8 +94,6 @@ def geocode_addresses(
 
     if not fetch_remote:
         return results
-
-    results: list[Tuple[str, float | None, float | None]] = []
 
     final_results: list[Tuple[str, float | None, float | None]] = []
     for address, lat, lon in results:
