@@ -23,7 +23,11 @@ def setup_logging(
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     handlers = [logging.StreamHandler(), logging.FileHandler(LOG_FILE)]
-    logging.basicConfig(level=level, format="%(asctime)s - %(levelname)s - %(message)s", handlers=handlers)
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=handlers,
+    )
 
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)

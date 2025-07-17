@@ -4,7 +4,20 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from business_intel_scraper.backend.nlp.cleaning import clean_text
+try:
+    from .cleaning import clean_text
+except ImportError:  # pragma: no cover - direct execution
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "cleaning", Path(__file__).parent / "cleaning.py"
+    )
+    cleaning = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
+    clean_text = cleaning.clean_text  # type: ignore[attr-defined]
+
 
 try:
     import spacy
@@ -37,19 +50,25 @@ def _get_nlp() -> Language | None:
 def preprocess(texts: Iterable[str]) -> list[str]:
     """Clean and normalize raw text strings."""
 
-    return [clean_text(t) for t in texts]
+    Returns
+    -------
+    list[str]
+        Extracted entities. When SpaCy or its English model is not
+        available, the returned entities will simply be whitespace
+        separated tokens from the input text.
+        
+    cleaned = [clean_text(t) for t in texts]
 
-
-def extract_entities(texts: Iterable[str]) -> list[str]:
-    """Extract named entities or fallback to tokenized text."""
 
     
     nlp = _get_nlp()
     cleaned = preprocess(texts)
     if nlp is None:
-        return [token for text in cleaned for token in text.split()]
+        for text in cleaned:
+            entities.extend(text.split())
+        return entities
 
-    entities: list[str] = []
+
     for doc in nlp.pipe(cleaned):
         if getattr(doc, "ents", None):
             found = [ent.text for ent in doc.ents if ent.text]
@@ -61,6 +80,16 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
 
 
 def preprocess(texts: Iterable[str]) -> list[str]:
-    """Clean and normalise raw text strings."""
-    
+    """Clean and normalize raw text strings.
+
+    Parameters
+    ----------
+    texts : Iterable[str]
+        Text strings to preprocess.
+
+    Returns
+    -------
+    list[str]
+        Cleaned text strings.
+    """
     return [clean_text(t) for t in texts]
