@@ -16,8 +16,9 @@ from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
 from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
-from ..db.models import Company
+from ..db.models import Company, UserRole
 from ..db import SessionLocal
+from .dependencies import require_role
 from pydantic import BaseModel
 import asyncio
 from pathlib import Path
@@ -211,14 +212,15 @@ async def get_data() -> list[dict[str, str]]:
     return scraped_data
 
 
-@app.get("/jobs", response_model=dict[str, JobStatus])
-async def get_jobs() -> dict[str, JobStatus]:
+@app.get("/jobs", dependencies=[require_role(UserRole.ADMIN)])
+async def get_jobs() -> dict[str, dict[str, str]]:
+
     """Return job statuses."""
 
     return {jid: JobStatus(status=get_task_status(jid)) for jid in list(jobs)}
 
+@app.get("/jobs/{job_id}", dependencies=[require_role(UserRole.ADMIN)])
+async def get_job(job_id: str) -> dict[str, str]:
 
-@app.get("/jobs/{job_id}", response_model=JobStatus)
-async def get_job(job_id: str) -> JobStatus:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
