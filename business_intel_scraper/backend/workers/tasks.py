@@ -6,6 +6,7 @@ import uuid
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
+import time
 
 try:
     from gevent.pool import Pool
@@ -24,7 +25,7 @@ from business_intel_scraper.backend.db.utils import (
     init_db,  # noqa: F401
     save_companies,  # noqa: F401
 )
-from business_intel_scraper.backend.db.models import Company  # noqa: F401
+
 
 try:
     from celery import Celery
@@ -117,7 +118,10 @@ def example_task(x: int, y: int) -> int:
     return x + y
 
 
-def _run_example_spider() -> str:
+from ..audit.logger import log_job_start, log_job_finish, log_job_error
+
+
+def _run_example_spider(job_id: str) -> str:
     """Run the example Scrapy spider and persist results."""
 
     try:
@@ -125,15 +129,21 @@ def _run_example_spider() -> str:
     except Exception:  # pragma: no cover - database optional
         init_db = save_companies = None  # type: ignore
 
-    items = run_spider_task("example")
+    log_job_start(job_id)
+    try:
+        items = run_spider_task("example")
+    except Exception as exc:  # pragma: no cover - unexpected spider error
+        log_job_error(job_id, str(exc))
+        raise
 
     if init_db and save_companies:
         try:
             init_db()
             save_companies(item.get("url", "") for item in items)
-        except Exception:  # pragma: no cover - database failure
-            pass
+        except Exception as exc:  # pragma: no cover - database failure
+            log_job_error(job_id, f"db error: {exc}")
 
+    log_job_finish(job_id)
     return "scraping complete"
 
 
@@ -147,7 +157,7 @@ def launch_scraping_task() -> str:
     """
 
     task_id = str(uuid.uuid4())
-    future = _submit(_run_example_spider)
+    future = _submit(_run_example_spider, task_id)
     _tasks[task_id] = future
     return task_id
 
@@ -171,14 +181,16 @@ def get_task_status(task_id: str) -> str:
 def run_spider_task(
     spider: str = "example", html: str | None = None
 ) -> list[dict[str, str]]:
+
     """Run a Scrapy spider.
 
     Parameters
     ----------
-    spider : str, optional
+    spider_name : str, optional
         Name of the spider to run. Only ``"example"`` is supported.
-    html : str, optional
-        Optional HTML body to parse instead of fetching from the network.
+    **kwargs : object
+        Additional arguments passed to the spider. Currently only ``html`` is
+        recognised and used when provided.
 
     Returns
     -------
@@ -187,14 +199,16 @@ def run_spider_task(
     """
     from importlib import import_module
 
-    if spider != "example":
-        raise ValueError(f"Unknown spider '{spider}'")
+    if spider_name != "example":
+        raise ValueError(f"Unknown spider '{spider_name}'")
 
     try:
         module = import_module("business_intel_scraper.backend.crawlers.spider")
         spider_cls = getattr(module, "ExampleSpider")
     except Exception:  # pragma: no cover - unexpected import failure
         return []
+
+    html = kwargs.get("html")
 
     if html is not None:
         spider_instance = spider_cls()
@@ -232,3 +246,79 @@ def spiderfoot_scan(domain: str) -> dict[str, str]:
     """
 
     return run_spiderfoot(domain)
+
+
+@celery_app.task
+def theharvester_scan(domain: str) -> dict[str, str]:
+    """Run TheHarvester OSINT scan.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to investigate.
+
+    Returns
+    -------
+    dict[str, str]
+        Results from :func:`run_theharvester`.
+    """
+
+    return run_theharvester(domain)
+
+
+def queue_spiderfoot_scan(
+    domain: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`spiderfoot_scan` via Celery.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to scan.
+    queue : str, optional
+        Celery queue name. Defaults to the configured default queue.
+    countdown : int, optional
+        Delay in seconds before the task executes.
+
+    Returns
+    -------
+    str
+        Identifier of the queued task.
+    """
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = spiderfoot_scan.apply_async(args=[domain], **options)
+    return result.id
+
+
+def queue_theharvester_scan(
+    domain: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`theharvester_scan` via Celery.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to scan.
+    queue : str, optional
+        Celery queue name. Defaults to the configured default queue.
+    countdown : int, optional
+        Delay in seconds before the task executes.
+
+    Returns
+    -------
+    str
+        Identifier of the queued task.
+    """
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = theharvester_scan.apply_async(args=[domain], **options)
+    return result.id

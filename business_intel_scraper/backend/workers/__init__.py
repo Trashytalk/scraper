@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from typing import Callable, TypeVar, Any
+
+from settings import settings
+
 
 try:
     from celery import Celery
@@ -20,11 +22,10 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             return func
 
 
-broker_url = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-result_backend = os.getenv("CELERY_RESULT_BACKEND", broker_url)
+broker_url = settings.celery.broker_url
+result_backend = settings.celery.result_backend
 
 # Instantiate the Celery application with configured broker and backend
 celery_app = Celery("tasks", broker=broker_url, backend=result_backend)
 
 __all__ = ["celery_app"]
-
