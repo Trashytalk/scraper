@@ -11,6 +11,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 tasks = pytest.importorskip("business_intel_scraper.backend.workers.tasks")
 example_task = tasks.example_task
 
+from business_intel_scraper.backend.db.utils import (
+    Base,
+    ENGINE,
+    SessionLocal,
+    init_db,
+    save_companies,
+)
+from business_intel_scraper.backend.db.models import Company
+
 
 def setup_function() -> None:
     """Reset the in-memory database before each test."""
