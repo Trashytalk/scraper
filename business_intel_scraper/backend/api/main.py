@@ -1,71 +1,13 @@
 """Main FastAPI application entry point."""
 
-from fastapi import FastAPI
-from sse_starlette.sse import EventSourceResponse
-import asyncio
-from pathlib import Path
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-from ..utils.helpers import setup_logging, LOG_FILE
-
-setup_logging()
-from __future__ import annotations
-
-from fastapi import Depends, FastAPI, HTTPException, status
-from pydantic import BaseModel
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session, sessionmaker
-
-from ..db.models import Base, Company
-
-# --- Database setup -----------------------------------------------------
-engine = create_engine(
-    "sqlite:///./app.db", connect_args={"check_same_thread": False}
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base.metadata.create_all(bind=engine)
-
-
-def get_db() -> Session:
-    """Provide a SQLAlchemy session dependency."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# --- Pydantic schemas ---------------------------------------------------
-
-class CompanyCreate(BaseModel):
-    """Schema for creating companies."""
-
-    name: str
-
-
-class CompanyRead(BaseModel):
-    """Schema for reading companies."""
-
-    id: int
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-# Simple in-memory placeholders. In a real application these would come from a
-# database or task queue.
-scraped_data: list[dict[str, str]] = [
-    {"id": "1", "url": "https://example.com"},
-]
-
-jobs: dict[str, dict[str, str]] = {
-    "example": {"status": "completed"},
-}
-
-from .rate_limit import RateLimitMiddleware
+from .notifications import ConnectionManager
 
 app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)
+
+manager = ConnectionManager()
 
 
 @app.get("/")
@@ -79,6 +21,17 @@ async def root() -> dict[str, str]:
     """
     return {"message": "API is running"}
 
+
+@app.websocket("/ws/notifications")
+async def notifications(websocket: WebSocket) -> None:
+    """Handle WebSocket connections for real-time notifications."""
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.broadcast(data)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @app.get("/logs/stream")
 async def stream_logs() -> EventSourceResponse:
