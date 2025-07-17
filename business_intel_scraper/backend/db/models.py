@@ -19,8 +19,10 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    # Relationship back to :class:`ScrapeTask` does not declare ``back_populates``
+    # on the task model. Using a simple ``relationship`` avoids mapper
+    # configuration errors during tests.
     tasks: Mapped[list["ScrapeTask"]] = relationship(
-        back_populates="company",
         cascade="all, delete-orphan",
     )
 
@@ -36,14 +38,15 @@ class Location(Base):
     longitude: Mapped[float] = mapped_column(nullable=False)
 
 
-
 class User(Base):
     """ORM model for an authenticated user."""
 
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(
+        String, unique=True, nullable=False, index=True
+    )
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     # Relationship to tasks omitted to keep test models lightweight
 
