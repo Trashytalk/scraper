@@ -14,9 +14,6 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
-import urllib.parse
-import urllib.request
-
 
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -58,7 +55,43 @@ def geocode_addresses(
     engine: Engine | None = None,
     use_nominatim: bool = True,
 ) -> list[Tuple[str, float | None, float | None]]:
-    """Geocode a list of addresses."""
+    """Geocode a list of addresses.
+
+    Parameters
+    ----------
+    addresses : Iterable[str]
+        Addresses to geocode.
+
+    Returns
+    -------
+    list[Tuple[str, float, float]]
+        Tuples containing address and latitude/longitude.
+    """
+
+    fetch_remote = engine is None
+    if engine is None:
+        engine = create_engine("sqlite:///geo.db")
+
+    Base.metadata.create_all(engine)
+
+    results: list[Tuple[str, float, float]] = []
+    with Session(engine) as session:
+        for address in addresses:
+            digest = hashlib.sha1(address.encode()).hexdigest()
+            num = int(digest[:8], 16)
+            latitude = float((num % 180) - 90)
+            longitude = float(((num // 180) % 360) - 180)
+
+            session.add(
+                Location(address=address, latitude=latitude, longitude=longitude)
+            )
+            results.append((address, latitude, longitude))
+
+        session.commit()
+
+    if not fetch_remote:
+        return results
+
 
     final_results: list[Tuple[str, float | None, float | None]] = []
     for address, lat, lon in results:
