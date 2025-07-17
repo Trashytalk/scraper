@@ -25,3 +25,38 @@ Use this route from the frontend to monitor running jobs or debug output.
 This project contains various modules for business intelligence scraping.
 The NLP backend now provides text-cleaning helpers for stripping HTML and
 normalizing whitespace.
+## Installation
+
+1. Create and activate a Python virtual environment.
+2. Install the main dependencies:
+   ```bash
+   pip install fastapi uvicorn celery sqlalchemy scrapy httpx spacy
+   ```
+   Additional packages may be required depending on your use case.
+
+## Environment Variables
+
+Configuration values are read from environment variables or an optional `.env` file in `business_intel_scraper/`.
+Common settings include:
+
+- `API_KEY` – credentials for external APIs.
+- `DATABASE_URL` – SQLAlchemy connection string (default `sqlite:///data.db`).
+- `PROXY_URL` – proxy server address if scraping through a proxy.
+- `CELERY_BROKER_URL` – broker URL for Celery tasks (`redis://localhost:6379/0` by default).
+- `CELERY_RESULT_BACKEND` – result backend for Celery (defaults to the broker URL).
+
+## Running the Server
+
+Start the FastAPI app with Uvicorn:
+
+```bash
+uvicorn business_intel_scraper.backend.api.main:app --reload
+```
+
+If background tasks are used, run a Celery worker in a separate terminal:
+
+```bash
+celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
+```
+
+
