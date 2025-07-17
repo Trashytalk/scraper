@@ -54,7 +54,10 @@ jobs: dict[str, dict[str, str]] = {
     "example": {"status": "completed"},
 }
 
+from .rate_limit import RateLimitMiddleware
+
 app = FastAPI(title="Business Intelligence Scraper")
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.get("/")
