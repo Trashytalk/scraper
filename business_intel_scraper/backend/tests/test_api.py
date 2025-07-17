@@ -1,5 +1,6 @@
 import os
 import sys
+import jwt
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
@@ -11,9 +12,14 @@ app = api.app
 
 
 def test_launch_and_check_task():
+    secret = "secret"
+    os.environ["JWT_SECRET"] = secret
+    os.environ["JWT_ALGORITHM"] = "HS256"
+    token = jwt.encode({"sub": "user"}, secret, algorithm="HS256")
+
     client = TestClient(app)
 
-    resp = client.post('/scrape/start')
+    resp = client.post('/scrape', headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     task_id = resp.json()['task_id']
     assert isinstance(task_id, str)
