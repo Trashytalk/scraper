@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import os
+from typing import Any
+
+import jwt
+
 
 def verify_token(token: str) -> bool:
     """Validate a JSON Web Token using ``PyJWT``.

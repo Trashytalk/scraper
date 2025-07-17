@@ -1,25 +1,3 @@
-"""Compatibility wrapper for project settings."""
-
-from settings import (
-    APISettings,
-    CelerySettings,
-    DatabaseSettings,
-    ProxySettings,
-    RateLimitSettings,
-    Settings,
-    settings,
-)
-
-__all__ = [
-    "APISettings",
-    "CelerySettings",
-    "DatabaseSettings",
-    "ProxySettings",
-    "RateLimitSettings",
-    "Settings",
-    "settings",
-]
-
 """Centralized configuration management for the project."""
 
 from __future__ import annotations
@@ -82,3 +60,13 @@ class Settings:
 
 
 settings = Settings()
+
+__all__ = [
+    "APISettings",
+    "CelerySettings",
+    "DatabaseSettings",
+    "ProxySettings",
+    "RateLimitSettings",
+    "Settings",
+    "settings",
+]

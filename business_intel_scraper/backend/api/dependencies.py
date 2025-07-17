@@ -10,7 +10,10 @@ def get_user_role(x_role: str = Header(...)) -> UserRole:
     try:
         return UserRole(x_role)
     except ValueError as exc:  # pragma: no cover - invalid header
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid role") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid role",
+        ) from exc
 
 
 def require_role(required: UserRole):
@@ -18,6 +21,9 @@ def require_role(required: UserRole):
 
     async def _checker(role: UserRole = Depends(get_user_role)) -> None:
         if role != required:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient role",
+            )
 
     return Depends(_checker)

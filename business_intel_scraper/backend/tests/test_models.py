@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# ruff: noqa: E402
+
 import os
 import sys
 from sqlalchemy import create_engine
@@ -9,7 +11,11 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from business_intel_scraper.backend.db.models import Base, User, ScrapeTask  # noqa: E402
+from business_intel_scraper.backend.db.models import (
+    Base,
+    User,
+    ScrapeTask,
+)  # noqa: E402
 
 
 def test_user_and_scrape_task_persistence() -> None:

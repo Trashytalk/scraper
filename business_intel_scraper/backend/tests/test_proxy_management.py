@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from business_intel_scraper.backend.proxy.manager import ProxyManager
-from business_intel_scraper.backend.proxy.provider import DummyProxyProvider, APIProxyProvider
+from business_intel_scraper.backend.proxy.provider import (
+    DummyProxyProvider,
+    APIProxyProvider,
+)
 
 
 def test_dummy_provider_cycle() -> None:
@@ -24,11 +27,18 @@ def test_api_proxy_provider(monkeypatch) -> None:
 
     proxies = iter(["proxy1", "proxy2"])
 
-    def fake_get(url: str, headers: dict[str, str] | None = None, timeout: int = 10) -> Response:
+    def fake_get(
+        url: str,
+        headers: dict[str, str] | None = None,
+        timeout: int = 10,
+    ) -> Response:
         calls.append(url)
         return Response(next(proxies))
 
-    monkeypatch.setattr("business_intel_scraper.backend.proxy.provider.requests.get", fake_get)
+    monkeypatch.setattr(
+        "business_intel_scraper.backend.proxy.provider.requests.get",
+        fake_get,
+    )
 
     provider = APIProxyProvider("http://api.test", api_key="token")
     first = provider.get_proxy()

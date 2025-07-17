@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Simple job event logger writing to the database."""
+
+from __future__ import annotations
 
 import logging
 from typing import Optional

@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Simple in-memory rate limiting middleware."""
+
+from __future__ import annotations
 
 from collections import defaultdict, deque
 from time import time

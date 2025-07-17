@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import logging.config
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
@@ -66,4 +65,3 @@ def setup_logging(
 
     logging.config.dictConfig(config)
     logger.debug("Logging configured")
-

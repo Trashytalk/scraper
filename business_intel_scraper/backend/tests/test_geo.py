@@ -5,7 +5,10 @@ import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+sys.path.insert(
+    0,
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")),
+)
 
 from business_intel_scraper.backend.db.models import Base, Location
 from business_intel_scraper.backend.geo.processing import geocode_addresses

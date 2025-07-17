@@ -6,7 +6,6 @@ import uuid
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
-import time
 
 try:
     from gevent.pool import Pool
@@ -17,9 +16,13 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
-from business_intel_scraper.backend.osint.integrations import run_spiderfoot
+from business_intel_scraper.backend.osint.integrations import (
+    run_spiderfoot,
+    run_theharvester,
+)
 from business_intel_scraper.backend.nlp import pipeline
 from business_intel_scraper.backend.geo.processing import geocode_addresses
+from ..audit.logger import log_job_start, log_job_finish, log_job_error
 
 
 try:
@@ -113,9 +116,6 @@ def example_task(x: int, y: int) -> int:
     return x + y
 
 
-from ..audit.logger import log_job_start, log_job_finish, log_job_error
-
-
 def _run_example_spider(job_id: str) -> str:
     """Run the example Scrapy spider and persist results."""
 
@@ -176,16 +176,14 @@ def get_task_status(task_id: str) -> str:
 def run_spider_task(
     spider: str = "example", html: str | None = None
 ) -> list[dict[str, str]]:
-
     """Run a Scrapy spider.
 
     Parameters
     ----------
-    spider_name : str, optional
+    spider : str, optional
         Name of the spider to run. Only ``"example"`` is supported.
-    **kwargs : object
-        Additional arguments passed to the spider. Currently only ``html`` is
-        recognised and used when provided.
+    html : str | None, optional
+        HTML content to parse directly instead of performing a crawl.
 
     Returns
     -------
@@ -194,16 +192,14 @@ def run_spider_task(
     """
     from importlib import import_module
 
-    if spider_name != "example":
-        raise ValueError(f"Unknown spider '{spider_name}'")
+    if spider != "example":
+        raise ValueError(f"Unknown spider '{spider}'")
 
     try:
         module = import_module("business_intel_scraper.backend.crawlers.spider")
         spider_cls = getattr(module, "ExampleSpider")
     except Exception:  # pragma: no cover - unexpected import failure
         return []
-
-    html = kwargs.get("html")
 
     if html is not None:
         spider_instance = spider_cls()
@@ -262,6 +258,7 @@ def geocode_task(addresses: list[str]) -> list[tuple[str, float | None, float | 
     """Geocode ``addresses`` using the built-in helper."""
 
     return geocode_addresses(addresses)
+
 
 def theharvester_scan(domain: str) -> dict[str, str]:
     """Run TheHarvester OSINT scan.
