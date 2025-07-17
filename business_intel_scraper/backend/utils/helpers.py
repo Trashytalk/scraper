@@ -1,4 +1,4 @@
-"""Utility functions for the backend."""
+"""Utility helper functions for the backend."""
 
 from __future__ import annotations
 
