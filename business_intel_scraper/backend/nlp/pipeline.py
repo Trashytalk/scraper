@@ -4,11 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-try:
-    from .cleaning import clean_text
-except ImportError:  # pragma: no cover - fallback when executed as script
-    from business_intel_scraper.backend.nlp.cleaning import clean_text
-
+from business_intel_scraper.backend.nlp.cleaning import clean_text
 
 try:
     import spacy
@@ -20,7 +16,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         """Fallback type used when SpaCy is unavailable."""
 
         pass
-
 
 _NLP_MODEL: Language | None = None
 
@@ -39,28 +34,29 @@ def _get_nlp() -> Language | None:
     return _NLP_MODEL
 
 
+def preprocess(texts: Iterable[str]) -> list[str]:
+    """Clean and normalize raw text strings."""
+
+    return [clean_text(t) for t in texts]
+
+
 def extract_entities(texts: Iterable[str]) -> list[str]:
-    """Extract named entities from a sequence of texts.
+    """Extract named entities or fallback to tokenized text."""
 
-    When SpaCy is unavailable or no model is installed the text is simply
-    tokeni=======
-sed on whitespace.
-    """
+    
     nlp = _get_nlp()
-    entities: list[str] = []
-
+    cleaned = preprocess(texts)
     if nlp is None:
-        for text in texts:
-            entities.extend(text.split())
-        return entities
+        return [token for text in cleaned for token in text.split()]
 
-    for doc in nlp.pipe(texts):
-        found = [ent.text for ent in getattr(doc, "ents", [])]
-        if found:
-            entities.extend(found)
-        else:
-            entities.extend(doc.text.split())
-
+    entities: list[str] = []
+    for doc in nlp.pipe(cleaned):
+        if getattr(doc, "ents", None):
+            found = [ent.text for ent in doc.ents if ent.text]
+            if found:
+                entities.extend(found)
+                continue
+        entities.extend(doc.text.split())
     return entities
 
 
