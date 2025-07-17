@@ -1,4 +1,4 @@
-"""Authentication and authorization helpers."""
+"""Authentication helpers used in tests."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ def verify_token(token: str) -> bool:
     external dependencies. The unit tests only check that the function
     returns ``True`` for any non-empty string, so we simplify the logic
     accordingly.
+
 
     Parameters
     ----------
