@@ -43,6 +43,7 @@ def preprocess(texts: Iterable[str]) -> list[str]:
 def extract_entities(texts: Iterable[str]) -> list[str]:
     """Extract named entities or fallback to tokenized text."""
 
+    
     nlp = _get_nlp()
     cleaned = preprocess(texts)
     if nlp is None:
@@ -57,3 +58,9 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
                 continue
         entities.extend(doc.text.split())
     return entities
+
+
+def preprocess(texts: Iterable[str]) -> list[str]:
+    """Clean and normalise raw text strings."""
+    
+    return [clean_text(t) for t in texts]
