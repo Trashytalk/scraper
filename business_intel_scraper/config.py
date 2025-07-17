@@ -28,6 +28,9 @@ class Settings:
     """Container for application settings."""
 
     api_key: str = os.getenv("API_KEY", "")
+    use_https: bool = os.getenv("USE_HTTPS", "false").lower() == "true"
+    rate_limit: int = int(os.getenv("RATE_LIMIT", "60"))
+    rate_limit_window: int = int(os.getenv("RATE_LIMIT_WINDOW", "60"))
 
 
 # Singleton settings instance used across the project
