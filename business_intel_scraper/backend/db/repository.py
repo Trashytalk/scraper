@@ -7,7 +7,7 @@ from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from .models import Base, Company
+from .models import Base, Company, Location, OsintResult, ScrapeTask, User
 
 # Create a simple SQLite engine for demonstration purposes
 ENGINE = create_engine("sqlite:///business_intel.db", echo=False)
@@ -48,3 +48,223 @@ class CompanyRepository:
         if company is not None:
             self._session.delete(company)
             self._session.commit()
+
+
+# ---------------------------------------------------------------------------
+# CRUD helper functions
+# ---------------------------------------------------------------------------
+
+
+def create_company(session: Session, name: str) -> Company:
+    """Create and persist a :class:`Company`."""
+
+    company = Company(name=name)
+    session.add(company)
+    session.commit()
+    session.refresh(company)
+    return company
+
+
+def get_company(session: Session, company_id: int) -> Optional[Company]:
+    """Return a company by primary key."""
+
+    return session.get(Company, company_id)
+
+
+def update_company(
+    session: Session, company_id: int, **fields: object
+) -> Optional[Company]:
+    """Update a company record and return the updated instance."""
+
+    company = get_company(session, company_id)
+    if company is None:
+        return None
+    for key, value in fields.items():
+        setattr(company, key, value)
+    session.commit()
+    session.refresh(company)
+    return company
+
+
+def delete_company(session: Session, company_id: int) -> bool:
+    """Delete a company and return ``True`` if it existed."""
+
+    company = get_company(session, company_id)
+    if company is None:
+        return False
+    session.delete(company)
+    session.commit()
+    return True
+
+
+def create_location(
+    session: Session, address: str, latitude: float, longitude: float
+) -> Location:
+    """Insert a new :class:`Location`."""
+
+    location = Location(address=address, latitude=latitude, longitude=longitude)
+    session.add(location)
+    session.commit()
+    session.refresh(location)
+    return location
+
+
+def get_location(session: Session, location_id: int) -> Optional[Location]:
+    """Return a location by primary key."""
+
+    return session.get(Location, location_id)
+
+
+def update_location(
+    session: Session, location_id: int, **fields: object
+) -> Optional[Location]:
+    """Update a location record."""
+
+    location = get_location(session, location_id)
+    if location is None:
+        return None
+    for key, value in fields.items():
+        setattr(location, key, value)
+    session.commit()
+    session.refresh(location)
+    return location
+
+
+def delete_location(session: Session, location_id: int) -> bool:
+    """Delete a location and return ``True`` if it existed."""
+
+    location = get_location(session, location_id)
+    if location is None:
+        return False
+    session.delete(location)
+    session.commit()
+    return True
+
+
+def create_user(session: Session, username: str, hashed_password: str) -> User:
+    """Create a :class:`User`."""
+
+    user = User(username=username, hashed_password=hashed_password)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def get_user(session: Session, user_id: int) -> Optional[User]:
+    """Retrieve a user by primary key."""
+
+    return session.get(User, user_id)
+
+
+def update_user(session: Session, user_id: int, **fields: object) -> Optional[User]:
+    """Update a user record."""
+
+    user = get_user(session, user_id)
+    if user is None:
+        return None
+    for key, value in fields.items():
+        setattr(user, key, value)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def delete_user(session: Session, user_id: int) -> bool:
+    """Delete a user and return ``True`` if it existed."""
+
+    user = get_user(session, user_id)
+    if user is None:
+        return False
+    session.delete(user)
+    session.commit()
+    return True
+
+
+def create_task(
+    session: Session,
+    user_id: int,
+    company_id: int | None = None,
+    status: str = "pending",
+) -> ScrapeTask:
+    """Insert a new :class:`ScrapeTask`."""
+
+    task = ScrapeTask(user_id=user_id, company_id=company_id, status=status)
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+def get_task(session: Session, task_id: int) -> Optional[ScrapeTask]:
+    """Return a task by primary key."""
+
+    return session.get(ScrapeTask, task_id)
+
+
+def update_task(
+    session: Session, task_id: int, **fields: object
+) -> Optional[ScrapeTask]:
+    """Update a task record."""
+
+    task = get_task(session, task_id)
+    if task is None:
+        return None
+    for key, value in fields.items():
+        setattr(task, key, value)
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+def delete_task(session: Session, task_id: int) -> bool:
+    """Delete a task and return ``True`` if it existed."""
+
+    task = get_task(session, task_id)
+    if task is None:
+        return False
+    session.delete(task)
+    session.commit()
+    return True
+
+
+def create_result(session: Session, task_id: int, data: str) -> OsintResult:
+    """Insert an :class:`OsintResult`."""
+
+    result = OsintResult(task_id=task_id, data=data)
+    session.add(result)
+    session.commit()
+    session.refresh(result)
+    return result
+
+
+def get_result(session: Session, result_id: int) -> Optional[OsintResult]:
+    """Return an OSINT result by primary key."""
+
+    return session.get(OsintResult, result_id)
+
+
+def update_result(
+    session: Session, result_id: int, **fields: object
+) -> Optional[OsintResult]:
+    """Update an OSINT result record."""
+
+    result = get_result(session, result_id)
+    if result is None:
+        return None
+    for key, value in fields.items():
+        setattr(result, key, value)
+    session.commit()
+    session.refresh(result)
+    return result
+
+
+def delete_result(session: Session, result_id: int) -> bool:
+    """Delete an OSINT result and return ``True`` if it existed."""
+
+    result = get_result(session, result_id)
+    if result is None:
+        return False
+    session.delete(result)
+    session.commit()
+    return True
