@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def setup_logging(
     level: int = logging.INFO,
-    log_file: str | Path = "logs/backend.log",
+    log_file: str | Path = LOG_FILE,
     max_bytes: int = 10 * 1024 * 1024,
     backup_count: int = 5,
 ) -> None:
@@ -34,12 +34,12 @@ def setup_logging(
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     file_handler = RotatingFileHandler(log_path, maxBytes=max_bytes, backupCount=backup_count)
+
     file_handler.setFormatter(formatter)
-    root_logger.addHandler(file_handler)
 
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
-    root_logger.addHandler(stream_handler)
 
+    logging.basicConfig(level=level, handlers=[file_handler, stream_handler])
     logger.debug("Logging configured")
 
