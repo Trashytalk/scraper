@@ -4,7 +4,20 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .cleaning import clean_text
+try:
+    from .cleaning import clean_text
+except ImportError:  # pragma: no cover - direct execution
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "cleaning", Path(__file__).parent / "cleaning.py"
+    )
+    cleaning = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
+    clean_text = cleaning.clean_text  # type: ignore[attr-defined]
+
 
 try:
     import spacy
@@ -16,7 +29,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         """Fallback type used when SpaCy is unavailable."""
 
         pass
-
 
 _NLP_MODEL: Language | None = None
 
@@ -35,13 +47,8 @@ def _get_nlp() -> Language | None:
     return _NLP_MODEL
 
 
-def extract_entities(texts: Iterable[str]) -> list[str]:
-    """Extract named entities from text collection.
-
-    Parameters
-    ----------
-    texts : Iterable[str]
-        List or generator of text strings.
+def preprocess(texts: Iterable[str]) -> list[str]:
+    """Clean and normalize raw text strings."""
 
     Returns
     -------
@@ -50,7 +57,23 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
         available, the returned entities will simply be whitespace
         separated tokens from the input text.
     """
-    return []
+    nlp = _get_nlp()
+    entities: list[str] = []
+
+    if nlp is None:
+        for text in texts:
+            entities.extend(text.split())
+        return entities
+
+    for doc in nlp.pipe(texts):
+        if getattr(doc, "ents", None):
+            found = [ent.text for ent in doc.ents]
+
+            if found:
+                entities.extend(found)
+                continue
+        entities.extend(doc.text.split())
+    return entities
 
 
 def preprocess(texts: Iterable[str]) -> list[str]:
@@ -67,21 +90,3 @@ def preprocess(texts: Iterable[str]) -> list[str]:
         Cleaned text strings.
     """
     return [clean_text(t) for t in texts]
-
-    nlp = _get_nlp()
-    entities: list[str] = []
-
-    if nlp is None:
-        for text in texts:
-            entities.extend(text.split())
-        return entities
-
-    for doc in nlp.pipe(texts):
-        if getattr(doc, "ents", None):
-            found = [ent.text for ent in doc.ents]
-            if found:
-                entities.extend(found)
-                continue
-        entities.extend(doc.text.split())
-
-    return entities
