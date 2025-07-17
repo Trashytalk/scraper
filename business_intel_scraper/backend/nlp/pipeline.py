@@ -12,18 +12,16 @@ try:  # pragma: no cover - optional dependency
 except ModuleNotFoundError:  # pragma: no cover
     spacy = None  # type: ignore
 
-    class Language:  # type: ignore
+    class Language:  # type: ignore[override]
         """Fallback type used when SpaCy is unavailable."""
 
         pass
-
 
 _NLP_MODEL: Language | None = None
 
 
 def _get_nlp() -> Language | None:
     """Load and cache the SpaCy language model if available."""
-
     global _NLP_MODEL
     if spacy is None:
         return None
@@ -38,9 +36,9 @@ def _get_nlp() -> Language | None:
 def extract_entities(texts: Iterable[str]) -> list[str]:
     """Extract named entities from text collection."""
 
+
     nlp = _get_nlp()
     entities: list[str] = []
-
     if nlp is None:
         for text in texts:
             entities.extend(text.split())
@@ -52,7 +50,6 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
             entities.extend(found)
         else:
             entities.extend(doc.text.split())
-
     return entities
 
 

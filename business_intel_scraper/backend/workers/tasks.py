@@ -5,11 +5,32 @@ from __future__ import annotations
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
+
+try:
+    from gevent.pool import Pool
+    from gevent import sleep as async_sleep
+    GEVENT_AVAILABLE = True
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    Pool = None  # type: ignore
+    async_sleep = time.sleep  # type: ignore
+    GEVENT_AVAILABLE = False
 from business_intel_scraper.backend.osint.integrations import run_spiderfoot
+from business_intel_scraper.backend.db.utils import (
+    Base,
+    ENGINE,
+    SessionLocal,
+    init_db,
+    save_companies,
+)
+from business_intel_scraper.backend.db.models import Company
 
 try:
     from celery import Celery
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
+
+    from typing import Callable, TypeVar, Any
+
+    F = TypeVar("F", bound=Callable[..., Any])
 
     class Celery:  # type: ignore
         """Fallback Celery replacement."""
@@ -20,7 +41,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def config_from_object(self, *args: object, **kwargs: object) -> None:
             return None
 
-        def task(self, func):  # type: ignore[no-untyped-def]
+        def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
             return func
 
 celery_app = Celery("business_intel_scraper")
@@ -50,12 +71,24 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 # In the test environment Celery may not be installed. To provide basic
 # asynchronous behaviour without requiring external services we also manage
-# a thread pool and in-memory task registry. Each launched task is executed in
-# the pool and tracked by a UUID. The API can query the task status using this
-# registry.
+# an executor and in-memory task registry. If ``gevent`` is available we use a
+# greenlet pool for lightweight concurrency, otherwise a ``ThreadPoolExecutor``
+# is used. Each launched task is tracked by a UUID so the API can query its
+# status.
 
-_executor = ThreadPoolExecutor()
-_tasks: Dict[str, Future] = {}
+if GEVENT_AVAILABLE:
+    _executor = Pool()
+    _tasks: Dict[str, object] = {}
+else:  # pragma: no cover - fallback when gevent is missing
+    _executor = ThreadPoolExecutor()
+    _tasks: Dict[str, Future] = {}
+
+def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
+    """Submit a callable to the underlying executor."""
+
+    if GEVENT_AVAILABLE:
+        return _executor.spawn(func, *args, **kwargs)
+    return _executor.submit(func, *args, **kwargs)
 
 
 @celery_app.task
@@ -107,7 +140,7 @@ def launch_scraping_task() -> str:
     """
 
     task_id = str(uuid.uuid4())
-    future = _executor.submit(_run_example_spider)
+    future = _submit(_run_example_spider)
     _tasks[task_id] = future
     return task_id
 
@@ -118,8 +151,12 @@ def get_task_status(task_id: str) -> str:
     future = _tasks.get(task_id)
     if future is None:
         return "not_found"
-    if future.done():
-        return "completed"
+    if GEVENT_AVAILABLE:
+        if future.ready():
+            return "completed"
+    else:
+        if isinstance(future, Future) and future.done():
+            return "completed"
     return "running"
 
 @celery_app.task
@@ -158,7 +195,7 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
     items: list[dict[str, str]] = []
     process = CrawlerProcess(settings={"LOG_ENABLED": False})
 
-    def _collect(item):
+    def _collect(item: dict) -> None:
         items.append(dict(item))
 
     process.crawl(spider_cls)
@@ -168,6 +205,7 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
 
     return items
 
+@celery_app.task
 def spiderfoot_scan(domain: str) -> dict[str, str]:
     """Run SpiderFoot OSINT scan.
 
