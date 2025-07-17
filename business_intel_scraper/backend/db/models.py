@@ -37,7 +37,6 @@ class Location(Base):
     # Relationship to ``ScrapeTask`` omitted to keep schema simple for tests.
 
 
-
 class User(Base):
     """ORM model for an authenticated user."""
 

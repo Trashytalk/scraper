@@ -35,7 +35,6 @@ def _get_nlp() -> Language | None:
 
 def extract_entities(texts: Iterable[str]) -> list[str]:
     """Extract named entities from the provided ``texts``."""
-
     nlp = _get_nlp()
     entities: list[str] = []
     if nlp is None:
