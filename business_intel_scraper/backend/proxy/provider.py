@@ -24,7 +24,7 @@ class ProxyProvider(ABC):
 class DummyProxyProvider(ProxyProvider):
     """Simple provider that cycles through a list of proxies."""
 
-    def __init__(self, proxies: Iterable[str]):
+    def __init__(self, proxies: Iterable[str]) -> None:
         self._proxies = list(proxies)
         self._index = 0
 

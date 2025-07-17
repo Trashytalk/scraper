@@ -5,6 +5,14 @@ from __future__ import annotations
 import os
 import sys
 import pytest
+from business_intel_scraper.backend.db.utils import (
+    Base,
+    ENGINE,
+    init_db,
+    save_companies,
+    SessionLocal,
+)
+from business_intel_scraper.backend.db.models import Company
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
