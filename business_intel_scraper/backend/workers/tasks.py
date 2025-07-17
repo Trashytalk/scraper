@@ -19,7 +19,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     GEVENT_AVAILABLE = False
 from business_intel_scraper.backend.osint.integrations import run_spiderfoot
 
-
 try:
     from celery import Celery
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
