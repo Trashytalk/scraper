@@ -1,17 +1,12 @@
 """Main FastAPI application entry point."""
 
-from fastapi import (
-    Depends,
-    FastAPI,
-    HTTPException,
-    WebSocket,
-    WebSocketDisconnect,
-    status,
-)
-from sse_starlette.sse import EventSourceResponse
-from pathlib import Path
-import asyncio
+from typing import AsyncGenerator
 
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from sse_starlette.sse import EventSourceResponse
+import asyncio
+from pathlib import Path
+from .rate_limit import RateLimitMiddleware
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
@@ -26,7 +21,22 @@ from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
 from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
-from .rate_limit import RateLimitMiddleware
+from ..utils.helpers import LOG_FILE
+from pydantic import BaseModel
+
+
+class CompanyCreate(BaseModel):
+    """Pydantic model for creating a company."""
+
+    name: str
+
+
+class CompanyRead(BaseModel):
+    """Pydantic model representing a company record."""
+
+    id: int
+    name: str
+
 
 app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)
@@ -106,7 +116,7 @@ async def notifications(websocket: WebSocket) -> None:
 async def stream_logs() -> EventSourceResponse:
     """Stream log file updates using Server-Sent Events."""
 
-    async def event_generator():
+    async def event_generator() -> AsyncGenerator[dict[str, str], None]:
         path = Path(LOG_FILE)
         path.touch(exist_ok=True)
         with path.open() as f:
@@ -137,31 +147,3 @@ async def get_job(job_id: str) -> dict[str, str]:
     status = get_task_status(job_id)
     jobs[job_id] = status
     return {"status": status}
-
-@app.post("/companies", response_model=CompanyRead, status_code=status.HTTP_201_CREATED)
-def create_company(company: CompanyCreate, db: Session = Depends(get_db)) -> Company:
-    """Create a new ``Company`` record."""
-
-    db_company = Company(name=company.name)
-    db.add(db_company)
-    db.commit()
-    db.refresh(db_company)
-    return db_company
-
-
-@app.get("/companies/{company_id}", response_model=CompanyRead)
-def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
-    """Retrieve a ``Company`` by ID."""
-
-    stmt = select(Company).where(Company.id == company_id)
-    result = db.execute(stmt).scalar_one_or_none()
-    if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
-    return result
-
-
-@app.get("/companies", response_model=list[CompanyRead])
-def list_companies(db: Session = Depends(get_db)) -> list[Company]:
-    """List all ``Company`` records."""
-
-
