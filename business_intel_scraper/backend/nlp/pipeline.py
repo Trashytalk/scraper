@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, List, TypedDict
 
 from business_intel_scraper.backend.nlp.cleaning import clean_text
 
@@ -19,6 +19,15 @@ except ModuleNotFoundError:  # pragma: no cover
 
 
 _NLP_MODEL: Language | None = None
+
+
+class Entity(TypedDict):
+    """Structured representation of a named entity."""
+
+    text: str
+    label: str
+    start: int
+    end: int
 
 
 def _get_nlp() -> Language | None:
@@ -52,6 +61,23 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
         else:
             entities.extend(doc.text.split())
     return entities
+
+
+def extract_entities_structured(text: str) -> List[Entity]:
+    """Return SpaCy named entities from ``text`` in structured form."""
+    nlp = _get_nlp()
+    if nlp is None:
+        return []
+    doc = nlp(text)
+    return [
+        {
+            "text": ent.text,
+            "label": ent.label_,
+            "start": ent.start_char,
+            "end": ent.end_char,
+        }
+        for ent in getattr(doc, "ents", [])
+    ]
 
 
 def preprocess(texts: Iterable[str]) -> list[str]:
