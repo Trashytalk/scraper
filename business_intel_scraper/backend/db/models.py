@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Optional
 
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, DateTime
+from datetime import datetime
 from enum import Enum
-
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from typing import Optional
+
+
+class UserRole(str, Enum):
+    """Available user roles."""
+
+    ADMIN = "admin"
+    ANALYST = "analyst"
 
 
 class Base(DeclarativeBase):
@@ -48,6 +53,7 @@ class Location(Base):
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
 
+
 class User(Base):
     """ORM model for an authenticated user."""
 
@@ -59,7 +65,11 @@ class User(Base):
     )
 
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    role: Mapped[UserRole] = mapped_column(String, nullable=False, default=UserRole.ANALYST)
+    role: Mapped[UserRole] = mapped_column(
+        String,
+        nullable=False,
+        default=UserRole.ANALYST,
+    )
     # Relationship to tasks omitted to keep test models lightweight
 
 
@@ -74,12 +84,9 @@ class ScrapeTask(Base):
         ForeignKey("companies.id"),
         nullable=True,
     )
-      
+
     company: Mapped["Company"] = relationship("Company", back_populates="tasks")
     status: Mapped[str] = mapped_column(String, default="pending")
-    company: Mapped[Company | None] = relationship(
-        back_populates="tasks",
-    )
 
 
 class OsintResult(Base):
@@ -103,4 +110,3 @@ class JobEvent(Base):
     event: Mapped[str] = mapped_column(String, nullable=False)
     message: Mapped[str | None] = mapped_column(String, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-

@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Proxy manager that handles rotation across providers."""
+
+from __future__ import annotations
 
 from .provider import ProxyProvider
 

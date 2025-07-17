@@ -16,6 +16,7 @@ LAST_SCRAPE_TIME = Gauge(
     "Unix timestamp of the last successful scrape.",
 )
 
+
 def record_scrape() -> None:
     """Record a single scrape event."""
     REQUESTS_TOTAL.inc()

@@ -1,5 +1,4 @@
 import importlib
-import os
 import sys
 from types import ModuleType
 from pathlib import Path
@@ -21,7 +20,9 @@ def _load_pipeline(monkeypatch: pytest.MonkeyPatch, use_spacy: bool) -> ModuleTy
         class DummyDoc:
             def __init__(self, text: str) -> None:
                 self.text = text
-                self.ents = [type("Ent", (), {"text": w}) for w in text.split() if w.istitle()]
+                self.ents = [
+                    type("Ent", (), {"text": w}) for w in text.split() if w.istitle()
+                ]
 
         class DummyNLP:
             def pipe(self, texts):
