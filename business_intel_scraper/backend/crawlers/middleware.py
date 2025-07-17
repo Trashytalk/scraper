@@ -15,11 +15,11 @@ from ..proxy.manager import ProxyManager
 class ProxyMiddleware:
     """Middleware that sets proxy for each request."""
 
-    def __init__(self, proxy_manager: ProxyManager):
+    def __init__(self, proxy_manager: ProxyManager) -> None:
         self.proxy_manager = proxy_manager
 
     @classmethod
-    def from_crawler(cls, crawler):  # type: ignore[no-untyped-def]
+    def from_crawler(cls, crawler) -> "ProxyMiddleware":  # type: ignore[no-untyped-def]
         provider = getattr(crawler.settings, "PROXY_PROVIDER", None)
         if provider is None:
             raise RuntimeError("PROXY_PROVIDER setting not configured")
@@ -34,6 +34,10 @@ class ProxyMiddleware:
 
 """Downloader middleware for anti-bot measures."""
 
+import random
+import time
+from typing import Iterable
+
 
 class RandomUserAgentMiddleware:
     """Set a random ``User-Agent`` header for each request."""
@@ -42,7 +46,7 @@ class RandomUserAgentMiddleware:
         self.user_agents = list(user_agents)
 
     @classmethod
-    def from_crawler(cls, crawler):  # type: ignore[no-untyped-def]
+    def from_crawler(cls, crawler) -> "RandomUserAgentMiddleware":  # type: ignore[no-untyped-def]
         settings_agents = crawler.settings.getlist(
             "USER_AGENTS",
             [
@@ -54,7 +58,7 @@ class RandomUserAgentMiddleware:
         )
         return cls(settings_agents)
 
-    def process_request(self, request, spider):  # type: ignore[no-untyped-def]
+    def process_request(self, request, spider) -> None:  # type: ignore[no-untyped-def]
         request.headers.setdefault("User-Agent", random.choice(self.user_agents))
 
 
@@ -66,11 +70,11 @@ class RandomDelayMiddleware:
         self.max_delay = max_delay
 
     @classmethod
-    def from_crawler(cls, crawler):  # type: ignore[no-untyped-def]
+    def from_crawler(cls, crawler) -> "RandomDelayMiddleware":  # type: ignore[no-untyped-def]
         return cls(
             crawler.settings.getfloat("MIN_DELAY", 0.5),
             crawler.settings.getfloat("MAX_DELAY", 2.0),
         )
 
-    def process_request(self, request, spider):  # type: ignore[no-untyped-def]
+    def process_request(self, request, spider) -> None:  # type: ignore[no-untyped-def]
         time.sleep(random.uniform(self.min_delay, self.max_delay))
