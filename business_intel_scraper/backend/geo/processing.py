@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Iterable, Tuple
 
 import hashlib
+import json
+import time
+import urllib.parse
+import urllib.request
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
@@ -14,16 +18,49 @@ import json
 import time
 import urllib.parse
 import urllib.request
+from urllib.error import URLError, HTTPError
+
 
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+
+
+def _deterministic_coords(address: str) -> tuple[float, float]:
+    """Return reproducible coordinates for an address."""
+
+    digest = hashlib.sha1(address.encode()).hexdigest()
+    num = int(digest[:8], 16)
+    latitude = float((num % 180) - 90)
+    longitude = float(((num // 180) % 360) - 180)
+    return latitude, longitude
+
+
+def _nominatim_lookup(address: str) -> tuple[float | None, float | None]:
+    """Query Nominatim for coordinates."""
+
+    query = urllib.parse.urlencode({"q": address, "format": "json"})
+    req = urllib.request.Request(
+        f"{NOMINATIM_URL}?{query}",
+        headers={"User-Agent": "business-intel-scraper/1.0"},
+    )
+
+    try:  # pragma: no cover - network issues
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.load(resp)
+        if data:
+            return float(data[0]["lat"]), float(data[0]["lon"])
+    except Exception:  # pragma: no cover - network issues
+        pass
+
+    return None, None
 
 
 def geocode_addresses(
     addresses: Iterable[str],
     *,
     engine: Engine | None = None,
-) -> list[Tuple[str, float, float]]:
+    use_nominatim: bool = True,
+) -> list[Tuple[str, float | None, float | None]]:
     """Geocode a list of addresses.
 
     Parameters
@@ -65,7 +102,8 @@ def geocode_addresses(
 
     results: list[Tuple[str, float | None, float | None]] = []
 
-    for address in addresses:
+    final_results: list[Tuple[str, float | None, float | None]] = []
+    for address, lat, lon in results:
         query = urllib.parse.urlencode({"q": address, "format": "json"})
         req = urllib.request.Request(
             f"{NOMINATIM_URL}?{query}",
@@ -78,12 +116,10 @@ def geocode_addresses(
             if data:
                 lat = float(data[0]["lat"])
                 lon = float(data[0]["lon"])
-                results.append((address, lat, lon))
-            else:
-                results.append((address, None, None))
         except Exception:  # pragma: no cover - network issues
-            results.append((address, None, None))
+            pass
 
+        final_results.append((address, lat, lon))
         time.sleep(1)
 
-    return results
+    return final_results

@@ -5,6 +5,7 @@ from .settings import (
     APISettings,
     DatabaseSettings,
     ProxySettings,
+    RateLimitSettings,
     settings,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "APISettings",
     "DatabaseSettings",
     "ProxySettings",
+    "RateLimitSettings",
     "settings",
 ]
