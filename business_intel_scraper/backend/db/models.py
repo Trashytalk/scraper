@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -36,14 +38,15 @@ class Location(Base):
     longitude: Mapped[float] = mapped_column(nullable=False)
 
 
-
 class User(Base):
     """ORM model for an authenticated user."""
 
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(
+        String, unique=True, nullable=False, index=True
+    )
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     # Relationship to tasks omitted to keep test models lightweight
 
@@ -65,7 +68,7 @@ class ScrapeTask(Base):
         index=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
-    # Relationships omitted; not needed for tests
+    company: Mapped[Optional["Company"]] = relationship(back_populates="tasks")
 
 
 class OsintResult(Base):
