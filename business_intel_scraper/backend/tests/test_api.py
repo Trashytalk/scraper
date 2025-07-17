@@ -1,5 +1,6 @@
 import os
 import sys
+import jwt
 import pytest
 
 sys.path.insert(
@@ -13,6 +14,11 @@ app = api.app
 
 
 def test_launch_and_check_task():
+    secret = "secret"
+    os.environ["JWT_SECRET"] = secret
+    os.environ["JWT_ALGORITHM"] = "HS256"
+    token = jwt.encode({"sub": "user"}, secret, algorithm="HS256")
+
     client = TestClient(app)
 
     resp = client.post("/scrape")
