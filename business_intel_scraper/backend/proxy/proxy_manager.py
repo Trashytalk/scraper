@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Proxy pool manager with validation and rotation utilities."""
+
+from __future__ import annotations
 
 import itertools
 import logging

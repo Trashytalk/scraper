@@ -39,9 +39,7 @@ def run_spiderfoot(domain: str) -> dict[str, str]:
     """
 
     executable = (
-        shutil.which("spiderfoot")
-        or shutil.which("sf.py")
-        or shutil.which("sf")
+        shutil.which("spiderfoot") or shutil.which("sf.py") or shutil.which("sf")
     )
     if executable is None:
         return {"domain": domain, "error": "SpiderFoot executable not found"}

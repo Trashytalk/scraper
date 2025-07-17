@@ -20,14 +20,28 @@ class ExampleSpider(scrapy.Spider):
     # Configure proxy middleware and provider
     custom_settings = {
         "DOWNLOADER_MIDDLEWARES": {
-            "business_intel_scraper.backend.crawlers.middleware.ProxyMiddleware": 543,
-            "business_intel_scraper.backend.crawlers.middleware.RandomUserAgentMiddleware": 544,
-            "business_intel_scraper.backend.crawlers.middleware.RandomDelayMiddleware": 545,
+            (
+                "business_intel_scraper.backend.crawlers.middleware." "ProxyMiddleware"
+            ): 543,
+            (
+                "business_intel_scraper.backend.crawlers.middleware."
+                "RandomUserAgentMiddleware"
+            ): 544,
+            (
+                "business_intel_scraper.backend.crawlers.middleware."
+                "RandomDelayMiddleware"
+            ): 545,
         },
         "PROXY_PROVIDER": DummyProxyProvider(["http://localhost:8000"]),
     }
 
-    def __init__(self, *args, use_browser: bool = False, headless: bool = True, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        use_browser: bool = False,
+        headless: bool = True,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.use_browser = use_browser
         self.headless = headless

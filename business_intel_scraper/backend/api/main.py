@@ -1,64 +1,34 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from sse_starlette.sse import EventSourceResponse
-from pathlib import Path
-import asyncio
-from fastapi import Depends, HTTPException, status
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from .notifications import ConnectionManager
-from .rate_limit import RateLimitMiddleware
-from ..workers.tasks import get_task_status, launch_scraping_task
-from ..security import require_token
-from ..utils.helpers import LOG_FILE
-from business_intel_scraper.settings import settings
-from ..db.models import Company, Location
-from ..db import SessionLocal
-from .auth import router as auth_router
-
-from pydantic import BaseModel
-from ..nlp import pipeline
 import asyncio
 from pathlib import Path
 from typing import AsyncGenerator
 
 import aiofiles
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from sse_starlette.sse import EventSourceResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from pydantic import BaseModel
 
 from business_intel_scraper.settings import settings
 
-from .notifications import ConnectionManager
-from .rate_limit import RateLimitMiddleware
-from ..utils.helpers import LOG_FILE
-from ..workers.tasks import get_task_status, launch_scraping_task
+from .auth import router as auth_router
+from .dependencies import require_role
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from .schemas import (
     HealthCheckResponse,
+    JobStatus,
     TaskCreateResponse,
     TaskStatusResponse,
-    JobStatus,
 )
-from ..workers.tasks import get_task_status, launch_scraping_task
+from ..db.models import UserRole
+from ..nlp import pipeline
 from ..utils.helpers import LOG_FILE
-
-from pydantic import BaseModel
-
-
-class CompanyCreate(BaseModel):
-    name: str
-
-
-class CompanyRead(BaseModel):
-    id: int
-    name: str
+from ..workers.tasks import get_task_status, launch_scraping_task
 
 
 class NLPRequest(BaseModel):
@@ -80,7 +50,6 @@ app.add_middleware(
     window=settings.rate_limit.window,
 )
 app.include_router(auth_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.api.allowed_origins,
@@ -100,15 +69,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(SecurityHeadersMiddleware)
-
 manager = ConnectionManager()
 
+# Track scraped data and job status in memory
 scraped_data: list[dict[str, str]] = []
 jobs: dict[str, str] = {}
 
 
 async def monitor_job(job_id: str) -> None:
     """Watch a background job and broadcast status changes."""
+
     previous = None
     while True:
         status = get_task_status(job_id)
@@ -120,13 +90,10 @@ async def monitor_job(job_id: str) -> None:
             break
         await asyncio.sleep(1)
 
-# Track job status information in memory
-jobs: dict[str, str] = {}
-
 
 @app.get("/", response_model=HealthCheckResponse)
 async def root() -> HealthCheckResponse:
-    """Health check endpoint."""
+    """Basic health check."""
 
     return HealthCheckResponse(
         message="API is running",
@@ -142,25 +109,9 @@ async def start_scrape() -> TaskCreateResponse:
     jobs[task_id] = "running"
     return TaskCreateResponse(task_id=task_id)
 
-@app.get("/")
-async def root() -> dict[str, str]:
-    """Basic health check."""
-    return {"message": "API is running", "database_url": settings.database.url}
 
 @app.get("/tasks/{task_id}", response_model=TaskStatusResponse)
 async def task_status(task_id: str) -> TaskStatusResponse:
-
-@app.post("/scrape/start")
-async def enqueue_scrape() -> dict[str, str]:
-    """Enqueue a new scraping task."""
-
-@app.post("/scrape")
-async def start_scrape(token: str = Depends(require_token)) -> dict[str, str]:
-    """Launch a background scraping task using the example spider."""
-
-
-@app.get("/tasks/{task_id}")
-async def task_status(task_id: str) -> dict[str, str]:
     """Return the current status of a scraping task."""
 
     status = get_task_status(task_id)
@@ -175,7 +126,6 @@ async def notifications(websocket: WebSocket) -> None:
     await manager.connect(websocket)
     try:
         while True:
-            # Keep the connection alive; ignore incoming messages
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -208,23 +158,23 @@ async def get_data() -> list[dict[str, str]]:
 
 
 @app.get("/jobs", dependencies=[require_role(UserRole.ADMIN)])
-async def get_jobs() -> dict[str, dict[str, str]]:
-
+async def get_jobs() -> dict[str, JobStatus]:
     """Return job statuses."""
 
     return {jid: JobStatus(status=get_task_status(jid)) for jid in list(jobs)}
 
+
 @app.get("/jobs/{job_id}", dependencies=[require_role(UserRole.ADMIN)])
 async def get_job(job_id: str) -> dict[str, str]:
-
     """Return a single job status."""
+
     return jobs.get(job_id, {"status": "unknown"})
 
 
-@app.post("/nlp/process", response_model=NLPResponse)
+@app.post("/nlp/process")
 async def process_text(payload: NLPRequest) -> NLPResponse:
     """Extract entities from provided text."""
+
     cleaned = pipeline.preprocess([payload.text])
     entities = pipeline.extract_entities(cleaned)
     return NLPResponse(entities=entities)
-

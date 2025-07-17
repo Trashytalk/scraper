@@ -7,8 +7,8 @@ requests
 httpx
 spacy
 playwright
-PyJWT
+pyjwt
 passlib
-PyJWT
 prometheus-client
+gevent
 

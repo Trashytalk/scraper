@@ -19,4 +19,3 @@ def test_browser_crawler_requires_dependency(monkeypatch) -> None:
     crawler = BrowserCrawler()
     with pytest.raises(RuntimeError):
         crawler.fetch("https://example.com")
-

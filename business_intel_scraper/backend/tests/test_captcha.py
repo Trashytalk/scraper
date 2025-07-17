@@ -26,7 +26,12 @@ def test_solve_captcha_with_mock(monkeypatch: pytest.MonkeyPatch) -> None:
         def json(self) -> dict[str, str]:
             return self._data
 
-    def fake_post(url: str, data: dict[str, str], files: dict[str, bytes], timeout: int) -> FakeResponse:
+    def fake_post(
+        url: str,
+        data: dict[str, str],
+        files: dict[str, bytes],
+        timeout: int,
+    ) -> FakeResponse:
         assert url == "https://mockservice/solve"
         assert "image" in files
         assert data.get("key") == "secret"
