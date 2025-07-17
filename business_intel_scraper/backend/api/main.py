@@ -22,6 +22,7 @@ from ..db import SessionLocal
 from .auth import router as auth_router
 
 from pydantic import BaseModel
+from ..nlp import pipeline
 import asyncio
 from pathlib import Path
 from typing import AsyncGenerator
@@ -47,6 +48,26 @@ from .schemas import (
 )
 from ..workers.tasks import get_task_status, launch_scraping_task
 from ..utils.helpers import LOG_FILE
+
+from pydantic import BaseModel
+
+
+class CompanyCreate(BaseModel):
+    name: str
+
+
+class CompanyRead(BaseModel):
+    id: int
+    name: str
+
+
+class NLPRequest(BaseModel):
+    text: str
+
+
+class NLPResponse(BaseModel):
+    entities: list[str]
+
 
 app = FastAPI(title="Business Intelligence Scraper")
 
@@ -179,24 +200,6 @@ async def stream_logs() -> EventSourceResponse:
     return EventSourceResponse(event_generator())
 
 
-@app.websocket("/logs/stream")
-async def stream_logs_ws(websocket: WebSocket) -> None:
-    """Stream log file updates over a WebSocket connection."""
-    await websocket.accept()
-    path = Path(LOG_FILE)
-    path.touch(exist_ok=True)
-    async with aiofiles.open(path, "r") as f:
-        await f.seek(0, 2)
-        try:
-            while True:
-                line = await f.readline()
-                if line:
-                    await websocket.send_text(line.rstrip())
-                else:
-                    await asyncio.sleep(0.5)
-        except WebSocketDisconnect:
-            pass
-
 @app.get("/data")
 async def get_data() -> list[dict[str, str]]:
     """Return scraped data."""
@@ -218,16 +221,10 @@ async def get_job(job_id: str) -> dict[str, str]:
     return jobs.get(job_id, {"status": "unknown"})
 
 
-@app.get("/locations/{company_id}")
-def get_locations(company_id: int, db: Session = Depends(get_db)) -> list[dict[str, object]]:
-    """Return stored location data for a company."""
-    locations = db.execute(select(Location)).scalars().all()
-    return [
-        {
-            "id": loc.id,
-            "address": loc.address,
-            "latitude": loc.latitude,
-            "longitude": loc.longitude,
-        }
-        for loc in locations
-    ]
+@app.post("/nlp/process", response_model=NLPResponse)
+async def process_text(payload: NLPRequest) -> NLPResponse:
+    """Extract entities from provided text."""
+    cleaned = pipeline.preprocess([payload.text])
+    entities = pipeline.extract_entities(cleaned)
+    return NLPResponse(entities=entities)
+
