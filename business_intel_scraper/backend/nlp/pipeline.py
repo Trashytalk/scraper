@@ -17,24 +17,23 @@ except Exception:  # pragma: no cover - fallback for direct execution
     spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
     clean_text = cleaning.clean_text  # type: ignore
 
+
 try:
     import spacy
     from spacy.language import Language
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     spacy = None  # type: ignore
 
-    class Language:  # type: ignore
+    class Language:  # type: ignore[override]
         """Fallback type used when SpaCy is unavailable."""
 
         pass
-
 
 _NLP_MODEL: Language | None = None
 
 
 def _get_nlp() -> Language | None:
     """Load and cache the SpaCy language model if available."""
-
     global _NLP_MODEL
     if spacy is None:
         return None
@@ -49,9 +48,9 @@ def _get_nlp() -> Language | None:
 def extract_entities(texts: Iterable[str]) -> list[str]:
     """Extract named entities from text collection."""
 
+
     nlp = _get_nlp()
     entities: list[str] = []
-
     if nlp is None:
         for text in texts:
             entities.extend(text.split())

@@ -1,4 +1,4 @@
-"""Utility functions for the backend."""
+"""Utility functions for backend logging."""
 
 from __future__ import annotations
 
@@ -14,17 +14,21 @@ logger = logging.getLogger(__name__)
 
 def setup_logging(
     level: int = logging.INFO,
-    log_file: str | Path = "logs/backend.log",
+    log_file: str | Path = LOG_FILE,
     max_bytes: int = 10 * 1024 * 1024,
     backup_count: int = 5,
 ) -> None:
     """Configure application logging."""
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    handlers = [logging.StreamHandler(), logging.FileHandler(LOG_FILE)]
+
+    handlers = [
+        logging.StreamHandler(),
+        RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count),
+    ]
     logging.basicConfig(
         level=level,
-        format="%(asctime)s - %(levelname)s - %(message)s",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=handlers,
     )
 
@@ -48,4 +52,6 @@ def setup_logging(
     stream_handler.setFormatter(formatter)
     root_logger.addHandler(stream_handler)
 
+
     logger.debug("Logging configured")
+
