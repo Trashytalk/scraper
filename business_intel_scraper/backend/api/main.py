@@ -1,5 +1,7 @@
 """Main FastAPI application entry point."""
 
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from sse_starlette.sse import EventSourceResponse
 from __future__ import annotations
 
 import asyncio
