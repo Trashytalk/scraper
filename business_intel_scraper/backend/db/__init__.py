@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import os
-
+from business_intel_scraper.config import settings
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./development.db")
-
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(settings.database_url, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -22,5 +19,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
