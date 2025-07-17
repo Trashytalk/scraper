@@ -50,7 +50,6 @@ class Location(Base):
         cascade="all, delete-orphan",
     )
 
-
 class User(Base):
     """ORM model for an authenticated user."""
 
@@ -58,10 +57,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(
-        String,
-        unique=True,
-        nullable=False,
-        index=True,
+        String, unique=True, nullable=False, index=True
     )
 
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
@@ -80,7 +76,8 @@ class ScrapeTask(Base):
         ForeignKey("companies.id"),
         nullable=True,
     )
-    company: Mapped["Company"] = relationship(back_populates="tasks")
+      
+    company: Mapped["Company"] = relationship("Company", back_populates="tasks")
     status: Mapped[str] = mapped_column(String, default="pending")
     # Minimal relationship back to Company to satisfy mapper configuration
     company: Mapped[Optional["Company"]] = relationship(
