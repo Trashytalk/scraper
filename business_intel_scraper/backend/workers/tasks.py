@@ -7,6 +7,8 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
 
+from prometheus_client import Counter, Histogram
+
 try:
     from gevent.pool import Pool
     from gevent import sleep as async_sleep
@@ -49,6 +51,17 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 
 celery_app = Celery("business_intel_scraper")
+
+TASK_COUNTER = Counter(
+    "bi_worker_tasks_total",
+    "Total executed worker tasks",
+    ["task"],
+)
+TASK_DURATION = Histogram(
+    "bi_worker_task_duration_seconds",
+    "Duration of worker tasks in seconds",
+    ["task"],
+)
 
 try:  # pragma: no cover - optional dependency
     celery_app.config_from_object(
@@ -121,6 +134,9 @@ def example_task(x: int, y: int) -> int:
 def _run_example_spider(job_id: str) -> str:
     """Run the example Scrapy spider and persist results."""
 
+    TASK_COUNTER.labels(task="example_spider").inc()
+    start = time.perf_counter()
+
     try:
         from business_intel_scraper.backend.db.utils import init_db, save_companies
     except Exception:  # pragma: no cover - database optional
@@ -141,6 +157,7 @@ def _run_example_spider(job_id: str) -> str:
             log_job_error(job_id, f"db error: {exc}")
 
     log_job_finish(job_id)
+    TASK_DURATION.labels(task="example_spider").observe(time.perf_counter() - start)
     return "scraping complete"
 
 
@@ -192,6 +209,8 @@ def run_spider_task(
     list[dict[str, str]]
         Items scraped by the spider.
     """
+    TASK_COUNTER.labels(task="run_spider_task").inc()
+    start = time.perf_counter()
     from importlib import import_module
 
     if spider != "example":
@@ -219,7 +238,7 @@ def run_spider_task(
     for crawler in process.crawlers:
         crawler.signals.connect(_collect, signal="item_scraped")
     process.start(stop_after_crawl=True)
-
+    TASK_DURATION.labels(task="run_spider_task").observe(time.perf_counter() - start)
     return items
 
 
@@ -238,28 +257,41 @@ def spiderfoot_scan(domain: str) -> dict[str, str]:
         Results from :func:`run_spiderfoot`.
     """
 
-    return run_spiderfoot(domain)
+    TASK_COUNTER.labels(task="spiderfoot_scan").inc()
+    start = time.perf_counter()
+    result = run_spiderfoot(domain)
+    TASK_DURATION.labels(task="spiderfoot_scan").observe(time.perf_counter() - start)
+    return result
 
 
 @celery_app.task
 def preprocess_texts(texts: list[str]) -> list[str]:
     """Clean and normalize raw text strings asynchronously."""
-
-    return pipeline.preprocess(texts)
+    TASK_COUNTER.labels(task="preprocess_texts").inc()
+    start = time.perf_counter()
+    result = pipeline.preprocess(texts)
+    TASK_DURATION.labels(task="preprocess_texts").observe(time.perf_counter() - start)
+    return result
 
 
 @celery_app.task
 def extract_entities_task(texts: list[str]) -> list[str]:
     """Extract named entities from ``texts`` asynchronously."""
-
-    return pipeline.extract_entities(texts)
+    TASK_COUNTER.labels(task="extract_entities").inc()
+    start = time.perf_counter()
+    result = pipeline.extract_entities(texts)
+    TASK_DURATION.labels(task="extract_entities").observe(time.perf_counter() - start)
+    return result
 
 
 @celery_app.task
 def geocode_task(addresses: list[str]) -> list[tuple[str, float | None, float | None]]:
     """Geocode ``addresses`` using the built-in helper."""
-
-    return geocode_addresses(addresses)
+    TASK_COUNTER.labels(task="geocode").inc()
+    start = time.perf_counter()
+    result = geocode_addresses(addresses)
+    TASK_DURATION.labels(task="geocode").observe(time.perf_counter() - start)
+    return result
 
 
 def theharvester_scan(domain: str) -> dict[str, str]:
@@ -276,7 +308,11 @@ def theharvester_scan(domain: str) -> dict[str, str]:
         Results from :func:`run_theharvester`.
     """
 
-    return run_theharvester(domain)
+    TASK_COUNTER.labels(task="theharvester_scan").inc()
+    start = time.perf_counter()
+    result = run_theharvester(domain)
+    TASK_DURATION.labels(task="theharvester_scan").observe(time.perf_counter() - start)
+    return result
 
 
 @celery_app.task
