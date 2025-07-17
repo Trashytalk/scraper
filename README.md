@@ -13,6 +13,19 @@ Proxy rotation should be enabled to avoid blocking when scraping at scale.
 
 Real-time notifications are available via a WebSocket endpoint at `/ws/notifications`. Messages sent by any connected client are broadcast to all clients.
 
+## Configuration
+
+Copy `.env.example` to `.env` and update the values as needed. The application
+recognizes the following settings:
+
+```
+API_KEY=your_api_key_here
+DATABASE_URL=sqlite:///data.db
+PROXY_URL=
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+```
+
 # scraper
 
 ## Log Streaming
