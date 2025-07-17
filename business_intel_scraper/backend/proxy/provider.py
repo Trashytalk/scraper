@@ -1,10 +1,46 @@
-from __future__ import annotations
-
 """Proxy provider base classes."""
+
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
+
 import requests
+
+
+def fetch_fresh_proxies(endpoint: str, api_key: str | None = None) -> list[str]:
+    """Return a list of proxies fetched from ``endpoint``.
+
+    The endpoint is expected to return one proxy per line. Empty lines are
+    ignored. This helper makes it easy to obtain a fresh batch of proxies from a
+    simple HTTP service.
+
+    Parameters
+    ----------
+    endpoint:
+        URL of the proxy list service.
+    api_key:
+        Optional API token to include in the ``Authorization`` header.
+
+    Returns
+    -------
+    list[str]
+        All proxies returned by the service.
+    """
+
+    headers = {"Authorization": api_key} if api_key else None
+    resp = requests.get(endpoint, headers=headers, timeout=10)
+    resp.raise_for_status()
+    return [line.strip() for line in resp.text.splitlines() if line.strip()]
+
+
+def fetch_fresh_proxy(endpoint: str, api_key: str | None = None) -> str:
+    """Return a single proxy fetched from ``endpoint``."""
+
+    proxies = fetch_fresh_proxies(endpoint, api_key)
+    if not proxies:
+        raise RuntimeError("Empty proxy from provider")
+    return proxies[0]
 
 
 class ProxyProvider(ABC):
@@ -49,15 +85,9 @@ class APIProxyProvider(ProxyProvider):
         self.current_proxy: Optional[str] = None
 
     def _request_proxy(self) -> str:
-        headers = {}
-        if self.api_key:
-            headers["Authorization"] = self.api_key
-        resp = requests.get(self.endpoint, headers=headers, timeout=10)
-        resp.raise_for_status()
-        proxy = resp.text.strip()
-        if not proxy:
-            raise RuntimeError("Empty proxy from provider")
-        return proxy
+        """Retrieve a new proxy from the configured endpoint."""
+
+        return fetch_fresh_proxy(self.endpoint, self.api_key)
 
     def get_proxy(self) -> str:
         if not self.current_proxy:
