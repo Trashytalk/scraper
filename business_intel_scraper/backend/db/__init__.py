@@ -1,38 +1,16 @@
-"""Database utilities and ORM models."""
-
-from .models import Base, Company
-from .utils import ENGINE, SessionLocal, init_db, save_companies
-
-__all__ = [
-    "Base",
-    "Company",
-    "ENGINE",
-    "SessionLocal",
-    "init_db",
-    "save_companies",
-]
-
-"""Database engine setup for the backend."""
+"""Database utilities and session management."""
 
 from __future__ import annotations
+
+import os
+
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from .models import Base
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./development.db")
 
+engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-DATABASE_URL = "sqlite:///./data.db"
-
-# Create the SQLAlchemy engine. ``future=True`` enables 2.0 style usage.
-engine = create_engine(DATABASE_URL, future=True, echo=False)
-
-# Factory for database sessions used throughout the application.
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
-
-def init_db() -> None:
-    """Create all database tables if they do not exist."""
-
-    Base.metadata.create_all(bind=engine)
 
