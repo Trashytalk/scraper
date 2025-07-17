@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .mypy_cache/
 business_intel_scraper/backend/logs/app.log
+node_modules/
+
