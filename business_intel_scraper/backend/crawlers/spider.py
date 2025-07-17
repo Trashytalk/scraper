@@ -19,6 +19,8 @@ class ExampleSpider(scrapy.Spider):
     custom_settings = {
         "DOWNLOADER_MIDDLEWARES": {
             "business_intel_scraper.backend.crawlers.middleware.ProxyMiddleware": 543,
+            "business_intel_scraper.backend.crawlers.middleware.RandomUserAgentMiddleware": 544,
+            "business_intel_scraper.backend.crawlers.middleware.RandomDelayMiddleware": 545,
         },
         "PROXY_PROVIDER": DummyProxyProvider(["http://localhost:8000"]),
     }
