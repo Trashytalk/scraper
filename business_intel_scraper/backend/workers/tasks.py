@@ -3,18 +3,23 @@
 from __future__ import annotations
 
 import uuid
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
 
 try:
     from gevent.pool import Pool
     from gevent import sleep as async_sleep
+
     GEVENT_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
-from business_intel_scraper.backend.osint.integrations import run_spiderfoot
+from business_intel_scraper.backend.osint.integrations import (
+    run_spiderfoot,
+    run_theharvester,
+)
 from business_intel_scraper.backend.db.utils import (
     Base,
     ENGINE,
@@ -44,6 +49,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
             return func
 
+
 celery_app = Celery("business_intel_scraper")
 
 try:  # pragma: no cover - optional dependency
@@ -66,8 +72,11 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             raise RuntimeError("Scrapy is required to run this task")
 
     class TextResponse:  # type: ignore[no-redef]
-        def __init__(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - simple stub
+        def __init__(
+            self, *args: object, **kwargs: object
+        ) -> None:  # pragma: no cover - simple stub
             pass
+
 
 # In the test environment Celery may not be installed. To provide basic
 # asynchronous behaviour without requiring external services we also manage
@@ -82,6 +91,7 @@ if GEVENT_AVAILABLE:
 else:  # pragma: no cover - fallback when gevent is missing
     _executor = ThreadPoolExecutor()
     _tasks: Dict[str, Future] = {}
+
 
 def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
     """Submit a callable to the underlying executor."""
@@ -159,8 +169,11 @@ def get_task_status(task_id: str) -> str:
             return "completed"
     return "running"
 
+
 @celery_app.task
-def run_spider_task(spider: str = "example", html: str | None = None) -> list[dict[str, str]]:
+def run_spider_task(
+    spider: str = "example", html: str | None = None
+) -> list[dict[str, str]]:
     """Run a Scrapy spider.
 
     Parameters
@@ -205,6 +218,7 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
 
     return items
 
+
 @celery_app.task
 def spiderfoot_scan(domain: str) -> dict[str, str]:
     """Run SpiderFoot OSINT scan.
@@ -221,3 +235,79 @@ def spiderfoot_scan(domain: str) -> dict[str, str]:
     """
 
     return run_spiderfoot(domain)
+
+
+@celery_app.task
+def theharvester_scan(domain: str) -> dict[str, str]:
+    """Run TheHarvester OSINT scan.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to investigate.
+
+    Returns
+    -------
+    dict[str, str]
+        Results from :func:`run_theharvester`.
+    """
+
+    return run_theharvester(domain)
+
+
+def queue_spiderfoot_scan(
+    domain: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`spiderfoot_scan` via Celery.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to scan.
+    queue : str, optional
+        Celery queue name. Defaults to the configured default queue.
+    countdown : int, optional
+        Delay in seconds before the task executes.
+
+    Returns
+    -------
+    str
+        Identifier of the queued task.
+    """
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = spiderfoot_scan.apply_async(args=[domain], **options)
+    return result.id
+
+
+def queue_theharvester_scan(
+    domain: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`theharvester_scan` via Celery.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to scan.
+    queue : str, optional
+        Celery queue name. Defaults to the configured default queue.
+    countdown : int, optional
+        Delay in seconds before the task executes.
+
+    Returns
+    -------
+    str
+        Identifier of the queued task.
+    """
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = theharvester_scan.apply_async(args=[domain], **options)
+    return result.id
