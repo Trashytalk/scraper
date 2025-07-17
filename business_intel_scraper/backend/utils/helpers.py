@@ -1,5 +1,6 @@
 """Utility functions for backend logging."""
 
+
 from __future__ import annotations
 
 import logging
@@ -25,9 +26,12 @@ def setup_logging(
         logging.StreamHandler(),
         RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count),
     ]
+
     logging.basicConfig(
         level=level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=handlers,
     )
+
     logger.debug("Logging configured")
+

@@ -35,6 +35,7 @@ def _get_nlp() -> Language | None:
 
 def extract_entities(texts: Iterable[str]) -> list[str]:
     """Extract named entities from the provided ``texts``."""
+
     nlp = _get_nlp()
     entities: list[str] = []
     if nlp is None:
@@ -50,4 +51,5 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
 
 def preprocess(texts: Iterable[str]) -> list[str]:
     """Clean and normalize raw text strings."""
+
     return [clean_text(t) for t in texts]

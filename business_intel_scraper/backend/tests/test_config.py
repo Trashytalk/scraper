@@ -24,3 +24,9 @@ def test_settings_reads_env(monkeypatch) -> None:
     monkeypatch.setenv("API_KEY", "from_env")
     module = importlib.reload(config)
     assert module.settings.api_key == "from_env"
+
+
+def test_https_setting(monkeypatch) -> None:
+    monkeypatch.setenv("USE_HTTPS", "true")
+    module = importlib.reload(config)
+    assert module.settings.use_https is True
