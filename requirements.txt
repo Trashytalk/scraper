@@ -9,4 +9,6 @@ sqlalchemy
 spacy
 celery
 playwright
+passlib
+PyJWT
 
