@@ -9,6 +9,7 @@ from typing import Dict
 try:
     from gevent.pool import Pool
     from gevent import sleep as async_sleep
+
     GEVENT_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
@@ -44,6 +45,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
             return func
 
+
 celery_app = Celery("business_intel_scraper")
 
 try:  # pragma: no cover - optional dependency
@@ -66,8 +68,11 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             raise RuntimeError("Scrapy is required to run this task")
 
     class TextResponse:  # type: ignore[no-redef]
-        def __init__(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - simple stub
+        def __init__(
+            self, *args: object, **kwargs: object
+        ) -> None:  # pragma: no cover - simple stub
             pass
+
 
 # In the test environment Celery may not be installed. To provide basic
 # asynchronous behaviour without requiring external services we also manage
@@ -82,6 +87,7 @@ if GEVENT_AVAILABLE:
 else:  # pragma: no cover - fallback when gevent is missing
     _executor = ThreadPoolExecutor()
     _tasks: Dict[str, Future] = {}
+
 
 def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
     """Submit a callable to the underlying executor."""
@@ -110,7 +116,10 @@ def example_task(x: int, y: int) -> int:
     return x + y
 
 
-def _run_example_spider() -> str:
+from ..audit.logger import log_job_start, log_job_finish, log_job_error
+
+
+def _run_example_spider(job_id: str) -> str:
     """Run the example Scrapy spider and persist results."""
 
     try:
@@ -118,15 +127,21 @@ def _run_example_spider() -> str:
     except Exception:  # pragma: no cover - database optional
         init_db = save_companies = None  # type: ignore
 
-    items = run_spider_task("example")
+    log_job_start(job_id)
+    try:
+        items = run_spider_task("example")
+    except Exception as exc:  # pragma: no cover - unexpected spider error
+        log_job_error(job_id, str(exc))
+        raise
 
     if init_db and save_companies:
         try:
             init_db()
             save_companies(item.get("url", "") for item in items)
-        except Exception:  # pragma: no cover - database failure
-            pass
+        except Exception as exc:  # pragma: no cover - database failure
+            log_job_error(job_id, f"db error: {exc}")
 
+    log_job_finish(job_id)
     return "scraping complete"
 
 
@@ -140,7 +155,7 @@ def launch_scraping_task() -> str:
     """
 
     task_id = str(uuid.uuid4())
-    future = _submit(_run_example_spider)
+    future = _submit(_run_example_spider, task_id)
     _tasks[task_id] = future
     return task_id
 
@@ -159,8 +174,11 @@ def get_task_status(task_id: str) -> str:
             return "completed"
     return "running"
 
+
 @celery_app.task
-def run_spider_task(spider: str = "example", html: str | None = None) -> list[dict[str, str]]:
+def run_spider_task(
+    spider: str = "example", html: str | None = None
+) -> list[dict[str, str]]:
     """Run a Scrapy spider.
 
     Parameters
@@ -204,6 +222,7 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
     process.start(stop_after_crawl=True)
 
     return items
+
 
 @celery_app.task
 def spiderfoot_scan(domain: str) -> dict[str, str]:
