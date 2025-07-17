@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 
 from ..db import get_db, engine
 from ..db.models import User, Base
+from ..security import create_token
 
 # Ensure tables exist when module is imported
 Base.metadata.create_all(bind=engine)
@@ -50,4 +51,5 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credentials"
         )
-    return {"message": "Login successful"}
+    token = create_token(str(db_user.id), db_user.role.value)
+    return {"access_token": token, "token_type": "bearer"}

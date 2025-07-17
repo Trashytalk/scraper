@@ -8,6 +8,7 @@ import sys
 
 import pytest
 import requests
+from business_intel_scraper.backend.security import create_token
 
 ROOT = Path(__file__).resolve().parents[3]
 COMPOSE_FILE = ROOT / "business_intel_scraper" / "docker-compose.yml"
@@ -88,13 +89,18 @@ def services():
 def test_api_celery_db_flow(services):
     """End-to-end test for API -> Celery -> DB."""
     env = services
-    resp = requests.post("http://localhost:8000/scrape")
+    os.environ["JWT_SECRET"] = "secret"
+    os.environ["JWT_ALGORITHM"] = "HS256"
+    token = create_token("1", "analyst")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = requests.post("http://localhost:8000/scrape", headers=headers)
     assert resp.status_code == 200
     task_id = resp.json()["task_id"]
 
     status = "running"
     for _ in range(40):
-        r = requests.get(f"http://localhost:8000/tasks/{task_id}")
+        r = requests.get(f"http://localhost:8000/tasks/{task_id}", headers=headers)
         assert r.status_code == 200
         status = r.json()["status"]
         if status == "completed":
