@@ -27,7 +27,6 @@ async def root() -> dict[str, str]:
         "message": "API is running",
         "database_url": settings.database.url,
     }
-    return {"message": "API is running"}
 
 
 @app.post("/scrape")
