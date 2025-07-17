@@ -31,7 +31,7 @@ class Location(Base):
     __tablename__ = "locations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    address: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    address: Mapped[str] = mapped_column(String, nullable=False)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
 
@@ -45,8 +45,12 @@ class User(Base):
     username: Mapped[str] = mapped_column(
         String, unique=True, nullable=False, index=True
     )
+    
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    # Relationship to tasks omitted to keep test models lightweight
+    tasks: Mapped[list["ScrapeTask"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class ScrapeTask(Base):
@@ -55,15 +59,10 @@ class ScrapeTask(Base):
     __tablename__ = "scrape_tasks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
-        index=True,
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     company_id: Mapped[int | None] = mapped_column(
         ForeignKey("companies.id"),
         nullable=True,
-        index=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
     company: Mapped[Company | None] = relationship("Company", back_populates="tasks")
@@ -75,6 +74,6 @@ class OsintResult(Base):
     __tablename__ = "osint_results"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"), index=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"))
     data: Mapped[str] = mapped_column(String, nullable=False)
-    # Relationship omitted
+    task: Mapped["ScrapeTask"] = relationship(back_populates="results")
