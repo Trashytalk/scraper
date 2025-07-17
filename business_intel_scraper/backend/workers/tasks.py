@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
 
@@ -24,34 +25,7 @@ from business_intel_scraper.backend.db.utils import (
 )
 from business_intel_scraper.backend.db.models import Company
 
-try:
-    from celery import Celery
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-
-    from typing import Callable, TypeVar, Any
-
-    F = TypeVar("F", bound=Callable[..., Any])
-
-    class Celery:  # type: ignore
-        """Fallback Celery replacement."""
-
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            pass
-
-        def config_from_object(self, *args: object, **kwargs: object) -> None:
-            return None
-
-        def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
-            return func
-
-celery_app = Celery("business_intel_scraper")
-
-try:  # pragma: no cover - optional dependency
-    celery_app.config_from_object(
-        "business_intel_scraper.backend.workers.celery_config", namespace="CELERY"
-    )
-except ModuleNotFoundError:
-    pass
+from . import celery_app
 
 
 try:
