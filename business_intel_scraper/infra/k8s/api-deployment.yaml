@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bi-scraper-api
+  namespace: bi-scraper
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bi-scraper-api
+  template:
+    metadata:
+      labels:
+        app: bi-scraper-api
+    spec:
+      containers:
+      - name: api
+        image: your-registry/bi-scraper-api:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: CELERY_BROKER_URL
+          value: redis://redis:6379/0

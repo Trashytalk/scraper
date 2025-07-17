@@ -9,5 +9,6 @@ __all__ = [
     "solve_captcha",
     "CaptchaSolver",
     "HTTPCaptchaSolver",
+    "TwoCaptchaSolver",
     "RateLimitMiddleware",
 ]
