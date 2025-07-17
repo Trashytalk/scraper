@@ -1,12 +1,19 @@
 import scrapy
 from typing import Iterable
 
+from ...security import solve_captcha
+
+
 class QuotesSpider(scrapy.Spider):
     name = "quotes"
     allowed_domains = ["quotes.toscrape.com"]
     start_urls = ["https://quotes.toscrape.com/"]
 
     def parse(self, response: scrapy.http.Response) -> Iterable[dict[str, str]]:
+        if "captcha" in response.text.lower():
+            solve_captcha(b"dummy")
+            return
+
         for quote in response.css("div.quote"):
             yield {
                 "text": quote.css("span.text::text").get(),
