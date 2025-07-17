@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 from sqlalchemy import String, ForeignKey
+from enum import Enum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class UserRole(str, Enum):
+    """Enumerated user roles."""
+
+    ADMIN = "admin"
+    ANALYST = "analyst"
 
 
 class Base(DeclarativeBase):
@@ -19,10 +27,7 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    tasks: Mapped[list["ScrapeTask"]] = relationship(
-        back_populates="company",
-        cascade="all, delete-orphan",
-    )
+    tasks: Mapped[list["ScrapeTask"]] = relationship(cascade="all, delete-orphan")
 
 
 class Location(Base):
@@ -45,6 +50,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[UserRole] = mapped_column(String, nullable=False, default=UserRole.ANALYST)
     # Relationship to tasks omitted to keep test models lightweight
 
 
