@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from sqlalchemy import String, ForeignKey
+from enum import Enum
 
-from sqlalchemy import String, ForeignKey, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Optional
+
+
+class UserRole(str, Enum):
+    """Enumerated user roles."""
+
+    ADMIN = "admin"
+    ANALYST = "analyst"
 
 
 class Base(DeclarativeBase):
@@ -22,12 +29,7 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    # Relationship back to :class:`ScrapeTask` does not declare ``back_populates``
-    # on the task model. Using a simple ``relationship`` avoids mapper
-    # configuration errors during tests.
-    tasks: Mapped[list["ScrapeTask"]] = relationship(
-        cascade="all, delete-orphan",
-    )
+    tasks: Mapped[list["ScrapeTask"]] = relationship(cascade="all, delete-orphan")
 
 
 class Location(Base):
@@ -52,10 +54,8 @@ class User(Base):
     )
 
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    tasks: Mapped[list["ScrapeTask"]] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
+    role: Mapped[UserRole] = mapped_column(String, nullable=False, default=UserRole.ANALYST)
+    # Relationship to tasks omitted to keep test models lightweight
 
 
 class ScrapeTask(Base):
