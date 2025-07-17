@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from typing import Optional
 
 
 class Base(DeclarativeBase):
@@ -19,8 +20,10 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    # Relationship back to :class:`ScrapeTask` does not declare ``back_populates``
+    # on the task model. Using a simple ``relationship`` avoids mapper
+    # configuration errors during tests.
     tasks: Mapped[list["ScrapeTask"]] = relationship(
-        back_populates="company",
         cascade="all, delete-orphan",
     )
 
@@ -31,10 +34,9 @@ class Location(Base):
     __tablename__ = "locations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    address: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    address: Mapped[str] = mapped_column(String, nullable=False)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
-
 
 
 class User(Base):
@@ -43,9 +45,15 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(
+        String, unique=True, nullable=False, index=True
+    )
+
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    # Relationship to tasks omitted to keep test models lightweight
+    tasks: Mapped[list["ScrapeTask"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class ScrapeTask(Base):
@@ -54,15 +62,10 @@ class ScrapeTask(Base):
     __tablename__ = "scrape_tasks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
-        index=True,
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     company_id: Mapped[int | None] = mapped_column(
         ForeignKey("companies.id"),
         nullable=True,
-        index=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
     company: Mapped[Company | None] = relationship(
@@ -77,6 +80,6 @@ class OsintResult(Base):
     __tablename__ = "osint_results"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"), index=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"))
     data: Mapped[str] = mapped_column(String, nullable=False)
-    # Relationship omitted
+    task: Mapped["ScrapeTask"] = relationship(back_populates="results")

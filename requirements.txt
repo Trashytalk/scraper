@@ -5,9 +5,6 @@ scrapy
 sqlalchemy
 requests
 httpx
-sqlalchemy
 spacy
-celery
 playwright
 prometheus-client
-
