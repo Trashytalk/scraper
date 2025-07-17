@@ -65,7 +65,10 @@ class ScrapeTask(Base):
         index=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
-    # Relationships omitted; not needed for tests
+    company: Mapped[Company | None] = relationship(
+        "Company",
+        back_populates="tasks",
+    )
 
 
 class OsintResult(Base):
