@@ -4,24 +4,12 @@ from __future__ import annotations
 
 from typing import Iterable
 
-try:
-    from .cleaning import clean_text
-except Exception:  # pragma: no cover - fallback for direct execution
-    import importlib.util
-    import pathlib
+from business_intel_scraper.backend.nlp.cleaning import clean_text
 
-    module_path = pathlib.Path(__file__).resolve().parent / "cleaning.py"
-    spec = importlib.util.spec_from_file_location("cleaning", module_path)
-    cleaning = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
-    clean_text = cleaning.clean_text  # type: ignore
-
-
-try:
+try:  # pragma: no cover - optional dependency
     import spacy
     from spacy.language import Language
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
+except ModuleNotFoundError:  # pragma: no cover
     spacy = None  # type: ignore
 
     class Language:  # type: ignore[override]

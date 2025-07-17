@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
@@ -112,8 +111,22 @@ def example_task(x: int, y: int) -> int:
 
 
 def _run_example_spider() -> str:
-    """Placeholder function representing a scraping job."""
-    async_sleep(1)
+    """Run the example Scrapy spider and persist results."""
+
+    try:
+        from business_intel_scraper.backend.db.utils import init_db, save_companies
+    except Exception:  # pragma: no cover - database optional
+        init_db = save_companies = None  # type: ignore
+
+    items = run_spider_task("example")
+
+    if init_db and save_companies:
+        try:
+            init_db()
+            save_companies(item.get("url", "") for item in items)
+        except Exception:  # pragma: no cover - database failure
+            pass
+
     return "scraping complete"
 
 

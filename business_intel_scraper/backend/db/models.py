@@ -34,8 +34,6 @@ class Location(Base):
     address: Mapped[str] = mapped_column(String, nullable=False, index=True)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
-    # Relationships to other tables are omitted for simplicity in the tests
-    # to avoid needing foreign key joins.
 
 
 
