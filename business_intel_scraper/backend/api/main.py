@@ -1,5 +1,11 @@
 """Main FastAPI application entry point."""
 
+import asyncio
+from pathlib import Path
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from sse_starlette.sse import EventSourceResponse
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -9,6 +15,7 @@ from pathlib import Path
 from .rate_limit import RateLimitMiddleware
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
+from ..utils.helpers import LOG_FILE
 from ..workers.tasks import get_task_status, launch_scraping_task
 from ..db.models import Company
 from ..db.repository import SessionLocal
@@ -39,7 +46,13 @@ class CompanyRead(BaseModel):
 
 
 app = FastAPI(title="Business Intelligence Scraper")
-app.add_middleware(RateLimitMiddleware)
+if settings.require_https:
+    app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(
+    RateLimitMiddleware,
+    limit=settings.rate_limit.limit,
+    window=settings.rate_limit.window,
+)
 
 manager = ConnectionManager()
 
