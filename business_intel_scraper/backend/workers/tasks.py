@@ -12,6 +12,10 @@ try:
     from celery import Celery
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
+    from typing import Callable, TypeVar, Any
+
+    F = TypeVar("F", bound=Callable[..., Any])
+
     class Celery:  # type: ignore
         """Fallback Celery replacement."""
 
@@ -21,7 +25,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def config_from_object(self, *args: object, **kwargs: object) -> None:
             return None
 
-        def task(self, func):  # type: ignore[no-untyped-def]
+        def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
             return func
 
 celery_app = Celery("business_intel_scraper")
@@ -145,7 +149,7 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
     items: list[dict[str, str]] = []
     process = CrawlerProcess(settings={"LOG_ENABLED": False})
 
-    def _collect(item):
+    def _collect(item: dict) -> None:
         items.append(dict(item))
 
     process.crawl(spider_cls)
