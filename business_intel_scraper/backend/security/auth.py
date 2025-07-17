@@ -1,4 +1,4 @@
-"""Authentication and authorization helpers."""
+"""Authentication helpers used in tests."""
 
 from __future__ import annotations
 
