@@ -1,26 +1,39 @@
 function App() {
   const [data, setData] = React.useState([]);
   const [jobs, setJobs] = React.useState({});
-
-  React.useEffect(() => {
+  const loadData = () => {
     fetch('/data')
-      .then(res => res.json())
+      .then((res) => res.json())
       .then(setData)
       .catch(() => {});
     fetch('/jobs')
-      .then(res => res.json())
+      .then((res) => res.json())
       .then(setJobs)
       .catch(() => {});
-  }, []);
+  };
+
+  React.useEffect(loadData, []);
 
   return (
-    <div>
-      <h1>Scraped Data</h1>
-      <ul>{data.map((item, idx) => <li key={idx}>{JSON.stringify(item)}</li>)}</ul>
-      <h1>Job Status</h1>
-      <pre>{JSON.stringify(jobs, null, 2)}</pre>
+    <div style={{ fontFamily: 'sans-serif' }}>
+      <h1>Scraped Results</h1>
+      <button onClick={loadData}>Refresh</button>
+      <ul>
+        {data.map((item, idx) => (
+          <li key={idx}>{JSON.stringify(item)}</li>
+        ))}
+      </ul>
+
+      <h2>Job Status</h2>
+      <ul>
+        {Object.entries(jobs).map(([id, job]) => (
+          <li key={id}>
+            {id}: {job.status}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
