@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 from sqlalchemy import String, ForeignKey
 from enum import Enum
 
@@ -45,10 +47,6 @@ class Location(Base):
     address: Mapped[str] = mapped_column(String, nullable=False)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
-    companies: Mapped[list["Company"]] = relationship(
-        back_populates="location",
-        cascade="all, delete-orphan",
-    )
 
 class User(Base):
     """ORM model for an authenticated user."""
@@ -79,11 +77,7 @@ class ScrapeTask(Base):
       
     company: Mapped["Company"] = relationship("Company", back_populates="tasks")
     status: Mapped[str] = mapped_column(String, default="pending")
-    # Minimal relationship back to Company to satisfy mapper configuration
-    company: Mapped[Optional["Company"]] = relationship(
-        "Company",
-        back_populates="tasks",
-    )
+    company: Mapped[Optional["Company"]] = relationship(back_populates="tasks")
 
 
 class OsintResult(Base):
