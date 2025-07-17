@@ -4,7 +4,20 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from business_intel_scraper.backend.nlp.cleaning import clean_text
+try:
+    from .cleaning import clean_text
+except ImportError:  # pragma: no cover - direct execution
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "cleaning", Path(__file__).parent / "cleaning.py"
+    )
+    cleaning = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
+    clean_text = cleaning.clean_text  # type: ignore[attr-defined]
+
 
 try:
     import spacy
@@ -16,7 +29,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         """Fallback type used when SpaCy is unavailable."""
 
         pass
-
 
 _NLP_MODEL: Language | None = None
 
@@ -35,32 +47,49 @@ def _get_nlp() -> Language | None:
     return _NLP_MODEL
 
 
-def extract_entities(texts: Iterable[str]) -> list[str]:
-    """Extract named entities from a sequence of texts.
+def preprocess(texts: Iterable[str]) -> list[str]:
+    """Clean and normalize raw text strings."""
 
-    When SpaCy is unavailable or no model is installed the text is simply
-    tokeni=======
-sed on whitespace.
-    """
+    Returns
+    -------
+    list[str]
+        Extracted entities. When SpaCy or its English model is not
+        available, the returned entities will simply be whitespace
+        separated tokens from the input text.
+        
+    cleaned = [clean_text(t) for t in texts]
+
+
+    
     nlp = _get_nlp()
-    entities: list[str] = []
-
+    cleaned = preprocess(texts)
     if nlp is None:
-        for text in texts:
+        for text in cleaned:
             entities.extend(text.split())
         return entities
 
-    for doc in nlp.pipe(texts):
-        found = [ent.text for ent in getattr(doc, "ents", [])]
-        if found:
-            entities.extend(found)
-        else:
-            entities.extend(doc.text.split())
 
+    for doc in nlp.pipe(cleaned):
+        if getattr(doc, "ents", None):
+            found = [ent.text for ent in doc.ents if ent.text]
+            if found:
+                entities.extend(found)
+                continue
+        entities.extend(doc.text.split())
     return entities
 
 
 def preprocess(texts: Iterable[str]) -> list[str]:
-    """Clean and normalise raw text strings."""
-    
+    """Clean and normalize raw text strings.
+
+    Parameters
+    ----------
+    texts : Iterable[str]
+        Text strings to preprocess.
+
+    Returns
+    -------
+    list[str]
+        Cleaned text strings.
+    """
     return [clean_text(t) for t in texts]

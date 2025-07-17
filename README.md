@@ -5,6 +5,9 @@ This project provides a modular framework for scraping and analyzing business in
 ## API
 
 The backend is built with FastAPI and exposes a simple health check at `/`.
+Production deployments should enable HTTPS and can configure request rate
+limits via environment variables.
+Proxy rotation should be enabled to avoid blocking when scraping at scale.
 
 ### WebSocket Notifications
 
@@ -25,6 +28,33 @@ Use this route from the frontend to monitor running jobs or debug output.
 This project contains various modules for business intelligence scraping.
 The NLP backend now provides text-cleaning helpers for stripping HTML and
 normalizing whitespace.
+
+## Database Migrations
+
+Alembic is used to manage schema versions. To apply migrations run:
+
+```bash
+cd business_intel_scraper/backend/db
+PYTHONPATH=../../.. alembic upgrade head
+```
+
+The command uses `alembic.ini` (or `DATABASE_URL`) to connect to the
+database and upgrades it to the latest schema.
+
+## Development
+
+Formatting and linting are handled by **black** and **ruff**. Install both
+tools and run them from the repository root before committing changes.
+
+```bash
+pip install black ruff
+
+black .
+ruff .
+```
+
+Use `ruff --fix .` to automatically apply suggested fixes.
+
 ## Installation
 
 1. Create and activate a Python virtual environment.
