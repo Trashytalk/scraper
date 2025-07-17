@@ -62,9 +62,8 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             raise RuntimeError("Scrapy is required to run this task")
 
     class TextResponse:  # type: ignore[no-redef]
-        def __init__(
-            self, *args: object, **kwargs: object
-        ) -> None:  # pragma: no cover - simple stub
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            # pragma: no cover - simple stub
             pass
 
 
