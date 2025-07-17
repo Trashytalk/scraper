@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "echo 'Frontend placeholder'"
+    "start": "python -m http.server 8000 -d public"
   }
 }
