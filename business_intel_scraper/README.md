@@ -104,6 +104,8 @@ Project Structure
 Getting Started
 
     Clone repository and configure .env
+    Project settings are accessed via ``business_intel_scraper.config`` which
+    reads variables from the ``.env`` file and the environment.
 
     Bring up infra stack (docker-compose up or kubernetes deploy)
 
