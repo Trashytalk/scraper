@@ -6,6 +6,7 @@ import uuid
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
+import time
 
 try:
     from gevent.pool import Pool
@@ -163,14 +164,16 @@ def get_task_status(task_id: str) -> str:
 def run_spider_task(
     spider: str = "example", html: str | None = None
 ) -> list[dict[str, str]]:
+
     """Run a Scrapy spider.
 
     Parameters
     ----------
-    spider : str, optional
+    spider_name : str, optional
         Name of the spider to run. Only ``"example"`` is supported.
-    html : str, optional
-        Optional HTML body to parse instead of fetching from the network.
+    **kwargs : object
+        Additional arguments passed to the spider. Currently only ``html`` is
+        recognised and used when provided.
 
     Returns
     -------
@@ -179,14 +182,16 @@ def run_spider_task(
     """
     from importlib import import_module
 
-    if spider != "example":
-        raise ValueError(f"Unknown spider '{spider}'")
+    if spider_name != "example":
+        raise ValueError(f"Unknown spider '{spider_name}'")
 
     try:
         module = import_module("business_intel_scraper.backend.crawlers.spider")
         spider_cls = getattr(module, "ExampleSpider")
     except Exception:  # pragma: no cover - unexpected import failure
         return []
+
+    html = kwargs.get("html")
 
     if html is not None:
         spider_instance = spider_cls()

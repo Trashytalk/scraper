@@ -1,31 +1,25 @@
-"""Compatibility wrapper for project settings."""
-
-from settings import (
-    APISettings,
-    CelerySettings,
-    DatabaseSettings,
-    ProxySettings,
-    RateLimitSettings,
-    Settings,
-    settings,
-)
-
-__all__ = [
-    "APISettings",
-    "CelerySettings",
-    "DatabaseSettings",
-    "ProxySettings",
-    "RateLimitSettings",
-    "Settings",
-    "settings",
-]
-
-"""Centralized configuration management for the project."""
+"""Project-wide configuration settings."""
 
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
+
+
+def _load_env_file(path: Path) -> None:
+    """Load environment variables from ``.env`` if it exists."""
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key, value)
+
+
+_load_env_file(Path(__file__).resolve().parent / ".env")
 
 
 @dataclass
@@ -60,7 +54,7 @@ class RateLimitSettings:
 
 @dataclass
 class CelerySettings:
-    """Celery task queue configuration."""
+    """Celery broker and backend configuration."""
 
     broker_url: str = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
     result_backend: str = os.getenv("CELERY_RESULT_BACKEND", broker_url)
