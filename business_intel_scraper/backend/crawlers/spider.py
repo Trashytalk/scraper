@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import scrapy
 
-from ..proxy.middleware import ProxyMiddleware
+from .middleware import ProxyMiddleware
 from ..proxy.provider import DummyProxyProvider
 
 
