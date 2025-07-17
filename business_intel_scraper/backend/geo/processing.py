@@ -60,17 +60,14 @@ def geocode_addresses(
 ) -> list[Tuple[str, float | None, float | None]]:
     """Geocode a list of addresses."""
 
-    results: list[Tuple[str, float | None, float | None]] = []
+    final_results: list[Tuple[str, float | None, float | None]] = []
+    for address, lat, lon in results:
+        query = urllib.parse.urlencode({"q": address, "format": "json"})
+        req = urllib.request.Request(
+            f"{NOMINATIM_URL}?{query}",
+            headers={"User-Agent": "business-intel-scraper/1.0"},
+        )
 
-    if engine is not None:
-        Base.metadata.create_all(engine)
-        with Session(engine) as session:
-            for address in addresses:
-                lat, lon = _deterministic_coords(address)
-                session.add(Location(address=address, latitude=lat, longitude=lon))
-                results.append((address, lat, lon))
-            session.commit()
-        return results
 
     for address in addresses:
         lat, lon = (
