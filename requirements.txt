@@ -1,8 +1,12 @@
 fastapi
-uvicorn
+uvicorn[standard]
+celery
+scrapy
+sqlalchemy
+requests
 httpx
 sqlalchemy
-scrapy
 spacy
 celery
 playwright
+
