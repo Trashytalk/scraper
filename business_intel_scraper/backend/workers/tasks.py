@@ -18,13 +18,8 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
 from business_intel_scraper.backend.osint.integrations import run_spiderfoot
-from business_intel_scraper.backend.db.utils import (
-    Base,  # noqa: F401
-    ENGINE,  # noqa: F401
-    SessionLocal,  # noqa: F401
-    init_db,  # noqa: F401
-    save_companies,  # noqa: F401
-)
+from business_intel_scraper.backend.nlp import pipeline
+from business_intel_scraper.backend.geo.processing import geocode_addresses
 
 
 try:
@@ -249,6 +244,25 @@ def spiderfoot_scan(domain: str) -> dict[str, str]:
 
 
 @celery_app.task
+def preprocess_texts(texts: list[str]) -> list[str]:
+    """Clean and normalize raw text strings asynchronously."""
+
+    return pipeline.preprocess(texts)
+
+
+@celery_app.task
+def extract_entities_task(texts: list[str]) -> list[str]:
+    """Extract named entities from ``texts`` asynchronously."""
+
+    return pipeline.extract_entities(texts)
+
+
+@celery_app.task
+def geocode_task(addresses: list[str]) -> list[tuple[str, float | None, float | None]]:
+    """Geocode ``addresses`` using the built-in helper."""
+
+    return geocode_addresses(addresses)
+
 def theharvester_scan(domain: str) -> dict[str, str]:
     """Run TheHarvester OSINT scan.
 

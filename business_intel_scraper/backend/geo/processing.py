@@ -14,6 +14,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
+import urllib.parse
+import urllib.request
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
