@@ -1,17 +1,60 @@
 """Main FastAPI application entry point."""
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    WebSocket,
+    WebSocketDisconnect,
+    Depends,
+    HTTPException,
+    status,
+    Query,
+)
+from pathlib import Path
+import asyncio
+
+from sse_starlette import EventSourceResponse
 
 from .notifications import ConnectionManager
-
+from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
-
 from business_intel_scraper.settings import settings
+from ..db import SessionLocal
+from ..db.models import Company
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from ..utils.helpers import LOG_FILE
+
+from pydantic import BaseModel
+
+
+class CompanyCreate(BaseModel):
+    """Schema for creating companies."""
+
+    name: str
+
+
+class CompanyRead(BaseModel):
+    """Schema for reading companies."""
+
+    id: int
+    name: str
 
 app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)
 
 manager = ConnectionManager()
+
+scraped_data: list[dict[str, str]] = []
+jobs: dict[str, dict[str, str]] = {}
+
+
+def get_db() -> Session:
+    """Yield a database session."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
@@ -113,8 +156,13 @@ def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
 
 
 @app.get("/companies", response_model=list[CompanyRead])
-def list_companies(db: Session = Depends(get_db)) -> list[Company]:
-    """List all ``Company`` records."""
+def list_companies(
+    *,
+    limit: int = Query(100, ge=1),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[Company]:
+    """List ``Company`` records with pagination."""
 
-    stmt = select(Company)
+    stmt = select(Company).offset(offset).limit(limit)
     return list(db.execute(stmt).scalars())
