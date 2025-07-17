@@ -1,23 +1,21 @@
 """Main FastAPI application entry point."""
 
-from fastapi import (
-    FastAPI,
-    WebSocket,
-    WebSocketDisconnect,
-    Depends,
-    HTTPException,
-    status,
-    Query,
-)
-from pathlib import Path
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
 import asyncio
+from pathlib import Path
 
-from sse_starlette import EventSourceResponse
+from .rate_limit import RateLimitMiddleware
+
 
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 
-from ..utils.helpers import LOG_FILE
+try:
+    from sse_starlette.sse import EventSourceResponse
+except Exception:  # pragma: no cover - optional dependency
+    EventSourceResponse = StreamingResponse  # type: ignore
+
 from ..workers.tasks import get_task_status, launch_scraping_task
 
 from sse_starlette.sse import EventSourceResponse
@@ -25,27 +23,8 @@ import asyncio
 from pathlib import Path
 import aiofiles
 from business_intel_scraper.settings import settings
-from ..db import SessionLocal
-from ..db.models import Company
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-from ..utils.helpers import LOG_FILE
+from business_intel_scraper.backend.utils.helpers import LOG_FILE
 
-from pydantic import BaseModel
-
-
-class CompanyCreate(BaseModel):
-    """Schema for creating companies."""
-
-    name: str
-
-
-class CompanyRead(BaseModel):
-    """Schema for reading companies."""
-
-    id: int
-    name: str
-      
 
 app = FastAPI(title="Business Intelligence Scraper")
 if settings.require_https:
@@ -150,38 +129,4 @@ async def get_jobs() -> dict[str, dict[str, str]]:
 async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
-
-@app.post("/companies", response_model=CompanyRead, status_code=status.HTTP_201_CREATED)
-def create_company(company: CompanyCreate, db: Session = Depends(get_db)) -> Company:
-    """Create a new ``Company`` record."""
-
-    db_company = Company(name=company.name)
-    db.add(db_company)
-    db.commit()
-    db.refresh(db_company)
-    return db_company
-
-
-@app.get("/companies/{company_id}", response_model=CompanyRead)
-def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
-    """Retrieve a ``Company`` by ID."""
-
-    stmt = select(Company).where(Company.id == company_id)
-    result = db.execute(stmt).scalar_one_or_none()
-    if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
-    return result
-
-
-@app.get("/companies", response_model=list[CompanyRead])
-def list_companies(
-    *,
-    limit: int = Query(100, ge=1),
-    offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db),
-) -> list[Company]:
-    """List ``Company`` records with pagination."""
-
-    stmt = select(Company).offset(offset).limit(limit)
-    return list(db.execute(stmt).scalars())
 
