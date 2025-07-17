@@ -14,6 +14,7 @@ from starlette.requests import Request
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
+from ..security import require_token
 from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
 from ..db.models import Company, UserRole
@@ -133,20 +134,8 @@ async def enqueue_scrape() -> dict[str, str]:
     """Enqueue a new scraping task."""
 
 @app.post("/scrape")
-async def start_scrape() -> dict[str, str]:
-    """Launch a background scraping task."""
-    task_id = launch_scraping_task()
-    jobs[task_id] = "running"
-    asyncio.create_task(monitor_job(task_id))
-    """
-    This simply wraps :func:`launch_scraping_task` from ``workers.tasks`` and
-    stores the task identifier in the in-memory ``jobs`` registry so it can be
-    queried later.
-    """
-    task_id = launch_scraping_task()
-    jobs[task_id] = "running"
-    record_scrape()
-    return {"task_id": task_id}
+async def start_scrape(token: str = Depends(require_token)) -> dict[str, str]:
+    """Launch a background scraping task using the example spider."""
 
 
 @app.get("/tasks/{task_id}")
