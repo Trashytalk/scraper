@@ -18,6 +18,14 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
 from business_intel_scraper.backend.osint.integrations import run_spiderfoot
+from business_intel_scraper.backend.db.utils import (
+    Base,  # noqa: F401
+    ENGINE,  # noqa: F401
+    SessionLocal,  # noqa: F401
+    init_db,  # noqa: F401
+    save_companies,  # noqa: F401
+)
+
 
 try:
     from celery import Celery
