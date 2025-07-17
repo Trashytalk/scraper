@@ -23,6 +23,8 @@ Key Capabilities
 
     Automated CAPTCHA Defeat: Integrates with third-party services (2Captcha, Anti-Captcha) for automated or human-in-the-loop solving; fallbacks to manual escalation.
 
+    Placeholder Module: ``business_intel_scraper.backend.security.captcha`` provides a stub ``CaptchaSolver`` interface for later service integration.
+
     Ban/Block Detection & Auto-Adaption: Real-time response to blocks—proxy rotation, throttling, dynamic fingerprint changes, and escalation to more aggressive evasion tactics.
 
     Distributed Infrastructure: Multi-region, cloud-native workers ensure resilient, scalable, and pattern-resistant data collection.
