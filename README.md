@@ -5,6 +5,9 @@ This project provides a modular framework for scraping and analyzing business in
 ## API
 
 The backend is built with FastAPI and exposes a simple health check at `/`.
+Production deployments should enable HTTPS and can configure request rate
+limits via environment variables.
+Proxy rotation should be enabled to avoid blocking when scraping at scale.
 
 ### WebSocket Notifications
 
