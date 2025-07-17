@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import List
+from typing import Any, List
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
 
 class ConnectionManager:
@@ -22,3 +22,8 @@ class ConnectionManager:
     async def broadcast(self, message: str) -> None:
         for connection in list(self.active_connections):
             await connection.send_text(message)
+
+    async def broadcast_json(self, data: dict[str, Any]) -> None:
+        """Send a JSON message to all connected clients."""
+        for connection in list(self.active_connections):
+            await connection.send_json(data)
