@@ -56,22 +56,19 @@ def preprocess(texts: Iterable[str]) -> list[str]:
         Extracted entities. When SpaCy or its English model is not
         available, the returned entities will simply be whitespace
         separated tokens from the input text.
-        
-    cleaned = [clean_text(t) for t in texts]
-
-
-    
+    """
     nlp = _get_nlp()
-    cleaned = preprocess(texts)
+    entities: list[str] = []
+
     if nlp is None:
-        for text in cleaned:
+        for text in texts:
             entities.extend(text.split())
         return entities
 
-
-    for doc in nlp.pipe(cleaned):
+    for doc in nlp.pipe(texts):
         if getattr(doc, "ents", None):
-            found = [ent.text for ent in doc.ents if ent.text]
+            found = [ent.text for ent in doc.ents]
+
             if found:
                 entities.extend(found)
                 continue
