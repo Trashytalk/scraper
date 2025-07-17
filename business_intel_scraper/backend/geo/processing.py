@@ -14,11 +14,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
-import json
-import time
 import urllib.parse
 import urllib.request
-from urllib.error import URLError, HTTPError
 
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -100,7 +97,10 @@ def geocode_addresses(
     final_results: list[Tuple[str, float | None, float | None]] = []
     for address, lat, lon in results:
         if use_nominatim:
-            lat, lon = _nominatim_lookup(address)
+            n_lat, n_lon = _nominatim_lookup(address)
+            if n_lat is not None and n_lon is not None:
+                lat, lon = n_lat, n_lon
+
         final_results.append((address, lat, lon))
         time.sleep(1)
 
