@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from sqlalchemy import String, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import String, ForeignKey, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -36,14 +38,15 @@ class Location(Base):
     longitude: Mapped[float] = mapped_column(nullable=False)
 
 
-
 class User(Base):
     """ORM model for an authenticated user."""
 
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(
+        String, unique=True, nullable=False, index=True
+    )
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     # Relationship to tasks omitted to keep test models lightweight
 
@@ -65,7 +68,10 @@ class ScrapeTask(Base):
         index=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
-    # Relationships omitted; not needed for tests
+    company: Mapped[Company | None] = relationship(
+        "Company",
+        back_populates="tasks",
+    )
 
 
 class OsintResult(Base):
@@ -77,3 +83,15 @@ class OsintResult(Base):
     task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"), index=True)
     data: Mapped[str] = mapped_column(String, nullable=False)
     # Relationship omitted
+
+
+class JobEvent(Base):
+    """Record of job lifecycle events."""
+
+    __tablename__ = "job_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    event: Mapped[str] = mapped_column(String, nullable=False)
+    message: Mapped[str | None] = mapped_column(String, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
