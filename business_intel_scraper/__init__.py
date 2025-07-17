@@ -1,11 +1,17 @@
 """Business intelligence scraper package."""
 
-from .backend.proxy.manager import ProxyManager
-from .backend.proxy.provider import ProxyProvider, DummyProxyProvider, APIProxyProvider
+from .settings import (
+    Settings,
+    APISettings,
+    DatabaseSettings,
+    ProxySettings,
+    settings,
+)
 
 __all__ = [
-    "ProxyManager",
-    "ProxyProvider",
-    "DummyProxyProvider",
-    "APIProxyProvider",
+    "Settings",
+    "APISettings",
+    "DatabaseSettings",
+    "ProxySettings",
+    "settings",
 ]

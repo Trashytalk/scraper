@@ -112,6 +112,9 @@ Getting Started
     Project settings are accessed via ``business_intel_scraper.config`` which
     reads variables from the ``.env`` file and the environment.
 
+    Review ``settings.py`` for available configuration options such as API
+    credentials, database connection, and proxy settings.
+
     Bring up infra stack (docker-compose up or kubernetes deploy)
 
     Configure proxy providers, scraping targets, and compliance rules
