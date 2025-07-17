@@ -77,7 +77,9 @@ class ScrapeTask(Base):
       
     company: Mapped["Company"] = relationship("Company", back_populates="tasks")
     status: Mapped[str] = mapped_column(String, default="pending")
-    company: Mapped[Optional["Company"]] = relationship(back_populates="tasks")
+    company: Mapped[Company | None] = relationship(
+        back_populates="tasks",
+    )
 
 
 class OsintResult(Base):
