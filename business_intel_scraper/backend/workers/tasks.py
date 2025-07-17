@@ -62,8 +62,9 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
             raise RuntimeError("Scrapy is required to run this task")
 
     class TextResponse:  # type: ignore[no-redef]
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            # pragma: no cover - simple stub
+        def __init__(
+            self, *args: object, **kwargs: object
+        ) -> None:  # pragma: no cover - simple stub
             pass
 
 
@@ -109,7 +110,10 @@ def example_task(x: int, y: int) -> int:
     return x + y
 
 
-def _run_example_spider() -> str:
+from ..audit.logger import log_job_start, log_job_finish, log_job_error
+
+
+def _run_example_spider(job_id: str) -> str:
     """Run the example Scrapy spider and persist results."""
 
     try:
@@ -117,18 +121,21 @@ def _run_example_spider() -> str:
     except Exception:  # pragma: no cover - database optional
         init_db = save_companies = None  # type: ignore
 
-    items = run_spider_task("example")
+    log_job_start(job_id)
+    try:
+        items = run_spider_task("example")
+    except Exception as exc:  # pragma: no cover - unexpected spider error
+        log_job_error(job_id, str(exc))
+        raise
 
     if init_db and save_companies:
         try:
             init_db()
-            from business_intel_scraper.backend.db.pipeline import normalize_names
+            save_companies(item.get("url", "") for item in items)
+        except Exception as exc:  # pragma: no cover - database failure
+            log_job_error(job_id, f"db error: {exc}")
 
-            names = normalize_names(item.get("url", "") for item in items)
-            save_companies(names)
-        except Exception:  # pragma: no cover - database failure
-            pass
-
+    log_job_finish(job_id)
     return "scraping complete"
 
 
@@ -142,7 +149,7 @@ def launch_scraping_task() -> str:
     """
 
     task_id = str(uuid.uuid4())
-    future = _submit(_run_example_spider)
+    future = _submit(_run_example_spider, task_id)
     _tasks[task_id] = future
     return task_id
 
