@@ -3,8 +3,15 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from .notifications import ConnectionManager
+from .rate_limit import RateLimitMiddleware
 
+from ..utils.helpers import LOG_FILE
 from ..workers.tasks import get_task_status, launch_scraping_task
+
+from sse_starlette.sse import EventSourceResponse
+import asyncio
+from pathlib import Path
+import aiofiles
 
 from business_intel_scraper.settings import settings
 
@@ -63,10 +70,10 @@ async def stream_logs() -> EventSourceResponse:
     async def event_generator():
         path = Path(LOG_FILE)
         path.touch(exist_ok=True)
-        with path.open() as f:
-            f.seek(0, 2)
+        async with aiofiles.open(path, "r") as f:
+            await f.seek(0, 2)
             while True:
-                line = f.readline()
+                line = await f.readline()
                 if line:
                     yield {"data": line.rstrip()}
                 else:
