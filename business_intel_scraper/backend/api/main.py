@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from sse_starlette.sse import EventSourceResponse
 from pathlib import Path
 import asyncio
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
@@ -84,6 +88,25 @@ app.add_middleware(
     limit=settings.rate_limit.limit,
     window=settings.rate_limit.window,
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.api.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "same-origin")
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 manager = ConnectionManager()
 
@@ -137,12 +160,11 @@ async def task_status(task_id: str) -> dict[str, str]:
     status_ = get_task_status(task_id)
     return {"status": status_}
 
-  
     status = get_task_status(task_id)
     jobs[task_id] = status
     return {"status": status}
 
-  
+
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
     """Handle WebSocket connections for real-time notifications."""
@@ -153,6 +175,7 @@ async def notifications(websocket: WebSocket) -> None:
             await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
 
 @app.get("/logs/stream")
 async def stream_logs() -> EventSourceResponse:
@@ -171,6 +194,8 @@ async def stream_logs() -> EventSourceResponse:
                     await asyncio.sleep(0.5)
 
     return EventSourceResponse(event_generator())
+
+
 @app.get("/data")
 async def get_data() -> list[dict[str, str]]:
     """Return scraped data."""
@@ -187,4 +212,3 @@ async def get_jobs() -> dict[str, dict[str, str]]:
 async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
     return jobs.get(job_id, {"status": "unknown"})
-

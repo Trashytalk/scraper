@@ -87,6 +87,7 @@ Common settings include:
 - `PROXY_URL` – proxy server address if scraping through a proxy.
 - `CELERY_BROKER_URL` – broker URL for Celery tasks (`redis://localhost:6379/0` by default).
 - `CELERY_RESULT_BACKEND` – result backend for Celery (defaults to the broker URL).
+- `ALLOWED_ORIGINS` – comma-separated list of origins allowed for CORS (default `*`).
 
 ## Running the Server
 
