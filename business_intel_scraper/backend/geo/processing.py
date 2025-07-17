@@ -58,9 +58,9 @@ def geocode_addresses(
             results.append((address, latitude, longitude))
 
         session.commit()
-    results: list[Tuple[str, float | None, float | None]] = []
 
-    for address in addresses:
+    final_results: list[Tuple[str, float | None, float | None]] = []
+    for address, lat, lon in results:
         query = urllib.parse.urlencode({"q": address, "format": "json"})
         req = urllib.request.Request(
             f"{NOMINATIM_URL}?{query}",
@@ -73,12 +73,10 @@ def geocode_addresses(
             if data:
                 lat = float(data[0]["lat"])
                 lon = float(data[0]["lon"])
-                results.append((address, lat, lon))
-            else:
-                results.append((address, None, None))
         except Exception:  # pragma: no cover - network issues
-            results.append((address, None, None))
+            pass
 
+        final_results.append((address, lat, lon))
         time.sleep(1)
 
-    return results
+    return final_results

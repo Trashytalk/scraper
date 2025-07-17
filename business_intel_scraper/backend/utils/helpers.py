@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
@@ -11,27 +12,14 @@ LOG_FILE = LOG_DIR / "app.log"
 logger = logging.getLogger(__name__)
 
 
-def setup_logging(level: int = logging.INFO) -> None:
-    """Configure basic logging to stdout and a file.
 def setup_logging(
     level: int = logging.INFO,
     log_file: str | Path = "logs/backend.log",
     max_bytes: int = 10 * 1024 * 1024,
     backup_count: int = 5,
 ) -> None:
-    """Configure application logging.
+    """Configure application logging."""
 
-    Parameters
-    ----------
-    level : int, optional
-        Logging level, by default ``logging.INFO``.
-    log_file : str | Path, optional
-        Path to the log file, by default ``"logs/backend.log"``.
-    max_bytes : int, optional
-        Maximum bytes before rotating the log file, by default ``10 * 1024 * 1024``.
-    backup_count : int, optional
-        Number of rotated log files to keep, by default ``5``.
-    """
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     handlers = [logging.StreamHandler(), logging.FileHandler(LOG_FILE)]
     logging.basicConfig(
@@ -39,6 +27,7 @@ def setup_logging(
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=handlers,
     )
+
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
