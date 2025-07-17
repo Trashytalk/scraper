@@ -19,6 +19,8 @@ from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
 from ..utils.helpers import LOG_FILE
+from business_intel_scraper.settings import settings
+from .rate_limit import RateLimitMiddleware
 
 app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)

@@ -21,6 +21,31 @@ def setup_logging(
     """Configure application logging."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+    """Configure application logging.
+
+    A stream handler writes logs to ``stdout`` while a rotating file
+    handler persists them to ``log_file``. Existing handlers are left
+    intact so this function can be called multiple times safely.
+
+    Parameters
+    ----------
+    level : int, optional
+        Logging level, by default ``logging.INFO``.
+    log_file : str | Path, optional
+        Path to the log file, by default ``"logs/backend.log"``.
+    max_bytes : int, optional
+        Maximum bytes before rotating the log file, by default
+        ``10 * 1024 * 1024``.
+    backup_count : int, optional
+        Number of rotated log files to keep, by default ``5``.
+    """
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = Path(log_file)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
