@@ -37,6 +37,7 @@ def geocode_addresses(
         Tuples containing address and latitude/longitude.
     """
 
+    fetch_remote = engine is None
     if engine is None:
         engine = create_engine("sqlite:///geo.db")
 
@@ -58,6 +59,10 @@ def geocode_addresses(
             results.append((address, latitude, longitude))
 
         session.commit()
+
+    if not fetch_remote:
+        return results
+
     results: list[Tuple[str, float | None, float | None]] = []
 
     for address in addresses:

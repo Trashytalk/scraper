@@ -1,6 +1,10 @@
+"""Scrapy middleware utilities."""
+
 from __future__ import annotations
 
-"""Scrapy middleware for proxy rotation."""
+import random
+import time
+from typing import Iterable
 
 from scrapy import Request
 from scrapy.crawler import Spider
@@ -9,9 +13,9 @@ from ..proxy.manager import ProxyManager
 
 
 class ProxyMiddleware:
-    """Middleware that sets proxy for each request."""
+    """Middleware that sets a proxy for each request."""
 
-    def __init__(self, proxy_manager: ProxyManager):
+    def __init__(self, proxy_manager: ProxyManager) -> None:
         self.proxy_manager = proxy_manager
 
     @classmethod
@@ -25,17 +29,7 @@ class ProxyMiddleware:
         request.meta["proxy"] = self.proxy_manager.get_proxy()
 
     def process_exception(self, request: Request, exception: Exception, spider: Spider) -> None:
-        # rotate proxy on failure
         self.proxy_manager.rotate_proxy()
-
-"""Downloader middleware for anti-bot measures."""
-
-from __future__ import annotations
-
-import random
-import time
-from typing import Iterable
-
 
 
 class RandomUserAgentMiddleware:
@@ -49,10 +43,8 @@ class RandomUserAgentMiddleware:
         settings_agents = crawler.settings.getlist(
             "USER_AGENTS",
             [
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/118.0 Safari/537.36",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0 Safari/537.36",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
             ],
         )
         return cls(settings_agents)
