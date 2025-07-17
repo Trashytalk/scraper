@@ -9,6 +9,7 @@ import json
 import time
 import urllib.parse
 import urllib.request
+
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
@@ -81,6 +82,7 @@ def geocode_addresses(
             lat, lon = _deterministic_coords(address)
             session.add(Location(address=address, latitude=lat, longitude=lon))
             results.append((address, lat, lon))
+
 
         session.commit()
 
