@@ -11,6 +11,8 @@ from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from sse_starlette.sse import EventSourceResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+
+from .metrics import MetricsMiddleware, metrics_app
 from pydantic import BaseModel
 
 from business_intel_scraper.settings import settings
@@ -57,6 +59,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(MetricsMiddleware)
+app.mount("/metrics", metrics_app)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
