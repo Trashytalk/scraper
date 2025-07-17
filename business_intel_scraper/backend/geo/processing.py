@@ -14,6 +14,12 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
+import json
+import time
+import urllib.parse
+import urllib.request
+from urllib.error import URLError, HTTPError
+
 
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -107,15 +113,35 @@ def geocode_addresses(
             results.append((address, latitude, longitude))
 
         session.commit()
-            if use_nominatim:
-                lat, lon = _nominatim_lookup(address)
-            else:
-                lat, lon = _deterministic_coords(address)
+    results: list[Tuple[str, float | None, float | None]] = []
 
-            session.add(Location(address=address, latitude=lat, longitude=lon))
-            results.append((address, lat, lon))
+    for address in addresses:
+        query = urllib.parse.urlencode({"q": address, "format": "json"})
+        req = urllib.request.Request(
+            f"{NOMINATIM_URL}?{query}",
+            headers={"User-Agent": "business-intel-scraper/1.0"},
+        )
 
-        session.commit()
+        attempts = 0
+        while attempts < 3:
+            try:
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.load(resp)
+
+                if data:
+                    lat = float(data[0]["lat"])
+                    lon = float(data[0]["lon"])
+                    results.append((address, lat, lon))
+                else:
+                    results.append((address, None, None))
+                break
+            except (HTTPError, URLError, TimeoutError, ValueError):
+                attempts += 1
+                if attempts >= 3:
+                    results.append((address, None, None))
+                else:
+                    time.sleep(1)
+
 
     if use_nominatim:
         time.sleep(1 * len(addresses))
