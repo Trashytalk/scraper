@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from typing import Optional
 
 
 class Base(DeclarativeBase):
@@ -61,7 +62,10 @@ class ScrapeTask(Base):
         nullable=True,
     )
     status: Mapped[str] = mapped_column(String, default="pending")
-    company: Mapped[Company | None] = relationship("Company", back_populates="tasks")
+    company: Mapped[Optional["Company"]] = relationship(
+        back_populates="tasks",
+    )
+
 
 
 class OsintResult(Base):
