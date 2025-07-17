@@ -1,19 +1,14 @@
 """Proxy utilities package."""
 
 from .manager import ProxyManager
-from .provider import (
-    ProxyProvider,
-    DummyProxyProvider,
-    APIProxyProvider,
-    fetch_fresh_proxy,
-    fetch_fresh_proxies,
-)
+from .provider import ProxyProvider, DummyProxyProvider, APIProxyProvider
+from .proxy_manager import ProxyPoolManager
+
 
 __all__ = [
     "ProxyManager",
     "ProxyProvider",
     "DummyProxyProvider",
     "APIProxyProvider",
-    "fetch_fresh_proxy",
-    "fetch_fresh_proxies",
+    "ProxyPoolManager",
 ]
