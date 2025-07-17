@@ -60,12 +60,31 @@ async def start_scrape() -> TaskCreateResponse:
 
 @app.get("/tasks/{task_id}", response_model=TaskStatusResponse)
 async def task_status(task_id: str) -> TaskStatusResponse:
+
+@app.post("/scrape/start")
+async def enqueue_scrape() -> dict[str, str]:
+    """Enqueue a new scraping task.
+
+    This simply wraps :func:`launch_scraping_task` from ``workers.tasks`` and
+    stores the task identifier in the in-memory ``jobs`` registry so it can be
+    queried later.
+    """
+    task_id = launch_scraping_task()
+    jobs[task_id] = "running"
+    return {"task_id": task_id}
+
+
+@app.get("/tasks/{task_id}")
+async def task_status(task_id: str) -> dict[str, str]:
     """Return the current status of a scraping task."""
+
+@app.get("/scrape/status/{task_id}")
+async def scrape_status(task_id: str) -> dict[str, str]:
+    """Return the status of a previously enqueued scraping task."""
 
     status = get_task_status(task_id)
     jobs[task_id] = status
     return TaskStatusResponse(status=status)
-
 
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
@@ -118,3 +137,40 @@ async def get_job(job_id: str) -> JobStatus:
     """Return a single job status."""
 
     return JobStatus(status=jobs.get(job_id, "unknown"))
+
+@app.post(
+    "/companies/", response_model=CompanyRead, status_code=status.HTTP_201_CREATED
+)
+async def create_company(
+    company: CompanyCreate, db: Session = Depends(get_db)
+) -> Company:
+    """Create a new company."""
+    db_company = Company(name=company.name)
+    db.add(db_company)
+    db.commit()
+    db.refresh(db_company)
+    return db_company
+
+
+@app.get("/companies/{company_id}", response_model=CompanyRead)
+async def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
+    """Retrieve a company by ID."""
+    db_company = db.get(Company, company_id)
+    if not db_company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
+        )
+    return db_company
+
+
+@app.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_company(company_id: int, db: Session = Depends(get_db)) -> Response:
+    """Delete a company by ID."""
+    db_company = db.get(Company, company_id)
+    if not db_company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
+        )
+    db.delete(db_company)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
