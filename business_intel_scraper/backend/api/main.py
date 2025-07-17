@@ -1,9 +1,25 @@
 """Main FastAPI application entry point."""
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from sse_starlette.sse import EventSourceResponse
+
+from pathlib import Path
+import asyncio
 
 from .notifications import ConnectionManager
-
+from .rate_limit import RateLimitMiddleware
+from .schemas import CompanyCreate, CompanyRead
+from ..db.models import Company
+from ..db.repository import SessionLocal, init_db
 from ..workers.tasks import get_task_status, launch_scraping_task
 
 from business_intel_scraper.settings import settings
@@ -12,6 +28,21 @@ app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)
 
 manager = ConnectionManager()
+
+LOG_FILE = "backend.log"
+scraped_data: list[dict[str, str]] = []
+jobs: dict[str, dict[str, str]] = {}
+
+init_db()
+
+
+def get_db() -> Session:
+    """Provide a database session for request handling."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")

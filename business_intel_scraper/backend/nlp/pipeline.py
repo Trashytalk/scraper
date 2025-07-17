@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .cleaning import clean_text
+from business_intel_scraper.backend.nlp.cleaning import clean_text
 
 try:
     import spacy
@@ -16,7 +16,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         """Fallback type used when SpaCy is unavailable."""
 
         pass
-
 
 _NLP_MODEL: Language | None = None
 
@@ -35,53 +34,26 @@ def _get_nlp() -> Language | None:
     return _NLP_MODEL
 
 
-def extract_entities(texts: Iterable[str]) -> list[str]:
-    """Extract named entities from text collection.
-
-    Parameters
-    ----------
-    texts : Iterable[str]
-        List or generator of text strings.
-
-    Returns
-    -------
-    list[str]
-        Extracted entities. When SpaCy or its English model is not
-        available, the returned entities will simply be whitespace
-        separated tokens from the input text.
-    """
-    return []
-
-
 def preprocess(texts: Iterable[str]) -> list[str]:
-    """Clean and normalize raw text strings.
+    """Clean and normalize raw text strings."""
 
-    Parameters
-    ----------
-    texts : Iterable[str]
-        Text strings to preprocess.
-
-    Returns
-    -------
-    list[str]
-        Cleaned text strings.
-    """
     return [clean_text(t) for t in texts]
 
+
+def extract_entities(texts: Iterable[str]) -> list[str]:
+    """Extract named entities or fallback to tokenized text."""
+
     nlp = _get_nlp()
-    entities: list[str] = []
-
+    cleaned = preprocess(texts)
     if nlp is None:
-        for text in texts:
-            entities.extend(text.split())
-        return entities
+        return [token for text in cleaned for token in text.split()]
 
-    for doc in nlp.pipe(texts):
+    entities: list[str] = []
+    for doc in nlp.pipe(cleaned):
         if getattr(doc, "ents", None):
-            found = [ent.text for ent in doc.ents]
+            found = [ent.text for ent in doc.ents if ent.text]
             if found:
                 entities.extend(found)
                 continue
         entities.extend(doc.text.split())
-
     return entities
