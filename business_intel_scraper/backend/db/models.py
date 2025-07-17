@@ -9,13 +9,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Optional
 
 
-class UserRole(str, Enum):
-    """Enumerated user roles."""
-
-    ADMIN = "admin"
-    ANALYST = "analyst"
-
-
 class Base(DeclarativeBase):
     """Base class for ORM models."""
 
@@ -89,6 +82,11 @@ class ScrapeTask(Base):
     )
     company: Mapped["Company"] = relationship(back_populates="tasks")
     status: Mapped[str] = mapped_column(String, default="pending")
+    # Minimal relationship back to Company to satisfy mapper configuration
+    company: Mapped[Optional["Company"]] = relationship(
+        "Company",
+        back_populates="tasks",
+    )
 
 
 class OsintResult(Base):
