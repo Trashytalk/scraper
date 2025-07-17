@@ -2,6 +2,7 @@
 
 from .auth import verify_token, require_token
 from .captcha import CaptchaSolver, HTTPCaptchaSolver, solve_captcha
+from .rate_limit import RateLimitMiddleware
 
 __all__ = [
     "verify_token",
@@ -9,4 +10,8 @@ __all__ = [
     "solve_captcha",
     "CaptchaSolver",
     "HTTPCaptchaSolver",
+    "solve_captcha",
+    "CaptchaSolver",
+    "HTTPCaptchaSolver",
+    "RateLimitMiddleware",
 ]
