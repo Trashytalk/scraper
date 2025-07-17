@@ -9,17 +9,12 @@ import json
 import time
 import urllib.parse
 import urllib.request
-from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from business_intel_scraper.backend.db.models import Base, Location
-import json
-import time
 import urllib.parse
 import urllib.request
-from urllib.error import URLError, HTTPError
-
 
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -61,65 +56,27 @@ def geocode_addresses(
     engine: Engine | None = None,
     use_nominatim: bool = True,
 ) -> list[Tuple[str, float | None, float | None]]:
-    """Geocode a list of addresses.
-
-    Parameters
-    ----------
-    addresses : Iterable[str]
-        Addresses to geocode.
-
-    Returns
-    -------
-    list[Tuple[str, float, float]]
-        Tuples containing address and latitude/longitude.
-    """
-
-    fetch_remote = engine is None
-    if engine is None:
-        engine = create_engine("sqlite:///geo.db")
-
-    Base.metadata.create_all(engine)
-
-    results: list[Tuple[str, float, float]] = []
-    with Session(engine) as session:
-        for address in addresses:
-            digest = hashlib.sha1(address.encode()).hexdigest()
-            num = int(digest[:8], 16)
-            latitude = float((num % 180) - 90)
-            longitude = float(((num // 180) % 360) - 180)
-
-            session.add(
-                Location(
-                    address=address, latitude=latitude, longitude=longitude
-                )
-            )
-            results.append((address, latitude, longitude))
-
-        session.commit()
-
-    if not fetch_remote:
-        return results
+    """Geocode a list of addresses."""
 
     results: list[Tuple[str, float | None, float | None]] = []
 
-    final_results: list[Tuple[str, float | None, float | None]] = []
-    for address, lat, lon in results:
-        query = urllib.parse.urlencode({"q": address, "format": "json"})
-        req = urllib.request.Request(
-            f"{NOMINATIM_URL}?{query}",
-            headers={"User-Agent": "business-intel-scraper/1.0"},
+    if engine is not None:
+        Base.metadata.create_all(engine)
+        with Session(engine) as session:
+            for address in addresses:
+                lat, lon = _deterministic_coords(address)
+                session.add(Location(address=address, latitude=lat, longitude=lon))
+                results.append((address, lat, lon))
+            session.commit()
+        return results
+
+    for address in addresses:
+        lat, lon = (
+            _nominatim_lookup(address)
+            if use_nominatim
+            else _deterministic_coords(address)
         )
-
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.load(resp)
-            if data:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-        except Exception:  # pragma: no cover - network issues
-            pass
-
-        final_results.append((address, lat, lon))
+        results.append((address, lat, lon))
         time.sleep(1)
 
-    return final_results
+    return results
