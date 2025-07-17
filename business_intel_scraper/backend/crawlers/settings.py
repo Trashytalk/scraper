@@ -1,4 +1,8 @@
-"""Scrapy project settings."""
+"""Scrapy project settings.
+
+This configuration identifies the bot, limits concurrency, and enables the
+default item pipeline.
+"""
 
 from __future__ import annotations
 

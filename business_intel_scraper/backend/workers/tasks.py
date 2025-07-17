@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import uuid
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
+import time
 
 try:
     from gevent.pool import Pool
@@ -24,34 +26,7 @@ from business_intel_scraper.backend.db.utils import (
 )
 from business_intel_scraper.backend.db.models import Company
 
-try:
-    from celery import Celery
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-
-    from typing import Callable, TypeVar, Any
-
-    F = TypeVar("F", bound=Callable[..., Any])
-
-    class Celery:  # type: ignore
-        """Fallback Celery replacement."""
-
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            pass
-
-        def config_from_object(self, *args: object, **kwargs: object) -> None:
-            return None
-
-        def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
-            return func
-
-celery_app = Celery("business_intel_scraper")
-
-try:  # pragma: no cover - optional dependency
-    celery_app.config_from_object(
-        "business_intel_scraper.backend.workers.celery_config", namespace="CELERY"
-    )
-except ModuleNotFoundError:
-    pass
+from . import celery_app
 
 
 try:
@@ -160,15 +135,16 @@ def get_task_status(task_id: str) -> str:
     return "running"
 
 @celery_app.task
-def run_spider_task(spider: str = "example", html: str | None = None) -> list[dict[str, str]]:
+def run_spider_task(spider_name: str = "example", **kwargs: object) -> list[dict[str, str]]:
     """Run a Scrapy spider.
 
     Parameters
     ----------
-    spider : str, optional
+    spider_name : str, optional
         Name of the spider to run. Only ``"example"`` is supported.
-    html : str, optional
-        Optional HTML body to parse instead of fetching from the network.
+    **kwargs : object
+        Additional arguments passed to the spider. Currently only ``html`` is
+        recognised and used when provided.
 
     Returns
     -------
@@ -177,14 +153,16 @@ def run_spider_task(spider: str = "example", html: str | None = None) -> list[di
     """
     from importlib import import_module
 
-    if spider != "example":
-        raise ValueError(f"Unknown spider '{spider}'")
+    if spider_name != "example":
+        raise ValueError(f"Unknown spider '{spider_name}'")
 
     try:
         module = import_module("business_intel_scraper.backend.crawlers.spider")
         spider_cls = getattr(module, "ExampleSpider")
     except Exception:  # pragma: no cover - unexpected import failure
         return []
+
+    html = kwargs.get("html")
 
     if html is not None:
         spider_instance = spider_cls()
