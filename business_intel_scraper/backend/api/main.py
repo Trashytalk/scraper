@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI
 
+from business_intel_scraper.settings import settings
+
 app = FastAPI(title="Business Intelligence Scraper")
 
 
@@ -14,4 +16,7 @@ async def root() -> dict[str, str]:
     dict[str, str]
         A simple message confirming the service is running.
     """
-    return {"message": "API is running"}
+    return {
+        "message": "API is running",
+        "database_url": settings.database.url,
+    }
