@@ -18,7 +18,7 @@ class Company(Base):
     __tablename__ = "companies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     tasks: Mapped[list["ScrapeTask"]] = relationship(
         back_populates="company",
         cascade="all, delete-orphan",
@@ -34,6 +34,8 @@ class Location(Base):
     address: Mapped[str] = mapped_column(String, nullable=False, index=True)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
+    # Relationship to ``ScrapeTask`` omitted to keep schema simple for tests.
+
 
 
 class User(Base):

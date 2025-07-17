@@ -4,20 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-try:
-    from .cleaning import clean_text
-except ImportError:  # pragma: no cover - direct execution
-    import importlib.util
-    from pathlib import Path
-
-    spec = importlib.util.spec_from_file_location(
-        "cleaning", Path(__file__).parent / "cleaning.py"
-    )
-    cleaning = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    spec.loader.exec_module(cleaning)  # type: ignore[attr-defined]
-    clean_text = cleaning.clean_text  # type: ignore[attr-defined]
-
+from business_intel_scraper.backend.nlp.cleaning import clean_text
 
 try:
     import spacy
@@ -25,7 +12,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     spacy = None  # type: ignore
 
-    class Language:  # type: ignore
+    class Language:  # type: ignore[override]
         """Fallback type used when SpaCy is unavailable."""
 
         pass
@@ -35,7 +22,6 @@ _NLP_MODEL: Language | None = None
 
 def _get_nlp() -> Language | None:
     """Load and cache the SpaCy language model if available."""
-
     global _NLP_MODEL
     if spacy is None:
         return None
@@ -47,46 +33,23 @@ def _get_nlp() -> Language | None:
     return _NLP_MODEL
 
 
-def preprocess(texts: Iterable[str]) -> list[str]:
-    """Clean and normalize raw text strings."""
+def extract_entities(texts: Iterable[str]) -> list[str]:
+    """Extract named entities from the provided ``texts``."""
 
-    Returns
-    -------
-    list[str]
-        Extracted entities. When SpaCy or its English model is not
-        available, the returned entities will simply be whitespace
-        separated tokens from the input text.
-    """
     nlp = _get_nlp()
     entities: list[str] = []
-
     if nlp is None:
         for text in texts:
             entities.extend(text.split())
         return entities
 
     for doc in nlp.pipe(texts):
-        if getattr(doc, "ents", None):
-            found = [ent.text for ent in doc.ents]
-
-            if found:
-                entities.extend(found)
-                continue
-        entities.extend(doc.text.split())
+        found = [ent.text for ent in getattr(doc, "ents", [])]
+        entities.extend(found or doc.text.split())
     return entities
 
 
 def preprocess(texts: Iterable[str]) -> list[str]:
-    """Clean and normalize raw text strings.
+    """Clean and normalize raw text strings."""
 
-    Parameters
-    ----------
-    texts : Iterable[str]
-        Text strings to preprocess.
-
-    Returns
-    -------
-    list[str]
-        Cleaned text strings.
-    """
     return [clean_text(t) for t in texts]

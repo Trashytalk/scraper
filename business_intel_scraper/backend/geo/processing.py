@@ -74,53 +74,26 @@ def geocode_addresses(
         Tuples containing address and latitude/longitude.
     """
 
-    if engine is None:
-        engine = create_engine("sqlite:///geo.db")
+    if engine is not None:
+        Base.metadata.create_all(engine)
+        results: list[Tuple[str, float, float]] = []
+        with Session(engine) as session:
+            for address in addresses:
+                digest = hashlib.sha1(address.encode()).hexdigest()
+                num = int(digest[:8], 16)
+                latitude = float((num % 180) - 90)
+                longitude = float(((num // 180) % 360) - 180)
 
-    Base.metadata.create_all(engine)
-
-    results: list[Tuple[str, float | None, float | None]] = []
-    with Session(engine) as session:
-        for address in addresses:
-            if use_nominatim:
-                lat, lon = _nominatim_lookup(address)
-                if lat is None or lon is None:
-                    lat, lon = _deterministic_coords(address)
-            else:
-                lat, lon = _deterministic_coords(address)
-            digest = hashlib.sha1(address.encode()).hexdigest()
-            num = int(digest[:8], 16)
-            hashed_lat = float((num % 180) - 90)
-            hashed_lon = float(((num // 180) % 360) - 180)
-
-            session.add(
-                Location(
-                    address=address, latitude=hashed_lat, longitude=hashed_lon
+                session.add(
+                    Location(
+                        address=address, latitude=latitude, longitude=longitude
+                    )
                 )
-            )
-            try:
-                query = urllib.parse.urlencode({"q": address, "format": "json"})
-                req = urllib.request.Request(
-                    f"{NOMINATIM_URL}?{query}",
-                    headers={"User-Agent": "business-intel-scraper/1.0"},
-                )
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    data = json.load(resp)
-                if data:
-                    latitude = float(data[0]["lat"])
-                    longitude = float(data[0]["lon"])
-                else:
-                    latitude = hashed_lat
-                    longitude = hashed_lon
-            except Exception:  # pragma: no cover - network or parsing issues
-                latitude = hashed_lat
-                longitude = hashed_lon
+                results.append((address, latitude, longitude))
+            session.commit()
+        return results
 
-            results.append((address, latitude, longitude))
-
-        session.commit()
-    results: list[Tuple[str, float | None, float | None]] = []
-
+    results: list[Tuple[str, float, float]] = []
     for address in addresses:
         query = urllib.parse.urlencode({"q": address, "format": "json"})
         req = urllib.request.Request(
