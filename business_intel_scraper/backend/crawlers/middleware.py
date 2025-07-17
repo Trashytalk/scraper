@@ -1,6 +1,6 @@
-from __future__ import annotations
+"""Scrapy middleware for proxy rotation and basic anti-bot measures."""
 
-"""Scrapy middleware components."""
+from __future__ import annotations
 
 import random
 import time
@@ -31,12 +31,6 @@ class ProxyMiddleware:
     def process_exception(self, request: Request, exception: Exception, spider: Spider) -> None:
         # rotate proxy on failure
         self.proxy_manager.rotate_proxy()
-
-"""Downloader middleware for anti-bot measures."""
-
-import random
-import time
-from typing import Iterable
 
 
 class RandomUserAgentMiddleware:

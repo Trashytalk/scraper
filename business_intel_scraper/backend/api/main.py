@@ -1,12 +1,20 @@
 """Main FastAPI application entry point."""
 
-import asyncio
-from pathlib import Path
-
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
-from typing import AsyncGenerator
+
+from pathlib import Path
+import asyncio
+
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from sse_starlette.sse import EventSourceResponse
@@ -15,7 +23,9 @@ from pathlib import Path
 from .rate_limit import RateLimitMiddleware
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
-from ..utils.helpers import LOG_FILE
+from .schemas import CompanyCreate, CompanyRead
+from ..db.models import Company
+from ..db.repository import SessionLocal, init_db
 from ..workers.tasks import get_task_status, launch_scraping_task
 from ..db.models import Company
 from ..db.repository import SessionLocal
@@ -56,27 +66,21 @@ app.add_middleware(
 
 manager = ConnectionManager()
 
-# Simple in-memory stores used by a few demonstration endpoints
+LOG_FILE = "backend.log"
 scraped_data: list[dict[str, str]] = []
-jobs: dict[str, str] = {}
+jobs: dict[str, dict[str, str]] = {}
+
+init_db()
 
 
-def get_db() -> Generator[Session, None, None]:
-    """Provide a database session dependency."""
+def get_db() -> Session:
+    """Provide a database session for request handling."""
+
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-
-class CompanyCreate(BaseModel):
-    name: str
-
-
-class CompanyRead(BaseModel):
-    id: int
-    name: str
 
 
 @app.get("/")
