@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from sse_starlette.sse import EventSourceResponse
 from pathlib import Path
 import asyncio
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from fastapi.responses import Response
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from business_intel_scraper.infra.monitoring.prometheus_exporter import record_scrape
-
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
 from ..workers.tasks import get_task_status, launch_scraping_task
@@ -55,6 +55,25 @@ app.add_middleware(
     limit=settings.rate_limit.limit,
     window=settings.rate_limit.window,
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.api.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "same-origin")
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 manager = ConnectionManager()
 
@@ -135,7 +154,6 @@ async def task_status(task_id: str) -> dict[str, str]:
     return TaskStatusResponse(status=status)
 
 
-
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
     """Handle WebSocket connections for real-time notifications."""
@@ -185,7 +203,6 @@ async def stream_logs_ws(websocket: WebSocket) -> None:
                     await asyncio.sleep(0.5)
         except WebSocketDisconnect:
             pass
-
 
 @app.get("/data")
 async def get_data() -> list[dict[str, str]]:
