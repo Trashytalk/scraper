@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import scrapy
 
-from .middleware import RandomDelayMiddleware, RandomUserAgentMiddleware
+from ..proxy.middleware import ProxyMiddleware
+from ..proxy.provider import DummyProxyProvider
 
 
 class ExampleSpider(scrapy.Spider):
@@ -14,11 +15,12 @@ class ExampleSpider(scrapy.Spider):
     allowed_domains = ["example.com"]
     start_urls = ["https://example.com"]
 
+    # Configure proxy middleware and provider
     custom_settings = {
         "DOWNLOADER_MIDDLEWARES": {
-            "business_intel_scraper.backend.crawlers.middleware.RandomUserAgentMiddleware": 400,
-            "business_intel_scraper.backend.crawlers.middleware.RandomDelayMiddleware": 410,
-        }
+            "business_intel_scraper.backend.crawlers.middleware.ProxyMiddleware": 543,
+        },
+        "PROXY_PROVIDER": DummyProxyProvider(["http://localhost:8000"]),
     }
 
     def parse(
