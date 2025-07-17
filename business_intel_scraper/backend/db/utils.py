@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Iterable, List
 
+from .pipeline import normalize_names
+
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
@@ -31,9 +33,9 @@ def save_companies(names: Iterable[str]) -> List[Company]:
         ORM objects that were inserted.
     """
     session = SessionLocal()
-    unique_names = set(name.strip() for name in names if name and name.strip())
+    cleaned_names = normalize_names(names)
     inserted: List[Company] = []
-    for name in unique_names:
+    for name in cleaned_names:
         exists = session.scalar(select(Company).where(Company.name == name))
         if not exists:
             company = Company(name=name)

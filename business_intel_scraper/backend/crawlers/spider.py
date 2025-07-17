@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import scrapy
 
-from .middleware import ProxyMiddleware
+from ..security import solve_captcha
+
 from ..proxy.provider import DummyProxyProvider
+from .browser import BrowserCrawler
 
 
 class ExampleSpider(scrapy.Spider):
@@ -19,9 +21,27 @@ class ExampleSpider(scrapy.Spider):
     custom_settings = {
         "DOWNLOADER_MIDDLEWARES": {
             "business_intel_scraper.backend.crawlers.middleware.ProxyMiddleware": 543,
+            "business_intel_scraper.backend.crawlers.middleware.RandomUserAgentMiddleware": 544,
+            "business_intel_scraper.backend.crawlers.middleware.RandomDelayMiddleware": 545,
         },
         "PROXY_PROVIDER": DummyProxyProvider(["http://localhost:8000"]),
     }
+
+    def __init__(self, *args, use_browser: bool = False, headless: bool = True, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.use_browser = use_browser
+        self.headless = headless
+
+    def start_requests(self):
+        if self.use_browser:
+            crawler = BrowserCrawler(headless=self.headless)
+            for url in self.start_urls:
+                html = crawler.fetch(url)
+                response = scrapy.http.TextResponse(url=url, body=html.encode("utf-8"))
+                yield self.parse(response)
+        else:
+            for url in self.start_urls:
+                yield scrapy.Request(url, callback=self.parse)
 
     def parse(
         self,
@@ -39,4 +59,8 @@ class ExampleSpider(scrapy.Spider):
         scrapy.Item | dict[str, str]
             Parsed item from the page.
         """
+        if "captcha" in response.text.lower():
+            solve_captcha(b"dummy")
+            return {}
+
         return {"url": response.url}
