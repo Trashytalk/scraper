@@ -6,6 +6,7 @@ from typing import Callable, TypeVar, Any
 
 from settings import settings
 
+
 try:
     from celery import Celery
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
