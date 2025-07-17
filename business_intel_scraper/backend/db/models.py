@@ -20,6 +20,12 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    # Relationship back to :class:`ScrapeTask` does not declare ``back_populates``
+    # on the task model. Using a simple ``relationship`` avoids mapper
+    # configuration errors during tests.
+    tasks: Mapped[list["ScrapeTask"]] = relationship(
+        cascade="all, delete-orphan",
+    )
 
 
 class Location(Base):

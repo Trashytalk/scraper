@@ -17,18 +17,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
-from business_intel_scraper.backend.osint.integrations import (
-    run_spiderfoot,
-    run_theharvester,
-)
-from business_intel_scraper.backend.db.utils import (
-    Base,
-    ENGINE,
-    SessionLocal,
-    init_db,
-    save_companies,
-)
-from business_intel_scraper.backend.db.models import Company
+from business_intel_scraper.backend.osint.integrations import run_spiderfoot
 
 
 try:
