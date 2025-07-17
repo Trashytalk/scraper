@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from business_intel_scraper.backend.osint.integrations import run_spiderfoot
+
 try:
     from celery import Celery
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
@@ -36,3 +38,21 @@ def example_task(x: int, y: int) -> int:
         Sum of ``x`` and ``y``.
     """
     return x + y
+
+
+@celery_app.task
+def spiderfoot_scan(domain: str) -> dict[str, str]:
+    """Run SpiderFoot OSINT scan.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to investigate.
+
+    Returns
+    -------
+    dict[str, str]
+        Results from :func:`run_spiderfoot`.
+    """
+
+    return run_spiderfoot(domain)
