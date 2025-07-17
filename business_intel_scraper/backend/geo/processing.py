@@ -100,8 +100,6 @@ def geocode_addresses(
     if not fetch_remote:
         return results
 
-    results: list[Tuple[str, float | None, float | None]] = []
-
     final_results: list[Tuple[str, float | None, float | None]] = []
     for address, lat, lon in results:
         query = urllib.parse.urlencode({"q": address, "format": "json"})

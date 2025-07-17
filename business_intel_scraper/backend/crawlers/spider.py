@@ -6,6 +6,7 @@ import scrapy
 
 from .middleware import ProxyMiddleware
 from ..proxy.provider import DummyProxyProvider
+from .browser import BrowserCrawler
 
 
 class ExampleSpider(scrapy.Spider):
@@ -22,6 +23,22 @@ class ExampleSpider(scrapy.Spider):
         },
         "PROXY_PROVIDER": DummyProxyProvider(["http://localhost:8000"]),
     }
+
+    def __init__(self, *args, use_browser: bool = False, headless: bool = True, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.use_browser = use_browser
+        self.headless = headless
+
+    def start_requests(self):
+        if self.use_browser:
+            crawler = BrowserCrawler(headless=self.headless)
+            for url in self.start_urls:
+                html = crawler.fetch(url)
+                response = scrapy.http.TextResponse(url=url, body=html.encode("utf-8"))
+                yield self.parse(response)
+        else:
+            for url in self.start_urls:
+                yield scrapy.Request(url, callback=self.parse)
 
     def parse(
         self,
