@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from .cleaning import clean_text
+
 try:
     import spacy
     from spacy.language import Language
@@ -48,6 +50,23 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
         available, the returned entities will simply be whitespace
         separated tokens from the input text.
     """
+    return []
+
+
+def preprocess(texts: Iterable[str]) -> list[str]:
+    """Clean and normalize raw text strings.
+
+    Parameters
+    ----------
+    texts : Iterable[str]
+        Text strings to preprocess.
+
+    Returns
+    -------
+    list[str]
+        Cleaned text strings.
+    """
+    return [clean_text(t) for t in texts]
 
     nlp = _get_nlp()
     entities: list[str] = []
