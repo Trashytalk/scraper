@@ -30,3 +30,11 @@ def test_extract_entities_with_stub_nlp(monkeypatch) -> None:
     pipeline._NLP_MODEL = None
     result = pipeline.extract_entities(["Apple was founded", "No entity here"])
     assert result == ["Apple", "No", "entity", "here"]
+
+
+def test_extract_entities_cleans_html(monkeypatch) -> None:
+    """HTML content is stripped before tokenization."""
+    monkeypatch.setattr(pipeline, "_get_nlp", lambda: None)
+    pipeline._NLP_MODEL = None
+    result = pipeline.extract_entities(["<p>Hello <b>World</b></p>"])
+    assert result == ["Hello", "World"]

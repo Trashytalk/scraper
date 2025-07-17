@@ -5,7 +5,10 @@ from __future__ import annotations
 from typing import Optional
 
 from sqlalchemy import String, ForeignKey
+from enum import Enum
+
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from typing import Optional
 
 
 class Base(DeclarativeBase):
@@ -21,6 +24,14 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    location_id: Mapped[int | None] = mapped_column(
+        ForeignKey("locations.id"),
+        nullable=True,
+        index=True,
+    )
+    location: Mapped["Location"] = relationship(
+        back_populates="companies",
+    )
     tasks: Mapped[list["ScrapeTask"]] = relationship(
         back_populates="company",
         cascade="all, delete-orphan",
@@ -33,10 +44,9 @@ class Location(Base):
     __tablename__ = "locations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    address: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    address: Mapped[str] = mapped_column(String, nullable=False)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
-
 
 class User(Base):
     """ORM model for an authenticated user."""
@@ -47,7 +57,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(
         String, unique=True, nullable=False, index=True
     )
+
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[UserRole] = mapped_column(String, nullable=False, default=UserRole.ANALYST)
     # Relationship to tasks omitted to keep test models lightweight
 
 
@@ -57,16 +69,13 @@ class ScrapeTask(Base):
     __tablename__ = "scrape_tasks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
-        index=True,
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     company_id: Mapped[int | None] = mapped_column(
         ForeignKey("companies.id"),
         nullable=True,
-        index=True,
     )
+      
+    company: Mapped["Company"] = relationship("Company", back_populates="tasks")
     status: Mapped[str] = mapped_column(String, default="pending")
     company: Mapped[Optional["Company"]] = relationship(back_populates="tasks")
 
@@ -77,6 +86,19 @@ class OsintResult(Base):
     __tablename__ = "osint_results"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"), index=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("scrape_tasks.id"))
     data: Mapped[str] = mapped_column(String, nullable=False)
     # Relationship omitted
+
+
+class JobEvent(Base):
+    """Record of job lifecycle events."""
+
+    __tablename__ = "job_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    event: Mapped[str] = mapped_column(String, nullable=False)
+    message: Mapped[str | None] = mapped_column(String, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+

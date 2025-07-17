@@ -38,6 +38,15 @@ GET /logs/stream
 
 Use this route from the frontend to monitor running jobs or debug output.
 
+## Metrics
+
+Prometheus metrics are available at the `/metrics` endpoint. Run the server and
+scrape metrics with Prometheus or `curl`:
+
+```bash
+curl http://localhost:8000/metrics
+```
+
 This project contains various modules for business intelligence scraping.
 The NLP backend now provides text-cleaning helpers for stripping HTML and
 normalizing whitespace.
@@ -87,6 +96,7 @@ Common settings include:
 - `PROXY_URL` – proxy server address if scraping through a proxy.
 - `CELERY_BROKER_URL` – broker URL for Celery tasks (`redis://localhost:6379/0` by default).
 - `CELERY_RESULT_BACKEND` – result backend for Celery (defaults to the broker URL).
+- `ALLOWED_ORIGINS` – comma-separated list of origins allowed for CORS (default `*`).
 
 ## Running the Server
 

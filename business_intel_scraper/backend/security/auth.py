@@ -1,8 +1,6 @@
-"""Authentication and authorization helpers."""
+"""Authentication helpers."""
 
 from __future__ import annotations
-
-
 
 
 def verify_token(token: str) -> bool:
@@ -33,3 +31,4 @@ def verify_token(token: str) -> bool:
     """
 
     return bool(token)
+
