@@ -14,6 +14,7 @@ import json
 import time
 import urllib.parse
 import urllib.request
+from urllib.error import URLError, HTTPError
 
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -67,17 +68,25 @@ def geocode_addresses(
             headers={"User-Agent": "business-intel-scraper/1.0"},
         )
 
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.load(resp)
-            if data:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-                results.append((address, lat, lon))
-            else:
-                results.append((address, None, None))
-        except Exception:  # pragma: no cover - network issues
-            results.append((address, None, None))
+        attempts = 0
+        while attempts < 3:
+            try:
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.load(resp)
+
+                if data:
+                    lat = float(data[0]["lat"])
+                    lon = float(data[0]["lon"])
+                    results.append((address, lat, lon))
+                else:
+                    results.append((address, None, None))
+                break
+            except (HTTPError, URLError, TimeoutError, ValueError):
+                attempts += 1
+                if attempts >= 3:
+                    results.append((address, None, None))
+                else:
+                    time.sleep(1)
 
         time.sleep(1)
 
