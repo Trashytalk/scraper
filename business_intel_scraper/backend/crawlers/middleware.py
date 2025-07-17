@@ -28,8 +28,16 @@ class ProxyMiddleware:
     def process_request(self, request: Request, spider: Spider) -> None:
         request.meta["proxy"] = self.proxy_manager.get_proxy()
 
-    def process_exception(self, request: Request, exception: Exception, spider: Spider) -> None:
+    def process_exception(
+        self, request: Request, exception: Exception, spider: Spider
+    ) -> None:
         self.proxy_manager.rotate_proxy()
+
+    def process_response(self, request: Request, response, spider: Spider):  # type: ignore[no-untyped-def]
+        if response.status in {403, 429}:
+            request.meta["proxy"] = self.proxy_manager.rotate_proxy()
+            return request
+        return response
 
 
 class RandomUserAgentMiddleware:
@@ -43,8 +51,16 @@ class RandomUserAgentMiddleware:
         settings_agents = crawler.settings.getlist(
             "USER_AGENTS",
             [
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0 Safari/537.36",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+                (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/118.0 Safari/537.36"
+                ),
+                (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                    "Version/17.0 Safari/605.1.15"
+                ),
             ],
         )
         return cls(settings_agents)
