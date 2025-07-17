@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Scrapy middleware for proxy rotation."""
+"""Scrapy middleware components."""
 
 import random
 import time

@@ -39,9 +39,9 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
     """Extract named entities from a sequence of texts.
 
     When SpaCy is unavailable or no model is installed the text is simply
-    tokenised on whitespace.
+    tokeni=======
+sed on whitespace.
     """
-
     nlp = _get_nlp()
     entities: list[str] = []
 
@@ -62,5 +62,5 @@ def extract_entities(texts: Iterable[str]) -> list[str]:
 
 def preprocess(texts: Iterable[str]) -> list[str]:
     """Clean and normalise raw text strings."""
-
+    
     return [clean_text(t) for t in texts]

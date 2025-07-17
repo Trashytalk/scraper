@@ -21,8 +21,12 @@ from sqlalchemy.orm import Session
 from typing import Generator
 from sqlalchemy import select
 from pydantic import BaseModel
-
+from .notifications import ConnectionManager
+from .rate_limit import RateLimitMiddleware
+from ..workers.tasks import get_task_status, launch_scraping_task
+from ..utils.helpers import LOG_FILE
 from business_intel_scraper.settings import settings
+from .rate_limit import RateLimitMiddleware
 
 app = FastAPI(title="Business Intelligence Scraper")
 app.add_middleware(RateLimitMiddleware)
@@ -70,7 +74,6 @@ async def root() -> dict[str, str]:
 @app.post("/scrape")
 async def start_scrape() -> dict[str, str]:
     """Launch a background scraping task using the example spider."""
-
     task_id = launch_scraping_task()
     jobs[task_id] = "running"
     return {"task_id": task_id}
@@ -79,11 +82,15 @@ async def start_scrape() -> dict[str, str]:
 @app.get("/tasks/{task_id}")
 async def task_status(task_id: str) -> dict[str, str]:
     """Return the current status of a scraping task."""
+    status_ = get_task_status(task_id)
+    return {"status": status_}
 
+  
     status = get_task_status(task_id)
     jobs[task_id] = status
     return {"status": status}
 
+  
 @app.websocket("/ws/notifications")
 async def notifications(websocket: WebSocket) -> None:
     """Handle WebSocket connections for real-time notifications."""
@@ -157,5 +164,4 @@ def read_company(company_id: int, db: Session = Depends(get_db)) -> Company:
 def list_companies(db: Session = Depends(get_db)) -> list[Company]:
     """List all ``Company`` records."""
 
-    stmt = select(Company)
-    return list(db.execute(stmt).scalars())
+
