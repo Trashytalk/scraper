@@ -7,9 +7,13 @@ from pathlib import Path
 
 from .rate_limit import RateLimitMiddleware
 
-
 from .notifications import ConnectionManager
 from .rate_limit import RateLimitMiddleware
+
+try:
+    from sse_starlette.sse import EventSourceResponse
+except Exception:  # pragma: no cover - optional dependency
+    EventSourceResponse = StreamingResponse  # type: ignore
 
 try:
     from sse_starlette.sse import EventSourceResponse
