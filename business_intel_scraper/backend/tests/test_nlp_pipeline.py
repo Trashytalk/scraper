@@ -1,6 +1,6 @@
 import importlib
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from pathlib import Path
 import pytest
 
@@ -64,3 +64,29 @@ def test_extract_entities_with_spacy(monkeypatch: pytest.MonkeyPatch) -> None:
     pipeline = _load_pipeline(monkeypatch, use_spacy=True)
     texts = ["Apple is in Cupertino", "I like oranges"]
     assert pipeline.extract_entities(texts) == ["Apple", "Cupertino", "I"]
+
+
+def test_extract_entities_structured(monkeypatch: pytest.MonkeyPatch) -> None:
+    pipeline = _load_pipeline(monkeypatch, use_spacy=False)
+    result = pipeline.extract_entities_structured("ACME launched")
+    assert result == []
+
+    class DummyEnt(SimpleNamespace):
+        text: str
+        label_: str
+        start_char: int
+        end_char: int
+
+    class DummyDoc:
+        def __init__(self, text: str) -> None:
+            self.ents = [DummyEnt(text="ACME", label_="ORG", start_char=0, end_char=4)]
+
+    class DummyNLP:
+        def __call__(self, text: str) -> DummyDoc:  # pragma: no cover - simple stub
+            return DummyDoc(text)
+
+    pipeline = _load_pipeline(monkeypatch, use_spacy=True)
+    monkeypatch.setattr(pipeline, "_get_nlp", lambda: DummyNLP())
+    pipeline._NLP_MODEL = None
+    result = pipeline.extract_entities_structured("ACME launched")
+    assert result == [{"text": "ACME", "label": "ORG", "start": 0, "end": 4}]

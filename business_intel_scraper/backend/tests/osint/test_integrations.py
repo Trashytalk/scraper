@@ -13,6 +13,8 @@ if ROOT not in sys.path:
 from business_intel_scraper.backend.osint.integrations import (
     run_spiderfoot,
     run_theharvester,
+    run_sherlock,
+    run_subfinder,
 )
 
 
@@ -61,3 +63,47 @@ def test_run_theharvester_success(monkeypatch):
 
     result = run_theharvester("example.com")
     assert result == {"domain": "example.com", "output": "th ok"}
+
+
+def test_run_sherlock_missing(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    result = run_sherlock("alice")
+    assert result == {
+        "username": "alice",
+        "error": "sherlock executable not found",
+    }
+
+
+def test_run_sherlock_success(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/sherlock")
+
+    def fake_run(cmd, capture_output, text):
+        assert cmd == ["/usr/bin/sherlock", "alice", "--print-found"]
+        return SimpleNamespace(stdout="found", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = run_sherlock("alice")
+    assert result == {"username": "alice", "output": "found"}
+
+
+def test_run_subfinder_missing(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    result = run_subfinder("example.com")
+    assert result == {
+        "domain": "example.com",
+        "error": "subfinder executable not found",
+    }
+
+
+def test_run_subfinder_success(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/subfinder")
+
+    def fake_run(cmd, capture_output, text):
+        assert cmd == ["/usr/bin/subfinder", "-d", "example.com", "-silent"]
+        return SimpleNamespace(stdout="sub1\nsub2", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = run_subfinder("example.com")
+    assert result == {"domain": "example.com", "output": "sub1\nsub2"}

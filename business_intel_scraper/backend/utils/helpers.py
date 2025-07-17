@@ -4,12 +4,26 @@ from __future__ import annotations
 
 import logging
 import logging.config
+import json
 from pathlib import Path
 
 LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
 LOG_FILE = LOG_DIR / "app.log"
 
 logger = logging.getLogger(__name__)
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+        data = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "name": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            data["exc_info"] = self.formatException(record.exc_info)
+        return json.dumps(data)
 
 
 def setup_logging(
@@ -42,7 +56,10 @@ def setup_logging(
         "formatters": {
             "default": {
                 "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            }
+            },
+            "json": {
+                "()": JsonFormatter,
+            },
         },
         "handlers": {
             "file": {
@@ -50,7 +67,7 @@ def setup_logging(
                 "filename": str(log_path),
                 "maxBytes": max_bytes,
                 "backupCount": backup_count,
-                "formatter": "default",
+                "formatter": "json",
             },
             "console": {
                 "class": "logging.StreamHandler",

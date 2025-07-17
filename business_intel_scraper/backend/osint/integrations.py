@@ -14,11 +14,20 @@ environments where SpiderFoot or TheHarvester are not installed.
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
+from typing import Any
 
 
-def run_spiderfoot(domain: str) -> dict[str, str]:
+def _parse_json(text: str) -> Any:
+    try:
+        return json.loads(text)
+    except Exception:
+        return text.strip()
+
+
+def run_spiderfoot(domain: str, parse_output: bool = False) -> dict[str, Any]:
     """Run SpiderFoot against a domain.
 
     The function expects the ``spiderfoot`` (or ``sf.py``) executable to be
@@ -47,10 +56,63 @@ def run_spiderfoot(domain: str) -> dict[str, str]:
     cmd = [executable, "-q", domain, "-F", "json"]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     output = proc.stdout.strip() or proc.stderr.strip()
+    if parse_output:
+        return {"domain": domain, "data": _parse_json(output)}
+    return {"domain": domain, "output": output}
+
+
+def run_sherlock(username: str) -> dict[str, str]:
+    """Run Sherlock to check a username across social networks.
+
+    Parameters
+    ----------
+    username : str
+        Username to search for.
+
+    Returns
+    -------
+    dict[str, str]
+        ``username`` plus either ``output`` from the command or an ``error``
+        message.
+    """
+
+    executable = shutil.which("sherlock")
+    if executable is None:
+        return {"username": username, "error": "sherlock executable not found"}
+
+    cmd = [executable, username, "--print-found"]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    output = proc.stdout.strip() or proc.stderr.strip()
+    return {"username": username, "output": output}
+
+
+def run_subfinder(domain: str) -> dict[str, str]:
+    """Run subfinder to enumerate subdomains of ``domain``.
+
+    Parameters
+    ----------
+    domain : str
+        Domain to scan.
+
+    Returns
+    -------
+    dict[str, str]
+        ``domain`` plus either ``output`` from the command or an ``error``
+        message.
+    """
+
+    executable = shutil.which("subfinder")
+    if executable is None:
+        return {"domain": domain, "error": "subfinder executable not found"}
+
+    cmd = [executable, "-d", domain, "-silent"]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    output = proc.stdout.strip() or proc.stderr.strip()
     return {"domain": domain, "output": output}
 
 
 def run_theharvester(domain: str) -> dict[str, str]:
+
     """Run TheHarvester against a domain.
 
     Similar to :func:`run_spiderfoot`, this wrapper relies on the presence of
@@ -76,4 +138,14 @@ def run_theharvester(domain: str) -> dict[str, str]:
     cmd = [executable, "-d", domain, "-b", "all"]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     output = proc.stdout.strip() or proc.stderr.strip()
+    if parse_output:
+        return {"domain": domain, "data": _parse_json(output)}
     return {"domain": domain, "output": output}
+
+
+__all__ = [
+    "run_spiderfoot",
+    "run_theharvester",
+    "run_sherlock",
+    "run_subfinder",
+]
