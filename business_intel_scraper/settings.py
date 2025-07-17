@@ -11,6 +11,9 @@ class APISettings:
     """Settings related to external API access."""
 
     api_key: str = os.getenv("API_KEY", "")
+    allowed_origins: list[str] = field(
+        default_factory=lambda: os.getenv("ALLOWED_ORIGINS", "*").split(",")
+    )
 
 
 @dataclass
