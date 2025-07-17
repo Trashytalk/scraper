@@ -2,7 +2,10 @@
 
 from fastapi import FastAPI
 
+from .rate_limit import RateLimitMiddleware
+
 app = FastAPI(title="Business Intelligence Scraper")
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.get("/")
