@@ -124,7 +124,10 @@ def _run_example_spider() -> str:
     if init_db and save_companies:
         try:
             init_db()
-            save_companies(item.get("url", "") for item in items)
+            from business_intel_scraper.backend.db.pipeline import normalize_names
+
+            names = normalize_names(item.get("url", "") for item in items)
+            save_companies(names)
         except Exception:  # pragma: no cover - database failure
             pass
 
