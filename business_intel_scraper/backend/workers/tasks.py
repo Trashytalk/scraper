@@ -2,21 +2,7 @@
 
 from __future__ import annotations
 
-try:
-    from celery import Celery
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-
-    class Celery:  # type: ignore
-        """Fallback Celery replacement."""
-
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            pass
-
-        def task(self, func):  # type: ignore[no-untyped-def]
-            return func
-
-
-celery_app = Celery("tasks")
+from . import celery_app
 
 
 @celery_app.task
