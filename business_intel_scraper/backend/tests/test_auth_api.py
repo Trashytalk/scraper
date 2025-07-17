@@ -36,7 +36,7 @@ def test_register_and_login() -> None:
 
     login = client.post("/auth/login", json={"username": "alice", "password": "secret"})
     assert login.status_code == 200
-    assert login.json()["message"] == "Login successful"
+    assert "access_token" in login.json()
 
 
 def test_login_invalid() -> None:
