@@ -56,8 +56,7 @@ def verify_token(token: str) -> bool:
             options=options,
         )
     except jwt.PyJWTError:
-        # In the lightweight test environment any non-empty token is accepted.
-        return bool(token)
+        return False
     return True
 
 

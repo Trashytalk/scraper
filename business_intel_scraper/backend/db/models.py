@@ -52,6 +52,10 @@ class Location(Base):
     address: Mapped[str] = mapped_column(String, nullable=False)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
+    companies: Mapped[list["Company"]] = relationship(
+        back_populates="location",
+        cascade="all, delete-orphan",
+    )
 
 
 class User(Base):
