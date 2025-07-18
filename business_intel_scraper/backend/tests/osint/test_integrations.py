@@ -15,6 +15,8 @@ from business_intel_scraper.backend.osint.integrations import (
     run_theharvester,
     run_sherlock,
     run_subfinder,
+    run_shodan,
+    run_nmap,
 )
 
 
@@ -107,3 +109,47 @@ def test_run_subfinder_success(monkeypatch):
 
     result = run_subfinder("example.com")
     assert result == {"domain": "example.com", "output": "sub1\nsub2"}
+
+
+def test_run_shodan_missing(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    result = run_shodan("1.1.1.1")
+    assert result == {
+        "target": "1.1.1.1",
+        "error": "shodan executable not found",
+    }
+
+
+def test_run_shodan_success(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/shodan")
+
+    def fake_run(cmd, capture_output, text):
+        assert cmd == ["/usr/bin/shodan", "host", "1.1.1.1"]
+        return SimpleNamespace(stdout="ok", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = run_shodan("1.1.1.1")
+    assert result == {"target": "1.1.1.1", "output": "ok"}
+
+
+def test_run_nmap_missing(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    result = run_nmap("example.com")
+    assert result == {
+        "target": "example.com",
+        "error": "nmap executable not found",
+    }
+
+
+def test_run_nmap_success(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/nmap")
+
+    def fake_run(cmd, capture_output, text):
+        assert cmd == ["/usr/bin/nmap", "-sV", "example.com"]
+        return SimpleNamespace(stdout="scan", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = run_nmap("example.com")
+    assert result == {"target": "example.com", "output": "scan"}

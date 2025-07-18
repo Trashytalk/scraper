@@ -34,6 +34,21 @@ services:
     networks:
       - backend
 
+  beat:
+    build: .
+    command: celery -A business_intel_scraper.backend.workers.tasks.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - backend
+
   db:
     image: postgres:15
     environment:
