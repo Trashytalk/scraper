@@ -1,14 +1,13 @@
 """Security utilities and placeholders."""
 
 from .auth import (
-    verify_token,
-    require_token,
     create_token,
     get_role_from_token,
     require_role,
+    require_token,
+    verify_token,
 )
-from .captcha import CaptchaSolver, solve_captcha
-
+from .captcha import CaptchaSolver, EnvTwoCaptchaSolver, TwoCaptchaSolver, solve_captcha
 from .rate_limit import RateLimitMiddleware
 
 __all__ = [
@@ -20,5 +19,6 @@ __all__ = [
     "solve_captcha",
     "CaptchaSolver",
     "TwoCaptchaSolver",
+    "EnvTwoCaptchaSolver",
     "RateLimitMiddleware",
 ]
