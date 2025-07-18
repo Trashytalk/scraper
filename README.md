@@ -113,6 +113,10 @@ Common settings include:
 - `ALLOWED_ORIGINS` – comma-separated list of origins allowed for CORS (default `*`).
 - `CAPTCHA_API_KEY` – API token for the CAPTCHA solving service (e.g. 2Captcha).
 - `CAPTCHA_API_URL` – base URL for the CAPTCHA provider (defaults to `https://2captcha.com`).
+- `CACHE_BACKEND` – set to `redis` or `filesystem` to enable request caching.
+- `CACHE_REDIS_URL` – Redis connection URL when using the Redis backend.
+- `CACHE_DIR` – directory used for the filesystem cache.
+- `CACHE_EXPIRE` – cache expiration time in seconds (default `3600`).
 
 ## Proxy Configuration
 
