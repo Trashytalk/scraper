@@ -138,8 +138,6 @@ def run_theharvester(domain: str) -> dict[str, str]:
     cmd = [executable, "-d", domain, "-b", "all"]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     output = proc.stdout.strip() or proc.stderr.strip()
-    if parse_output:
-        return {"domain": domain, "data": _parse_json(output)}
     return {"domain": domain, "output": output}
 
 
