@@ -24,3 +24,37 @@ def test_invalid_proxy_removed() -> None:
     proxy = manager.get_proxy()
     assert proxy == "good"
     assert len(manager) == 1
+
+
+def test_add_and_remove_proxy() -> None:
+    manager = ProxyPoolManager([], rotate=False, validator=lambda p: True)
+    manager.add_proxy("p1")
+    manager.add_proxy("p2")
+    assert len(manager) == 2
+    manager.remove_proxy("p1")
+    assert len(manager) == 1
+    assert manager.get_proxy() == "p2"
+
+
+def test_remove_missing_proxy() -> None:
+    manager = ProxyPoolManager(["p1"], validator=lambda p: True)
+    manager.remove_proxy("does-not-exist")
+    assert len(manager) == 1
+
+
+def test_get_proxy_empty() -> None:
+    manager = ProxyPoolManager([])
+    assert manager.get_proxy() is None
+
+
+def test_default_validator_failure(monkeypatch) -> None:
+    def fake_get(*_args, **_kwargs):
+        raise RuntimeError("network")
+
+    monkeypatch.setattr(
+        "business_intel_scraper.backend.proxy.proxy_manager.requests.get", fake_get
+    )
+
+    manager = ProxyPoolManager(["p1"])
+    assert manager.get_proxy() is None
+    assert len(manager) == 0
