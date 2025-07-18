@@ -39,7 +39,10 @@ The backend exposes an SSE endpoint to stream log messages in real time.
 GET /logs/stream
 ```
 
-Use this route from the frontend to monitor running jobs or debug output.
+Use this route from the frontend to monitor running jobs or debug output. Logs
+are also written to `business_intel_scraper/backend/logs/app.log`. To forward
+them to a centralized collector set `LOG_FORWARD_URL` in your environment and
+see [docs/logging.md](docs/logging.md) for an example ELK setup.
 
 ## Metrics
 
@@ -113,6 +116,10 @@ Common settings include:
 - `ALLOWED_ORIGINS` – comma-separated list of origins allowed for CORS (default `*`).
 - `CAPTCHA_API_KEY` – API token for the CAPTCHA solving service (e.g. 2Captcha).
 - `CAPTCHA_API_URL` – base URL for the CAPTCHA provider (defaults to `https://2captcha.com`).
+- `CACHE_BACKEND` – set to `redis` or `filesystem` to enable request caching.
+- `CACHE_REDIS_URL` – Redis connection URL when using the Redis backend.
+- `CACHE_DIR` – directory used for the filesystem cache.
+- `CACHE_EXPIRE` – cache expiration time in seconds (default `3600`).
 
 ## Proxy Configuration
 
@@ -134,6 +141,11 @@ If background tasks are used, run a Celery worker in a separate terminal:
 ```bash
 celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
 ```
+To run scrapes automatically on a schedule, start Celery beat:
+
+```bash
+celery -A business_intel_scraper.backend.workers.tasks.celery_app beat --loglevel=info
+```
 
 With the services running you can interact with the API:
 
@@ -143,6 +155,16 @@ curl -X POST http://localhost:8000/scrape # launch the example spider
 ```
 
 Task progress can be queried at `/tasks/<task_id>` and log messages stream from `/logs/stream`.
+
+### Command Line Client
+
+A small CLI is included for interacting with the API. It defaults to http://localhost:8000 and reads a bearer token from the BI_SCRAPER_TOKEN environment variable.
+
+```bash
+python -m business_intel_scraper.cli scrape       # launch a job
+python -m business_intel_scraper.cli status <id>  # check status
+python -m business_intel_scraper.cli download -o results.json
+```
 
 The repository also provides a `docker-compose.yml` in `business_intel_scraper/` for launching Redis, the API and a worker together:
 

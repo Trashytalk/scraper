@@ -2,6 +2,7 @@ import argparse
 import json
 
 from business_intel_scraper.backend.workers.tasks import run_spider_task
+from business_intel_scraper.backend.utils import export
 from business_intel_scraper.backend.osint.integrations import (
     run_spiderfoot,
     run_theharvester,
