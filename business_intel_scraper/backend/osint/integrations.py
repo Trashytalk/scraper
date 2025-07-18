@@ -109,7 +109,7 @@ def run_subfinder(domain: str) -> dict[str, str]:
     return {"domain": domain, "output": output}
 
 
-def run_theharvester(domain: str, parse_output: bool = False) -> dict[str, Any]:
+def run_theharvester(domain: str, parse_output: bool = False) -> dict[str, str]:
 
     """Run TheHarvester against a domain.
 
