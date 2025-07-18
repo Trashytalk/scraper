@@ -56,8 +56,6 @@ def run_spiderfoot(domain: str, parse_output: bool = False) -> dict[str, Any]:
     cmd = [executable, "-q", domain, "-F", "json"]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     output = proc.stdout.strip() or proc.stderr.strip()
-    if parse_output:
-        return {"domain": domain, "data": _parse_json(output)}
     return {"domain": domain, "output": output}
 
 
@@ -112,7 +110,6 @@ def run_subfinder(domain: str) -> dict[str, str]:
 
 
 def run_theharvester(domain: str) -> dict[str, str]:
-
     """Run TheHarvester against a domain.
 
     Similar to :func:`run_spiderfoot`, this wrapper relies on the presence of
