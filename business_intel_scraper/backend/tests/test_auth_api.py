@@ -5,6 +5,7 @@ DB_PATH = "./test_auth.db"
 if os.path.exists(DB_PATH):
     os.remove(DB_PATH)
 os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH}"
+os.environ["CACHE_BACKEND"] = "none"
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
