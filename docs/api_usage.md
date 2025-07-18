@@ -56,6 +56,16 @@ curl -X POST \
   http://localhost:8000/graphql
 ```
 
+You can optionally filter results using the `search` argument or limit the
+number returned:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "{ scrapedData(search: \"foo\", limit: 10) }"}' \
+  http://localhost:8000/graphql
+```
+
 ## Real-Time Notifications
 
 Open a WebSocket connection to `/ws/notifications` to receive broadcast

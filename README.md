@@ -3,7 +3,12 @@
 This project provides a modular framework for scraping and analyzing business intelligence data.
 
 ## Overview
+
 The Business Intelligence Scraper is an experimental platform for collecting business data from the web and open-source intelligence (OSINT) tools. It combines Scrapy-based spiders, optional browser automation, and a FastAPI backend with Celery workers for asynchronous jobs.
+
+## Architecture
+
+The repository is organised as a single package named `business_intel_scraper`.  A FastAPI API coordinates scraping tasks executed by Celery workers.  Proxy rotation, NLP helpers and OSINT integrations live in dedicated modules.  Data can be persisted via SQLAlchemy models and Alembic migrations.  A small React dashboard and infrastructure scripts (Docker Compose and Kubernetes) are provided for local and production deployments.  See [docs/architecture.md](docs/architecture.md) for a detailed breakdown.
 
 ## API
 
@@ -92,12 +97,13 @@ Use `ruff --fix .` to automatically apply suggested fixes.
    python -m venv .venv
    source .venv/bin/activate
    ```
-2. Install the required packages:
+2. Install the framework along with its dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install .
    ```
+   For editable development installs use `pip install -e .`.
    The optional frontend requires Node.js. Run `npm install` inside
-   `business_intel_scraper/frontend` if you want the demo UI.
+   `business_intel_scraper/frontend` to enable the real-time dashboard.
 3. Copy `.env.example` to `.env` and adjust values to match your environment.
 
 ## Environment Variables
@@ -121,13 +127,16 @@ Common settings include:
 - `CACHE_REDIS_URL` – Redis connection URL when using the Redis backend.
 - `CACHE_DIR` – directory used for the filesystem cache.
 - `CACHE_EXPIRE` – cache expiration time in seconds (default `3600`).
+- `LOG_FORWARD_URL` – optional HTTP endpoint to forward JSON logs.
+- `LOG_LEVEL` – logging level for the API and workers.
 
 ## Proxy Configuration
 
 Configure proxy rotation using provider classes. Supply one or more providers to
-`ProxyManager` for automatic fallback when a proxy fails. Commercial services
-can be used via `CommercialProxyAPIProvider` together with the
-`PROXY_PROVIDER_ENDPOINTS` and `PROXY_API_KEY` variables.
+`ProxyManager` for automatic fallback when a proxy fails. Each proxy is verified
+using a lightweight health check so blocked or dead proxies are skipped
+automatically. Commercial services can be used via `CommercialProxyAPIProvider`
+together with the `PROXY_PROVIDER_ENDPOINTS` and `PROXY_API_KEY` variables.
 
 ## Running the Server
 
@@ -158,6 +167,17 @@ curl -X POST http://localhost:8000/scrape # launch the example spider
 ```
 
 Task progress can be queried at `/tasks/<task_id>` and log messages stream from `/logs/stream`.
+
+## Workflow
+
+1. Install dependencies and copy `.env.example` to `.env`.
+2. Start Redis, then run the API and a Celery worker.
+3. Queue jobs via `POST /scrape` or the CLI.
+4. Check `/tasks/<id>` and `/logs/stream` to monitor progress.
+5. Download results from `/export` or via the CLI once jobs complete.
+6. Optional: run Celery beat to execute periodic jobs.
+
+See [docs/workflow.md](docs/workflow.md) for a more detailed walk-through.
 
 ### Command Line Client
 
@@ -194,7 +214,7 @@ The repository contains working examples for scraping, simple NLP and OSINT task
 - **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
 - **Geocoding helpers** – addresses are geocoded via OpenStreetMap Nominatim or Google when a `GOOGLE_API_KEY` is provided.
-- **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
+- **Frontend dashboard** – a lightweight dashboard displays job progress, logs and scraped results in real time.
 - **Additional OSINT tools** – Shodan and Nmap scans are now available as Celery tasks.
 
 Contributions are welcome to help flesh out these areas.
