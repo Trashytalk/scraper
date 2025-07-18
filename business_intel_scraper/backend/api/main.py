@@ -81,6 +81,10 @@ manager = ConnectionManager()
 scraped_data: list[dict[str, str]] = []
 jobs: dict[str, str] = {}
 
+from .graphql import graphql_app  # noqa: E402
+
+app.include_router(graphql_app, prefix="/graphql")
+
 
 async def monitor_job(job_id: str) -> None:
     """Watch a background job and broadcast status changes."""
