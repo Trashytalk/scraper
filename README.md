@@ -175,6 +175,15 @@ docker compose up --build
 ```
 See `docs/deployment.md` for Kubernetes deployment instructions.
 
+## Third-Party Integrations
+
+Lightweight wrappers for several external scraping projects are available in
+`business_intel_scraper.backend.integrations`. They expose helper functions for
+running tools like `crawl4ai`, `SecretScraper`, `colly`, `proxy_pool`,
+`spiderfoot` and ProjectDiscovery's `katana`. Each wrapper simply invokes the
+underlying CLI when present and raises ``NotImplementedError`` if the tool is
+missing.
+
 ## Roadmap and Incomplete Features
 
 The repository contains working examples for scraping, simple NLP and OSINT tasks, but several pieces are intentionally stubbed out or incomplete:
