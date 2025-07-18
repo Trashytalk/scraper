@@ -1,8 +1,4 @@
-"""Placeholder spiders for future implementation."""
-"""Regional Scrapy spider definitions."""
-"""Collection of additional business intelligence spiders."""
-
-from __future__ import annotations
+"""Placeholder spider modules for region-specific registries."""
 
 from .business_registration_change import BusinessRegistrationChangeSpider
 from .ubo import UBOSpider
@@ -68,3 +64,4 @@ __all__ = [
     "UnionLaborDisputeSpider",
     "BankruptcyAssetSaleSpider",
 ]
+
