@@ -44,6 +44,18 @@ Query a single job:
 curl http://localhost:8000/jobs/<task_id>
 ```
 
+## GraphQL Endpoint
+
+The API also exposes a GraphQL schema at `/graphql` for flexible queries.
+Fetch the current scraped data:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "{ scrapedData }"}' \
+  http://localhost:8000/graphql
+```
+
 ## Real-Time Notifications
 
 Open a WebSocket connection to `/ws/notifications` to receive broadcast
