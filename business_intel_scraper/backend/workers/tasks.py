@@ -23,6 +23,8 @@ from business_intel_scraper.backend.osint.integrations import (
     run_theharvester,
     run_sherlock,
     run_subfinder,
+    run_shodan,
+    run_nmap,
 )
 from business_intel_scraper.backend.nlp import pipeline
 from business_intel_scraper.backend.geo.processing import geocode_addresses
@@ -345,6 +347,20 @@ def subfinder_scan(domain: str) -> dict[str, str]:
     return run_subfinder(domain)
 
 
+@celery_app.task
+def shodan_scan(target: str) -> dict[str, str]:
+    """Run Shodan search."""
+
+    return run_shodan(target)
+
+
+@celery_app.task
+def nmap_scan(target: str) -> dict[str, str]:
+    """Run Nmap service scan."""
+
+    return run_nmap(target)
+
+
 def queue_spiderfoot_scan(
     domain: str, *, queue: str | None = None, countdown: int | None = None
 ) -> str:
@@ -428,4 +444,32 @@ def queue_subfinder_scan(
     if countdown is not None:
         options["countdown"] = countdown
     result = subfinder_scan.apply_async(args=[domain], **options)
+    return result.id
+
+
+def queue_shodan_scan(
+    target: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`shodan_scan` via Celery."""
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = shodan_scan.apply_async(args=[target], **options)
+    return result.id
+
+
+def queue_nmap_scan(
+    target: str, *, queue: str | None = None, countdown: int | None = None
+) -> str:
+    """Queue :func:`nmap_scan` via Celery."""
+
+    options = {}
+    if queue is not None:
+        options["queue"] = queue
+    if countdown is not None:
+        options["countdown"] = countdown
+    result = nmap_scan.apply_async(args=[target], **options)
     return result.id

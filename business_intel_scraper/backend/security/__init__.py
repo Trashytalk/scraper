@@ -8,6 +8,7 @@ from .auth import (
     require_role,
 )
 from .captcha import CaptchaSolver, solve_captcha
+
 from .rate_limit import RateLimitMiddleware
 
 __all__ = [
