@@ -110,7 +110,6 @@ def run_subfinder(domain: str) -> dict[str, str]:
 
 
 def run_theharvester(domain: str) -> dict[str, str]:
-
     """Run TheHarvester against a domain.
 
     Similar to :func:`run_spiderfoot`, this wrapper relies on the presence of
