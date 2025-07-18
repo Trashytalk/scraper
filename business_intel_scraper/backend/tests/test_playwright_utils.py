@@ -52,6 +52,19 @@ async def test_fetch_with_playwright_uses_proxy(monkeypatch) -> None:
         dummy_async_playwright,
     )
     provider = DummyProxyProvider(["http://proxy"])
+
+    def fake_get(url: str, proxies=None, timeout=5):
+        class Resp:
+            def raise_for_status(self) -> None:
+                pass
+
+        return Resp()
+
+    monkeypatch.setattr(
+        "business_intel_scraper.backend.proxy.manager.requests.get",
+        fake_get,
+    )
+
     pm = ProxyManager(provider)
     html = await fetch_with_playwright("http://example.com", pm, headless=False)
     assert html == "<html></html>"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from business_intel_scraper.backend.proxy.manager import ProxyManager
+import requests
 from business_intel_scraper.backend.proxy.provider import (
     DummyProxyProvider,
     APIProxyProvider,
@@ -121,6 +122,60 @@ def test_proxy_manager_health_check(monkeypatch) -> None:
     assert manager.get_proxy() == "good"
 
 
-def test_proxy_manager_requires_provider() -> None:
-    with pytest.raises(ValueError):
-        ProxyManager([])
+def test_default_validator_uses_requests(monkeypatch) -> None:
+    calls = []
+
+    class Response:
+        def raise_for_status(self) -> None:
+            pass
+
+    def fake_get(url: str, proxies=None, timeout=5) -> Response:
+        calls.append((url, proxies, timeout))
+        return Response()
+
+    monkeypatch.setattr(
+        "business_intel_scraper.backend.proxy.manager.requests.get",
+        fake_get,
+    )
+
+    provider = DummyProxyProvider(["http://proxy"])
+    manager = ProxyManager(provider)
+
+    assert manager.get_proxy() == "http://proxy"
+    assert calls == [
+        (
+            "https://httpbin.org/ip",
+            {"http": "http://proxy", "https": "http://proxy"},
+            5,
+        )
+    ]
+
+
+def test_default_validator_failure_fallback(monkeypatch) -> None:
+    def bad_get(url: str, proxies=None, timeout=5):
+        raise requests.RequestException("fail")
+
+    class Response:
+        def raise_for_status(self) -> None:
+            pass
+
+    def good_get(url: str, proxies=None, timeout=5) -> Response:
+        return Response()
+
+    def dispatch(url: str, proxies=None, timeout=5):
+        if proxies["http"] == "http://bad":
+            return bad_get(url, proxies, timeout)
+        return good_get(url, proxies, timeout)
+
+    monkeypatch.setattr(
+        "business_intel_scraper.backend.proxy.manager.requests.get",
+        dispatch,
+    )
+
+    bad_provider = DummyProxyProvider(["http://bad"])
+    good_provider = DummyProxyProvider(["http://good"])
+
+    manager = ProxyManager([bad_provider, good_provider])
+
+    assert manager.get_proxy() == "http://good"
+

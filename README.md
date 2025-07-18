@@ -133,9 +133,10 @@ Common settings include:
 ## Proxy Configuration
 
 Configure proxy rotation using provider classes. Supply one or more providers to
-`ProxyManager` for automatic fallback when a proxy fails. Commercial services
-can be used via `CommercialProxyAPIProvider` together with the
-`PROXY_PROVIDER_ENDPOINTS` and `PROXY_API_KEY` variables.
+`ProxyManager` for automatic fallback when a proxy fails. Each proxy is verified
+using a lightweight health check so blocked or dead proxies are skipped
+automatically. Commercial services can be used via `CommercialProxyAPIProvider`
+together with the `PROXY_PROVIDER_ENDPOINTS` and `PROXY_API_KEY` variables.
 
 ## Running the Server
 
