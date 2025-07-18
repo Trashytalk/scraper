@@ -21,6 +21,11 @@ class DashboardWindow(QtWidgets.QMainWindow):
     """Main window aggregating all components."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        """
+        Initialize the main dashboard window with tabbed widgets for job management, log viewing, and data viewing.
+        
+        Creates a window titled "Business Intelligence Scraper" with a default size of 1024x768 pixels. Adds three main widgets—JobManagerWidget, LogViewerWidget, and DataViewerWidget—as tabs labeled "Jobs," "Logs," and "Data." Also sets up the main menu.
+        """
         super().__init__(parent)
         self.setWindowTitle("Business Intelligence Scraper")
         self.resize(1024, 768)
@@ -39,7 +44,11 @@ class DashboardWindow(QtWidgets.QMainWindow):
         self._create_menu()
 
     def _create_menu(self) -> None:
-        """Create basic menu actions."""
+        """
+        Creates the main menu bar with a "File" menu containing "Configuration" and "Quit" actions.
+        
+        The "Configuration" action opens the configuration dialog, and the "Quit" action closes the window.
+        """
 
         menubar = self.menuBar()
         file_menu = menubar.addMenu("File")
@@ -49,13 +58,19 @@ class DashboardWindow(QtWidgets.QMainWindow):
         quit_action.triggered.connect(self.close)
 
     def show_config_dialog(self) -> None:
-        """Display the configuration dialog."""
+        """
+        Opens and displays the configuration dialog as a modal window.
+        """
 
         dialog = ConfigDialog(self)
         dialog.exec()
 
     def closeEvent(self, event: Any) -> None:  # noqa: D401 - Qt override
-        """Handle window close event and perform cleanup."""
+        """
+        Handles the window close event, allowing for cleanup before the application exits.
+        
+        Currently, this method delegates to the superclass implementation. Intended for future extension to gracefully stop running jobs before closing.
+        """
 
         # TODO: gracefully stop running jobs if any
         super().closeEvent(event)

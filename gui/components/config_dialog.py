@@ -18,6 +18,11 @@ class ConfigDialog(QtWidgets.QDialog):
     """Simple configuration editor."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        """
+        Initialize the configuration editor dialog window.
+        
+        Sets the window title and size, builds the user interface, and loads the current configuration file content into the editor.
+        """
         super().__init__(parent)
         self.setWindowTitle("Configuration")
         self.resize(400, 300)
@@ -25,6 +30,9 @@ class ConfigDialog(QtWidgets.QDialog):
         self.load_config()
 
     def _setup_ui(self) -> None:
+        """
+        Set up the dialog's user interface with a plain text editor and Save/Cancel buttons.
+        """
         layout = QtWidgets.QVBoxLayout(self)
         self.text_edit = QtWidgets.QPlainTextEdit()
         layout.addWidget(self.text_edit)
@@ -37,7 +45,11 @@ class ConfigDialog(QtWidgets.QDialog):
         layout.addWidget(button_box)
 
     def load_config(self) -> None:
-        """Load configuration file into the text edit."""
+        """
+        Loads the configuration file content into the text editor.
+        
+        If the configuration file exists, its contents are displayed in the editor; otherwise, a placeholder comment is shown.
+        """
 
         if CONFIG_PATH.exists():
             self.text_edit.setPlainText(CONFIG_PATH.read_text())
@@ -45,7 +57,11 @@ class ConfigDialog(QtWidgets.QDialog):
             self.text_edit.setPlainText("# Configuration file not found\n")
 
     def save_config(self) -> None:
-        """Write text edit contents back to the configuration file."""
+        """
+        Saves the current editor contents to the configuration file and closes the dialog.
+        
+        Ensures the configuration directory exists before writing.
+        """
 
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         CONFIG_PATH.write_text(self.text_edit.toPlainText())

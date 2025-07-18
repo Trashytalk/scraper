@@ -13,6 +13,12 @@ class LogViewerWidget(QtWidgets.QTextEdit):
     """Live-updating log viewer."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        """
+        Initialize the log viewer widget as a read-only text editor.
+        
+        Parameters:
+            parent (QWidget, optional): The parent widget, if any.
+        """
         super().__init__(parent)
         self.setReadOnly(True)
         # TODO: stream logs from scraper into this widget
