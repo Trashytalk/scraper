@@ -1,3 +1,4 @@
+"""Regional Scrapy spider definitions."""
 """Collection of additional business intelligence spiders."""
 
 from __future__ import annotations
