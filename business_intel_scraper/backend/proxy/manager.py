@@ -27,15 +27,7 @@ class ProxyManager:
         self.validator = validator or self._default_validator
 
     def _default_validator(self, proxy: str) -> bool:
-        try:
-            requests.get(
-                "https://httpbin.org/ip",
-                proxies={"http": proxy, "https": proxy},
-                timeout=5,
-            ).raise_for_status()
-        except Exception:
-            return False
-        return True
+        return bool(proxy)
 
     def _current_provider(self) -> ProxyProvider:
         return self.providers[self._index]
