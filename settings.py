@@ -61,6 +61,16 @@ class CelerySettings:
 
 
 @dataclass
+class CacheSettings:
+    """HTTP request caching settings."""
+
+    backend: str = os.getenv("CACHE_BACKEND", "filesystem")
+    expire: int = int(os.getenv("CACHE_EXPIRE", "3600"))
+    redis_url: str = os.getenv("CACHE_REDIS_URL", "redis://localhost:6379/1")
+    cache_dir: str = os.getenv("CACHE_DIR", "http_cache")
+
+
+@dataclass
 class Settings:
     """Container for all application settings."""
 
@@ -69,6 +79,7 @@ class Settings:
     proxy: ProxySettings = field(default_factory=ProxySettings)
     rate_limit: RateLimitSettings = field(default_factory=RateLimitSettings)
     celery: CelerySettings = field(default_factory=CelerySettings)
+    cache: CacheSettings = field(default_factory=CacheSettings)
     require_https: bool = os.getenv("USE_HTTPS", "false").lower() == "true"
 
 
