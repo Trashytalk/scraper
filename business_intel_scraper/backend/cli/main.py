@@ -6,6 +6,8 @@ from business_intel_scraper.backend.utils import export
 from business_intel_scraper.backend.osint.integrations import (
     run_spiderfoot,
     run_theharvester,
+    run_shodan,
+    run_nmap,
 )
 
 
@@ -36,16 +38,11 @@ def main() -> None:
     )
     th_parser.add_argument("domain", help="Domain to scan")
 
-    export_parser = subparsers.add_parser("export", help="Run spider and export data")
-    export_parser.add_argument(
-        "--format", choices=["csv", "jsonl"], default="csv", help="Output format"
-    )
-    export_parser.add_argument("--output", required=True, help="Output file path")
-    export_parser.add_argument(
-        "--spider",
-        default="example",
-        help="Name of the spider to run (default: %(default)s)",
-    )
+    shodan_parser = subparsers.add_parser("shodan", help="Run Shodan search")
+    shodan_parser.add_argument("target", help="IP or query string")
+
+    nmap_parser = subparsers.add_parser("nmap", help="Run Nmap scan")
+    nmap_parser.add_argument("target", help="Target host")
 
     args = parser.parse_args()
 
@@ -58,15 +55,12 @@ def main() -> None:
     elif args.command == "theharvester":
         result = run_theharvester(args.domain)
         print(json.dumps(result, indent=2))
-    elif args.command == "export":
-        items = run_spider_task(args.spider)
-        if args.format == "csv":
-            data = export.to_csv(items)
-        else:
-            data = export.to_jsonl(items)
-        with open(args.output, "w", encoding="utf-8") as f:
-            f.write(data)
-        print(f"Exported {len(items)} items to {args.output}")
+    elif args.command == "shodan":
+        result = run_shodan(args.target)
+        print(json.dumps(result, indent=2))
+    elif args.command == "nmap":
+        result = run_nmap(args.target)
+        print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":

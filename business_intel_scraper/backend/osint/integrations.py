@@ -109,7 +109,8 @@ def run_subfinder(domain: str) -> dict[str, str]:
     return {"domain": domain, "output": output}
 
 
-def run_theharvester(domain: str) -> dict[str, str]:
+def run_theharvester(domain: str, parse_output: bool = False) -> dict[str, Any]:
+
     """Run TheHarvester against a domain.
 
     Similar to :func:`run_spiderfoot`, this wrapper relies on the presence of
@@ -138,9 +139,48 @@ def run_theharvester(domain: str) -> dict[str, str]:
     return {"domain": domain, "output": output}
 
 
+def run_shodan(target: str) -> dict[str, str]:
+    """Run Shodan search against ``target``.
+
+    Parameters
+    ----------
+    target : str
+        IP address or query string.
+
+    Returns
+    -------
+    dict[str, str]
+        ``target`` plus command output or error message.
+    """
+
+    executable = shutil.which("shodan")
+    if executable is None:
+        return {"target": target, "error": "shodan executable not found"}
+
+    cmd = [executable, "host", target]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    output = proc.stdout.strip() or proc.stderr.strip()
+    return {"target": target, "output": output}
+
+
+def run_nmap(target: str) -> dict[str, str]:
+    """Run Nmap service scan on ``target``."""
+
+    executable = shutil.which("nmap")
+    if executable is None:
+        return {"target": target, "error": "nmap executable not found"}
+
+    cmd = [executable, "-sV", target]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    output = proc.stdout.strip() or proc.stderr.strip()
+    return {"target": target, "output": output}
+
+
 __all__ = [
     "run_spiderfoot",
     "run_theharvester",
     "run_sherlock",
     "run_subfinder",
+    "run_shodan",
+    "run_nmap",
 ]
