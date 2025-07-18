@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 import aiofiles
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from sse_starlette.sse import EventSourceResponse
@@ -31,6 +31,7 @@ from .schemas import (
 from ..db.models import UserRole
 from ..nlp import pipeline
 from ..utils.helpers import LOG_FILE
+from ..utils import export
 from ..workers.tasks import get_task_status, launch_scraping_task
 
 
@@ -170,6 +171,29 @@ async def get_data() -> list[dict[str, str]]:
     """Return scraped data."""
 
     return scraped_data
+
+
+@app.get("/export", dependencies=[Depends(require_token)])
+async def export_data(
+    format: str = "jsonl", bucket: str | None = None, key: str | None = None
+):
+    """Export scraped data in the requested format."""
+
+    if format == "csv":
+        text = export.to_csv(scraped_data)
+        return Response(text, media_type="text/csv")
+    if format == "jsonl":
+        text = export.to_jsonl(scraped_data)
+        return Response(text, media_type="application/json")
+    if format == "s3":
+        if not bucket or not key:
+            raise HTTPException(status_code=400, detail="bucket and key required")
+        try:
+            location = export.upload_to_s3(scraped_data, bucket, key)
+        except Exception as exc:  # pragma: no cover - external service errors
+            raise HTTPException(status_code=500, detail=str(exc))
+        return {"location": location}
+    raise HTTPException(status_code=400, detail="unsupported format")
 
 
 @app.get(

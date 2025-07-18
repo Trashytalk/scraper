@@ -39,7 +39,10 @@ The backend exposes an SSE endpoint to stream log messages in real time.
 GET /logs/stream
 ```
 
-Use this route from the frontend to monitor running jobs or debug output.
+Use this route from the frontend to monitor running jobs or debug output. Logs
+are also written to `business_intel_scraper/backend/logs/app.log`. To forward
+them to a centralized collector set `LOG_FORWARD_URL` in your environment and
+see [docs/logging.md](docs/logging.md) for an example ELK setup.
 
 ## Metrics
 
@@ -113,6 +116,10 @@ Common settings include:
 - `ALLOWED_ORIGINS` – comma-separated list of origins allowed for CORS (default `*`).
 - `CAPTCHA_API_KEY` – API token for the CAPTCHA solving service (e.g. 2Captcha).
 - `CAPTCHA_API_URL` – base URL for the CAPTCHA provider (defaults to `https://2captcha.com`).
+- `CACHE_BACKEND` – set to `redis` or `filesystem` to enable request caching.
+- `CACHE_REDIS_URL` – Redis connection URL when using the Redis backend.
+- `CACHE_DIR` – directory used for the filesystem cache.
+- `CACHE_EXPIRE` – cache expiration time in seconds (default `3600`).
 
 ## Proxy Configuration
 
@@ -174,9 +181,9 @@ The repository contains working examples for scraping, simple NLP and OSINT task
 
 - **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
-- **Geocoding helpers** – the geocoding pipeline integrates with Nominatim or Google's API for real coordinates.
+- **Geocoding helpers** – the geocoding pipeline currently returns deterministic coordinates and does not fully use online providers.
 - **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
-- **Additional OSINT tools** – future releases will integrate more external tools and reporting features.
+- **Additional OSINT tools** – Shodan and Nmap scans are now available as Celery tasks.
 
 Contributions are welcome to help flesh out these areas.
 
