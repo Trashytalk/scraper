@@ -174,8 +174,8 @@ The repository contains working examples for scraping, simple NLP and OSINT task
 
 - **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
-- **Geocoding helpers** – the geocoding pipeline integrates with Nominatim or Google's API for real coordinates.
-- **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
+- **Geocoding helpers** – the geocoding pipeline currently returns deterministic coordinates and does not fully use online providers.
+- **Full frontend dashboard** – a lightweight React dashboard now shows job progress, logs and results in real time.
 - **Additional OSINT tools** – future releases will integrate more external tools and reporting features.
 
 Contributions are welcome to help flesh out these areas.
