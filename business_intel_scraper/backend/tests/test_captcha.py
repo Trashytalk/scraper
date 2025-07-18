@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import pytest
-
 import requests
 
-from business_intel_scraper.backend.security import solve_captcha
+from business_intel_scraper.backend.security import EnvTwoCaptchaSolver, solve_captcha
 
 
 class FakeResponse:
@@ -76,3 +75,26 @@ def test_solve_captcha_error(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(ValueError):
         solve_captcha(b"img")
+
+
+def test_env_solver(monkeypatch: pytest.MonkeyPatch) -> None:
+    """EnvTwoCaptchaSolver reads configuration from environment."""
+
+    def fake_post(url: str, data: dict[str, str], timeout: int) -> FakeResponse:
+        assert data["key"] == "secret"
+        return FakeResponse({"status": 1, "request": "123"})
+
+    def fake_get(url: str, params: dict[str, str], timeout: int) -> FakeResponse:
+        return FakeResponse({"status": 1, "request": "solved"})
+
+    monkeypatch.setattr(requests, "post", fake_post)
+    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(
+        "business_intel_scraper.backend.security.captcha.time.sleep", lambda x: None
+    )
+
+    monkeypatch.setenv("CAPTCHA_API_KEY", "secret")
+    monkeypatch.setenv("CAPTCHA_API_URL", "https://mock")
+
+    solver = EnvTwoCaptchaSolver()
+    assert solver.solve(b"img") == "solved"
