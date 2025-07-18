@@ -1,3 +1,4 @@
+"""Collection of stub Scrapy spiders for future implementation."""
 from __future__ import annotations
 
 from .company_registry_spider import CompanyRegistrySpider
