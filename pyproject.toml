@@ -6,3 +6,38 @@ line-length = 88
 target-version = "py311"
 extend-exclude = ["business_intel_scraper/backend/db/migrations"]
 
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "business-intel-scraper"
+version = "0.1.0"
+description = "Modular framework for scraping and analyzing business intelligence data"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [{name = "Trashytalk"}]
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "celery",
+    "scrapy",
+    "sqlalchemy",
+    "requests",
+    "httpx",
+    "spacy",
+    "playwright",
+    "pyjwt",
+    "passlib",
+    "prometheus-client",
+    "gevent",
+]
+
+[project.scripts]
+biscraper = "business_intel_scraper.backend.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["business_intel_scraper*"]
+
