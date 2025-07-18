@@ -13,6 +13,7 @@ import requests
 LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
 LOG_FILE = LOG_DIR / "app.log"
 LOG_FORWARD_URL = os.getenv("LOG_FORWARD_URL", "")
+LOG_LEVEL = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,10 @@ def setup_logging(
     backup_count : int, optional
         Number of rotated log files to keep, by default ``5``.
     """
+
+    env_level = os.getenv("LOG_LEVEL")
+    if env_level:
+        level = getattr(logging, env_level.upper(), level)
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 

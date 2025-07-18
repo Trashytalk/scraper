@@ -121,6 +121,8 @@ Common settings include:
 - `CACHE_REDIS_URL` – Redis connection URL when using the Redis backend.
 - `CACHE_DIR` – directory used for the filesystem cache.
 - `CACHE_EXPIRE` – cache expiration time in seconds (default `3600`).
+- `LOG_FORWARD_URL` – optional HTTP endpoint to forward JSON logs.
+- `LOG_LEVEL` – logging level for the API and workers.
 
 ## Proxy Configuration
 
