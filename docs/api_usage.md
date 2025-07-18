@@ -44,6 +44,18 @@ Query a single job:
 curl http://localhost:8000/jobs/<task_id>
 ```
 
+## GraphQL Endpoint
+
+The API also exposes a GraphQL schema at `/graphql` for flexible queries.
+Fetch the current scraped data:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "{ scrapedData }"}' \
+  http://localhost:8000/graphql
+```
+
 ## Real-Time Notifications
 
 Open a WebSocket connection to `/ws/notifications` to receive broadcast
@@ -61,8 +73,8 @@ curl http://localhost:8000/logs/stream
 ## OSINT Tool Examples
 
 The backend provides wrappers for several OSINT utilities that can be queued as
-Celery tasks. The snippets below show how to invoke the Sherlock and Subfinder
-tools using the Python API:
+Celery tasks. The snippets below show how to invoke the Sherlock, Subfinder,
+Shodan and Nmap tools using the Python API:
 
 ```python
 from business_intel_scraper.backend.workers import tasks
@@ -72,4 +84,10 @@ task_id = tasks.queue_sherlock_scan("alice")
 
 # Enumerate subdomains for a target
 task_id = tasks.queue_subfinder_scan("example.com")
+
+# Query Shodan for an IP address
+task_id = tasks.queue_shodan_scan("1.2.3.4")
+
+# Run an Nmap service scan
+task_id = tasks.queue_nmap_scan("example.com")
 ```

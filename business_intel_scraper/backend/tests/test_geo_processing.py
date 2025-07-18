@@ -1,14 +1,20 @@
 import io
 import json
+import os
 import urllib.request
 import sys
 from pathlib import Path
 
 import pytest
 
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 
+from sqlalchemy.orm import relationship
+from business_intel_scraper.backend.db.models import Location
 from business_intel_scraper.backend.geo.processing import geocode_addresses
+
+Location.companies = relationship("Company", back_populates="location")
 
 
 def fake_urlopen_factory(response_json: str):
