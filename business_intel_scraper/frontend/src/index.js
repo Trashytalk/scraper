@@ -1,5 +1,3 @@
-const { BrowserRouter, Routes, Route, Link } = ReactRouterDOM;
-
 function ResultsTable({ data }) {
   if (!data.length) return <p>No results</p>;
   const headers = Object.keys(data[0]);
@@ -21,68 +19,41 @@ function ResultsTable({ data }) {
   );
 }
 
-function ResultsPage({ data, refresh }) {
-  React.useEffect(() => {
-    const id = setInterval(refresh, 5000);
-    return () => clearInterval(id);
-  }, []);
+function JobsTable({ jobs }) {
   return (
-    <section>
-      <div className="section-header">
-        <h2>Scraped Results</h2>
-        <button onClick={refresh}>Refresh</button>
-      </div>
-      <ResultsTable data={data} />
-    </section>
+    <table className="table">
+      <thead>
+        <tr>
+          <th>Job ID</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(jobs).map(([id, job]) => (
+          <tr key={id}>
+            <td>{id}</td>
+            <td>
+              {job.status}
+              {job.status === 'running' && <span className="progress" />}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
-function JobsPage({ jobs, refresh, startJob, logs }) {
-  const logRef = React.useRef(null);
+function LogViewer({ logs }) {
+  const ref = React.useRef(null);
   React.useEffect(() => {
-    const id = setInterval(refresh, 5000);
-    return () => clearInterval(id);
-  }, []);
-  React.useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
+    if (ref.current) {
+      ref.current.scrollTop = ref.current.scrollHeight;
     }
   }, [logs]);
-  return (
-    <section>
-      <div className="section-header">
-        <h2>Job Management</h2>
-        <div>
-          <button onClick={refresh}>Refresh</button>
-          <button onClick={startJob}>Start Job</button>
-        </div>
-      </div>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Job ID</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(jobs).map(([id, job]) => (
-            <tr key={id}>
-              <td>{id}</td>
-              <td>
-                {job.status}
-                {job.status === 'running' && <span className="progress" />}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <h3>Logs</h3>
-      <pre ref={logRef} className="logs">{logs.join('\n')}</pre>
-    </section>
-  );
+  return <pre ref={ref} className="logs">{logs.join('\n')}</pre>;
 }
 
-function App() {
+function Dashboard() {
   const [data, setData] = React.useState([]);
   const [jobs, setJobs] = React.useState({});
   const [logs, setLogs] = React.useState([]);
@@ -113,11 +84,12 @@ function App() {
   React.useEffect(() => {
     loadData();
     loadJobs();
-    const id = setInterval(() => {
-      loadData();
-      loadJobs();
-    }, 5000);
-    return () => clearInterval(id);
+    const dataId = setInterval(loadData, 5000);
+    const jobId = setInterval(loadJobs, 5000);
+    return () => {
+      clearInterval(dataId);
+      clearInterval(jobId);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -131,7 +103,7 @@ function App() {
     };
     const es = new EventSource('/logs/stream');
     es.onmessage = (e) => {
-      setLogs((l) => [...l.slice(-99), e.data]);
+      setLogs((l) => [...l.slice(-199), e.data]);
     };
     return () => {
       ws.close();
@@ -140,24 +112,29 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <header>
-        <nav>
-          <Link to="/results">Results</Link>
-          <Link to="/jobs">Jobs</Link>
-        </nav>
-      </header>
-      <main>
-        <Routes>
-          <Route
-            path="/jobs"
-            element={<JobsPage jobs={jobs} refresh={loadJobs} startJob={startJob} logs={logs} />}
-          />
-          <Route path="/*" element={<ResultsPage data={data} refresh={loadData} />} />
-        </Routes>
-      </main>
-    </BrowserRouter>
+    <div className="dashboard">
+      <section className="dashboard-column">
+        <div className="section-header">
+          <h2>Jobs</h2>
+          <button onClick={startJob}>Start Job</button>
+        </div>
+        <JobsTable jobs={jobs} />
+      </section>
+      <section className="dashboard-column">
+        <div className="section-header">
+          <h2>Logs</h2>
+        </div>
+        <LogViewer logs={logs} />
+      </section>
+      <section className="dashboard-column dashboard-wide">
+        <div className="section-header">
+          <h2>Scraped Results</h2>
+          <button onClick={loadData}>Refresh</button>
+        </div>
+        <ResultsTable data={data} />
+      </section>
+    </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<Dashboard />);

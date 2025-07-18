@@ -97,7 +97,7 @@ Use `ruff --fix .` to automatically apply suggested fixes.
    pip install -r requirements.txt
    ```
    The optional frontend requires Node.js. Run `npm install` inside
-   `business_intel_scraper/frontend` if you want the demo UI.
+   `business_intel_scraper/frontend` to enable the real-time dashboard.
 3. Copy `.env.example` to `.env` and adjust values to match your environment.
 
 ## Environment Variables
@@ -194,7 +194,7 @@ The repository contains working examples for scraping, simple NLP and OSINT task
 - **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
 - **Geocoding helpers** – addresses are geocoded via OpenStreetMap Nominatim or Google when a `GOOGLE_API_KEY` is provided.
-- **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
+- **Frontend dashboard** – a lightweight dashboard displays job progress, logs and scraped results in real time.
 - **Additional OSINT tools** – Shodan and Nmap scans are now available as Celery tasks.
 
 Contributions are welcome to help flesh out these areas.
