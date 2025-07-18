@@ -21,3 +21,20 @@ def test_query_scraped_data() -> None:
     resp = client.post("/graphql", json={"query": "{ scrapedData }"})
     assert resp.status_code == 200
     assert resp.json()["data"]["scrapedData"] == []
+
+
+def test_query_scraped_data_search() -> None:
+    api.scraped_data.clear()
+    api.scraped_data.extend(
+        [
+            {"title": "Alpha"},
+            {"title": "Beta"},
+        ]
+    )
+    client = TestClient(app)
+    resp = client.post(
+        "/graphql",
+        json={"query": '{ scrapedData(search: "Beta") }'},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["scrapedData"] == [{"title": "Beta"}]

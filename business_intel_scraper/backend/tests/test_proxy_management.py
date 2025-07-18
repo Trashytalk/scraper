@@ -7,6 +7,7 @@ from business_intel_scraper.backend.proxy.provider import (
     APIProxyProvider,
     CommercialProxyAPIProvider,
 )
+import pytest
 
 
 def test_dummy_provider_cycle() -> None:
@@ -177,3 +178,4 @@ def test_default_validator_failure_fallback(monkeypatch) -> None:
     manager = ProxyManager([bad_provider, good_provider])
 
     assert manager.get_proxy() == "http://good"
+

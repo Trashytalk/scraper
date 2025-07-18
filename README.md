@@ -92,10 +92,11 @@ Use `ruff --fix .` to automatically apply suggested fixes.
    python -m venv .venv
    source .venv/bin/activate
    ```
-2. Install the required packages:
+2. Install the framework along with its dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install .
    ```
+   For editable development installs use `pip install -e .`.
    The optional frontend requires Node.js. Run `npm install` inside
    `business_intel_scraper/frontend` if you want the demo UI.
 3. Copy `.env.example` to `.env` and adjust values to match your environment.
