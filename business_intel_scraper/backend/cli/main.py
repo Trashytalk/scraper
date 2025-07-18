@@ -2,9 +2,12 @@ import argparse
 import json
 
 from business_intel_scraper.backend.workers.tasks import run_spider_task
+from business_intel_scraper.backend.utils import export
 from business_intel_scraper.backend.osint.integrations import (
     run_spiderfoot,
     run_theharvester,
+    run_shodan,
+    run_nmap,
 )
 
 
@@ -35,6 +38,12 @@ def main() -> None:
     )
     th_parser.add_argument("domain", help="Domain to scan")
 
+    shodan_parser = subparsers.add_parser("shodan", help="Run Shodan search")
+    shodan_parser.add_argument("target", help="IP or query string")
+
+    nmap_parser = subparsers.add_parser("nmap", help="Run Nmap scan")
+    nmap_parser.add_argument("target", help="Target host")
+
     args = parser.parse_args()
 
     if args.command == "scrape":
@@ -45,6 +54,12 @@ def main() -> None:
         print(json.dumps(result, indent=2))
     elif args.command == "theharvester":
         result = run_theharvester(args.domain)
+        print(json.dumps(result, indent=2))
+    elif args.command == "shodan":
+        result = run_shodan(args.target)
+        print(json.dumps(result, indent=2))
+    elif args.command == "nmap":
+        result = run_nmap(args.target)
         print(json.dumps(result, indent=2))
 
 

@@ -22,3 +22,15 @@ services:
       - ../../:/app
     depends_on:
       - api
+
+  beat:
+    build:
+      context: ../../..
+      dockerfile: business_intel_scraper/infra/docker/worker/Dockerfile
+    command: celery -A business_intel_scraper.backend.workers.tasks.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule
+    env_file:
+      - ../../.env
+    volumes:
+      - ../../:/app
+    depends_on:
+      - api

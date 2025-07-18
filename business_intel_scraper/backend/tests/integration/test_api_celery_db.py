@@ -6,15 +6,18 @@ import subprocess
 from pathlib import Path
 import sys
 
+# ruff: noqa: E402
+
 import pytest
 import requests
-from business_intel_scraper.backend.security import create_token
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 COMPOSE_FILE = ROOT / "business_intel_scraper" / "docker-compose.yml"
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+from business_intel_scraper.backend.security import create_token
 
 
 def _docker_available() -> bool:
