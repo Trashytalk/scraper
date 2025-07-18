@@ -30,6 +30,14 @@ curl http://localhost:8000/tasks/<task_id>
 curl http://localhost:8000/data
 ```
 
+## Export Scraped Data
+
+Request a different format using the `/export` route:
+
+```bash
+curl "http://localhost:8000/export?format=csv"
+```
+
 ## Job Information
 
 List all known jobs:
@@ -53,6 +61,16 @@ Fetch the current scraped data:
 curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"query": "{ scrapedData }"}' \
+  http://localhost:8000/graphql
+```
+
+You can optionally filter results using the `search` argument or limit the
+number returned:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "{ scrapedData(search: \"foo\", limit: 10) }"}' \
   http://localhost:8000/graphql
 ```
 

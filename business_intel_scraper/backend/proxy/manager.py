@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Callable, Iterable, List
 
-import requests
-
 from .provider import ProxyProvider
 
 
@@ -27,7 +25,18 @@ class ProxyManager:
         self.validator = validator or self._default_validator
 
     def _default_validator(self, proxy: str) -> bool:
-        return bool(proxy)
+        """Check that ``proxy`` can successfully reach ``httpbin.org``."""
+
+        try:
+            resp = requests.get(
+                "https://httpbin.org/ip",
+                proxies={"http": proxy, "https": proxy},
+                timeout=5,
+            )
+            resp.raise_for_status()
+        except Exception:  # pragma: no cover - simple network validation
+            return False
+        return True
 
     def _current_provider(self) -> ProxyProvider:
         return self.providers[self._index]
