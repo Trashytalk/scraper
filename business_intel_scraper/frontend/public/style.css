@@ -4,18 +4,19 @@ body {
   padding: 0;
 }
 
-header {
-  background: #333;
-  color: #fff;
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 1rem;
   padding: 1rem;
 }
-nav a {
-  color: #fff;
-  margin-right: 1rem;
-  text-decoration: none;
-}
-main {
+.dashboard-column {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
   padding: 1rem;
+}
+.dashboard-wide {
+  grid-column: span 2;
 }
 .table {
   width: 100%;

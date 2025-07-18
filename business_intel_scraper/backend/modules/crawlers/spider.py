@@ -18,6 +18,7 @@ class ExampleSpider(scrapy.Spider):
     start_urls = ["https://example.com"]
 
     # Configure proxy middleware and provider
+    base = "business_intel_scraper.backend.modules.crawlers.middleware"
     custom_settings = {
         "DOWNLOADER_MIDDLEWARES": {
             (
