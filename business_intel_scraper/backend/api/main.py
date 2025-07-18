@@ -16,7 +16,7 @@ from .metrics import MetricsMiddleware, metrics_app
 from pydantic import BaseModel
 
 from business_intel_scraper.settings import settings
-
+from ..utils import setup_request_cache
 from .auth import router as auth_router
 from fastapi import Depends
 from ..security import require_token, require_role
@@ -34,7 +34,7 @@ from ..utils.helpers import LOG_FILE
 from ..utils import export, setup_logging
 from ..workers.tasks import get_task_status, launch_scraping_task
 
-setup_logging()
+setup_request_cache()
 
 
 class NLPRequest(BaseModel):

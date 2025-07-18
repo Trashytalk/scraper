@@ -7,6 +7,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict
 
+from ..utils import setup_request_cache
 from prometheus_client import Counter, Histogram
 
 try:
@@ -32,6 +33,8 @@ from business_intel_scraper.backend.utils import setup_logging
 from ..audit.logger import log_job_start, log_job_finish, log_job_error
 from celery.schedules import crontab
 
+
+setup_request_cache()
 
 try:
     from celery import Celery
