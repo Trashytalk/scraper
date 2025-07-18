@@ -28,6 +28,7 @@ from business_intel_scraper.backend.modules.scrapers.integrations import (
 )
 from business_intel_scraper.backend.nlp import pipeline
 from business_intel_scraper.backend.geo.processing import geocode_addresses
+from business_intel_scraper.backend.utils import setup_logging
 from ..audit.logger import log_job_start, log_job_finish, log_job_error
 from celery.schedules import crontab
 
@@ -55,6 +56,8 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 celery_app = Celery("business_intel_scraper")
 
+setup_logging()
+
 TASK_COUNTER = Counter(
     "bi_worker_tasks_total",
     "Total executed worker tasks",
@@ -77,6 +80,7 @@ celery_app.conf.beat_schedule = {
     "example_spider_hourly": {
         "task": (
             "business_intel_scraper.backend.workers.tasks" ".scheduled_example_scrape"
+
         ),
         "schedule": crontab(minute=0, hour="*"),
     },

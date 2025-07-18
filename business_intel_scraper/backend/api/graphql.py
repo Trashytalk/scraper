@@ -20,10 +20,22 @@ class Query:
     """GraphQL queries for scraped data and jobs."""
 
     @strawberry.field
-    def scraped_data(self) -> list[JSON]:
-        """Return all scraped items."""
+    def scraped_data(
+        self, search: str | None = None, limit: int | None = None
+    ) -> list[JSON]:
+        """Return scraped items, optionally filtered by a search term."""
 
-        return api.scraped_data
+        data = api.scraped_data
+        if search:
+            lowered = search.lower()
+            data = [
+                item
+                for item in data
+                if any(lowered in str(value).lower() for value in item.values())
+            ]
+        if limit is not None:
+            data = data[:limit]
+        return data
 
     @strawberry.field
     def job(self, id: ID) -> Job | None:
