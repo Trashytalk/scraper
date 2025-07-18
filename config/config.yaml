@@ -1,0 +1,6 @@
+# Default configuration for Business Intelligence Scraper GUI
+# Adjust paths, proxies and user agents as needed.
+
+spider: example
+proxy: null
+user_agent: Mozilla/5.0

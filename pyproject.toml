@@ -43,5 +43,5 @@ bi-scraper = "business_intel_scraper.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["business_intel_scraper*"]
+include = ["business_intel_scraper*", "gui*"]
 
