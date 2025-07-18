@@ -252,9 +252,7 @@ def run_spider_task(
         raise ValueError(f"Unknown spider '{spider}'")
 
     try:
-        module = import_module(
-            "business_intel_scraper.backend.modules.crawlers.spider"
-        )
+        module = import_module("business_intel_scraper.backend.modules.crawlers.spider")
         spider_cls = getattr(module, "ExampleSpider")
     except Exception:  # pragma: no cover - unexpected import failure
         return []
@@ -329,6 +327,7 @@ def geocode_task(addresses: list[str]) -> list[tuple[str, float | None, float | 
     result = geocode_addresses(addresses)
     TASK_DURATION.labels(task="geocode").observe(time.perf_counter() - start)
     return result
+
 
 @celery_app.task
 def theharvester_scan(domain: str) -> dict[str, str]:

@@ -1,10 +1,11 @@
-
 """Collection of stub Scrapy spiders for future implementation."""
+
 from __future__ import annotations
 
 from .company_registry_spider import CompanyRegistrySpider
 from .social_media_profile_spider import SocialMediaProfileSpider
 from .news_article_spider import NewsArticleSpider
+from .reuters_news_spider import ReutersNewsSpider
 from .job_listings_spider import JobListingsSpider
 from .industry_reports_spider import IndustryReportsSpider
 from .financial_filings_spider import FinancialFilingsSpider
@@ -52,6 +53,7 @@ __all__ = [
     "CompanyRegistrySpider",
     "SocialMediaProfileSpider",
     "NewsArticleSpider",
+    "ReutersNewsSpider",
     "JobListingsSpider",
     "IndustryReportsSpider",
     "FinancialFilingsSpider",
@@ -95,4 +97,3 @@ __all__ = [
     "AwardsRankingsSpider",
     "ExportControlListSpider",
 ]
-

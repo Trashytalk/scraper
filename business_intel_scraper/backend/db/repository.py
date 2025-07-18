@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 from typing import Optional
+from datetime import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from .models import Base, Company, Location, OsintResult, ScrapeTask, User
+from .models import (
+    Base,
+    Company,
+    Location,
+    OsintResult,
+    ScrapeTask,
+    User,
+    Article,
+)
 
 # Create a simple SQLite engine for demonstration purposes
 ENGINE = create_engine("sqlite:///business_intel.db", echo=False)
@@ -48,6 +57,25 @@ class CompanyRepository:
         if company is not None:
             self._session.delete(company)
             self._session.commit()
+
+
+class ArticleRepository:
+    """Repository for :class:`~.models.Article` objects."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, title: str, url: str, published: datetime | None = None) -> Article:
+        """Persist a new article record."""
+        article = Article(title=title, url=url, published=published)
+        self._session.add(article)
+        self._session.commit()
+        self._session.refresh(article)
+        return article
+
+    def list(self) -> list[Article]:
+        stmt = self._session.query(Article)
+        return list(stmt.all())
 
 
 # ---------------------------------------------------------------------------
@@ -268,3 +296,22 @@ def delete_result(session: Session, result_id: int) -> bool:
     session.delete(result)
     session.commit()
     return True
+
+
+def create_article(
+    session: Session, title: str, url: str, published: datetime | None = None
+) -> Article:
+    """Insert a new :class:`Article`."""
+
+    article = Article(title=title, url=url, published=published)
+    session.add(article)
+    session.commit()
+    session.refresh(article)
+    return article
+
+
+def list_articles(session: Session) -> list[Article]:
+    """Return all :class:`Article` records."""
+
+    stmt = session.query(Article)
+    return list(stmt.all())
