@@ -39,7 +39,10 @@ The backend exposes an SSE endpoint to stream log messages in real time.
 GET /logs/stream
 ```
 
-Use this route from the frontend to monitor running jobs or debug output.
+Use this route from the frontend to monitor running jobs or debug output. Logs
+are also written to `business_intel_scraper/backend/logs/app.log`. To forward
+them to a centralized collector set `LOG_FORWARD_URL` in your environment and
+see [docs/logging.md](docs/logging.md) for an example ELK setup.
 
 ## Metrics
 
