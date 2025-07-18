@@ -110,3 +110,14 @@ class JobEvent(Base):
     event: Mapped[str] = mapped_column(String, nullable=False)
     message: Mapped[str | None] = mapped_column(String, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Article(Base):
+    """ORM model for a scraped news article."""
+
+    __tablename__ = "articles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    url: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    published: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
