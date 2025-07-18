@@ -6,6 +6,7 @@ from business_intel_scraper.backend.proxy.provider import (
     APIProxyProvider,
     CommercialProxyAPIProvider,
 )
+import pytest
 
 
 def test_dummy_provider_cycle() -> None:
@@ -118,3 +119,8 @@ def test_proxy_manager_health_check(monkeypatch) -> None:
     manager = ProxyManager([primary, secondary], validator=validator)
 
     assert manager.get_proxy() == "good"
+
+
+def test_proxy_manager_requires_provider() -> None:
+    with pytest.raises(ValueError):
+        ProxyManager([])
