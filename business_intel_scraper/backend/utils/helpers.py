@@ -5,10 +5,14 @@ from __future__ import annotations
 import logging
 import logging.config
 import json
+import os
 from pathlib import Path
+
+import requests
 
 LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
 LOG_FILE = LOG_DIR / "app.log"
+LOG_FORWARD_URL = os.getenv("LOG_FORWARD_URL", "")
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +28,27 @@ class JsonFormatter(logging.Formatter):
         if record.exc_info:
             data["exc_info"] = self.formatException(record.exc_info)
         return json.dumps(data)
+
+
+class HTTPLogHandler(logging.Handler):
+    """Send log records as JSON to ``LOG_FORWARD_URL`` if configured."""
+
+    def __init__(self, url: str, timeout: int = 5) -> None:
+        super().__init__()
+        self.url = url
+        self.timeout = timeout
+
+    def emit(self, record: logging.LogRecord) -> None:  # type: ignore[override]
+        try:
+            payload = self.format(record)
+            requests.post(
+                self.url,
+                data=payload.encode(),
+                headers={"Content-Type": "application/json"},
+                timeout=self.timeout,
+            )
+        except Exception:
+            self.handleError(record)
 
 
 def setup_logging(
@@ -79,6 +104,15 @@ def setup_logging(
             "handlers": ["file", "console"],
         },
     }
+
+    if LOG_FORWARD_URL:
+        config["handlers"]["http"] = {
+            "class": "business_intel_scraper.backend.utils.helpers.HTTPLogHandler",
+            "level": level,
+            "url": LOG_FORWARD_URL,
+            "formatter": "json",
+        }
+        config["root"]["handlers"].append("http")
 
     logging.config.dictConfig(config)
     logger.debug("Logging configured")

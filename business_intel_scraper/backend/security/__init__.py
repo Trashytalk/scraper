@@ -7,7 +7,12 @@ from .auth import (
     get_role_from_token,
     require_role,
 )
-from .captcha import CaptchaSolver, HTTPCaptchaSolver, solve_captcha
+from .captcha import (
+    CaptchaSolver,
+    HTTPCaptchaSolver,
+    TwoCaptchaSolver,
+    solve_captcha,
+)
 from .rate_limit import RateLimitMiddleware
 
 __all__ = [
@@ -18,7 +23,6 @@ __all__ = [
     "require_role",
     "solve_captcha",
     "CaptchaSolver",
-    "HTTPCaptchaSolver",
     "TwoCaptchaSolver",
     "RateLimitMiddleware",
 ]
