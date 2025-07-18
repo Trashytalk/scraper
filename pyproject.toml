@@ -32,10 +32,14 @@ dependencies = [
     "passlib",
     "prometheus-client",
     "gevent",
+    "requests-cache",
+    "redis",
+    "strawberry-graphql[fastapi]",
 ]
 
 [project.scripts]
 biscraper = "business_intel_scraper.backend.cli.main:main"
+bi-scraper = "business_intel_scraper.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

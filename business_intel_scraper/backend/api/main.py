@@ -31,7 +31,7 @@ from .schemas import (
 from ..db.models import UserRole
 from ..nlp import pipeline
 from ..utils.helpers import LOG_FILE
-from ..utils import export
+from ..utils import export, setup_logging
 from ..workers.tasks import get_task_status, launch_scraping_task
 
 setup_request_cache()

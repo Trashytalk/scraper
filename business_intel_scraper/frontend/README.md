@@ -1,6 +1,6 @@
 # Frontend Development Setup
 
-This directory holds a minimal frontend application. The only dependency is listed in `package.json`, but running `npm install` ensures all Node modules are present.
+This directory contains a small React dashboard for monitoring scraping jobs. The only dependency is listed in `package.json`, but running `npm install` ensures all Node modules are present.
 
 ## Install Node dependencies
 
@@ -16,7 +16,7 @@ Use the following command to serve the `public` folder locally.
 npm start
 ```
 
-The server runs on [http://localhost:8000](http://localhost:8000) by default.
+The server runs on [http://localhost:8000](http://localhost:8000) by default and serves a dashboard showing job progress, streaming logs and scraped data.
 
 ## Building and running
 

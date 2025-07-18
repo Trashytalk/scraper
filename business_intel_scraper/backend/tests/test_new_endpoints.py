@@ -27,7 +27,7 @@ def test_root_endpoint() -> None:
 def test_job_endpoints() -> None:
     os.environ["JWT_SECRET"] = "secret"
     os.environ["JWT_ALGORITHM"] = "HS256"
-    token = create_token("1", "analyst")
+    token = create_token("1", "admin")
     client = TestClient(app)
     headers = {"Authorization": f"Bearer {token}"}
 

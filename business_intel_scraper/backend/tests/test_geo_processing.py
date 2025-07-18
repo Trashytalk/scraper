@@ -12,7 +12,11 @@ sys.path.append(str(Path(__file__).resolve().parents[3]))
 
 from sqlalchemy.orm import relationship
 from business_intel_scraper.backend.db.models import Location
-from business_intel_scraper.backend.geo.processing import geocode_addresses
+from business_intel_scraper.backend.geo.processing import (
+    geocode_addresses,
+    _parse_nominatim_response,
+    _parse_google_response,
+)
 
 Location.companies = relationship("Company", back_populates="location")
 
@@ -52,3 +56,15 @@ def test_geocode_addresses_google(monkeypatch: pytest.MonkeyPatch) -> None:
 
     results = geocode_addresses(["Philly"], use_nominatim=False, google_api_key="dummy")
     assert results == [("Philly", 40.0, -75.0)]
+
+
+def test_parse_nominatim_response():
+    data = [{"lat": "1.23", "lon": "4.56"}]
+    assert _parse_nominatim_response(data) == (1.23, 4.56)
+    assert _parse_nominatim_response([]) == (None, None)
+
+
+def test_parse_google_response():
+    data = {"results": [{"geometry": {"location": {"lat": 9, "lng": 10}}}]}
+    assert _parse_google_response(data) == (9.0, 10.0)
+    assert _parse_google_response({}) == (None, None)
