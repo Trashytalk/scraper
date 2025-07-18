@@ -147,6 +147,8 @@ To run scrapes automatically on a schedule, start Celery beat:
 ```bash
 celery -A business_intel_scraper.backend.workers.tasks.celery_app beat --loglevel=info
 ```
+This runs the `scheduled_run_all_spiders` task every day at midnight to launch
+all available spiders.
 
 With the services running you can interact with the API:
 
