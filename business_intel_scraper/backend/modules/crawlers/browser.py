@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from ..proxy.manager import ProxyManager
+from ...proxy.manager import ProxyManager
 
 try:
     from playwright.sync_api import sync_playwright
