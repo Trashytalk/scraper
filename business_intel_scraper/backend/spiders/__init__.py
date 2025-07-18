@@ -1,3 +1,4 @@
+
 """Collection of stub Scrapy spiders for future implementation."""
 from __future__ import annotations
 
@@ -94,3 +95,4 @@ __all__ = [
     "AwardsRankingsSpider",
     "ExportControlListSpider",
 ]
+
