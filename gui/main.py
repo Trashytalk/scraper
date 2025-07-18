@@ -18,7 +18,11 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 def main() -> None:
-    """Launch the main GUI application."""
+    """
+    Launches the Business Intelligence Scraper GUI application.
+    
+    Initializes the Qt application, displays the main dashboard window, and starts the event loop.
+    """
 
     app = QtWidgets.QApplication(sys.argv)
     window = DashboardWindow()

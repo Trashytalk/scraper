@@ -22,11 +22,20 @@ class JobManagerWidget(QtWidgets.QWidget):
     job_finished = QtCore.pyqtSignal(str)  # type: ignore[attr-defined]
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        """
+        Initialize the JobManagerWidget, set up the user interface, and prepare internal job tracking.
+        
+        Parameters:
+            parent (QtWidgets.QWidget | None): Optional parent widget.
+        """
         super().__init__(parent)
         self._setup_ui()
         self.active_jobs: dict[str, str] = {}
 
     def _setup_ui(self) -> None:
+        """
+        Set up the user interface for the job manager widget, including input fields, control buttons, and a log display.
+        """
         layout = QtWidgets.QVBoxLayout(self)
 
         form = QtWidgets.QHBoxLayout()
@@ -47,12 +56,21 @@ class JobManagerWidget(QtWidgets.QWidget):
         self.stop_button.clicked.connect(self.stop_all_jobs)
 
     def start_job(self) -> None:
-        """Launch a new scraping job in a background thread."""
+        """
+        Starts a new simulated scraping job in a background thread and updates job status.
+        
+        The method retrieves the spider name from the input field (defaulting to "example" if empty), creates a unique job ID, marks the job as running, emits job status signals, and logs job events. The job simulation runs asynchronously to avoid blocking the UI.
+        """
 
         spider = self.spider_name.text().strip() or "example"
 
         def _run() -> None:
             # TODO: connect to scraper task runner instead of dummy logic
+            """
+            Simulates the execution of a scraping job, updating job status, emitting job signals, and logging progress.
+            
+            This function generates a unique job ID, marks the job as running, emits a job started signal, logs the start, waits for a fixed duration to simulate work, then marks the job as finished, emits a job finished signal, and logs the completion.
+            """
             job_id = f"job-{len(self.active_jobs)+1}"
             self.active_jobs[job_id] = "running"
             self.job_started.emit(job_id)
@@ -69,10 +87,15 @@ class JobManagerWidget(QtWidgets.QWidget):
         thread.start()
 
     def stop_all_jobs(self) -> None:
-        """Signal all jobs to stop. Placeholder implementation."""
+        """
+        Logs a request to stop all running jobs. Actual job cancellation is not implemented.
+        """
 
         # TODO: implement proper job cancellation via scraper APIs
         self._append_log("Requested stop for all jobs (not yet implemented)")
 
     def _append_log(self, message: str) -> None:
+        """
+        Appends a message to the log display in the widget.
+        """
         self.log.append(message)
