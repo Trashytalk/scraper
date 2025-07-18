@@ -130,6 +130,14 @@ Common settings include:
 - `LOG_FORWARD_URL` – optional HTTP endpoint to forward JSON logs.
 - `LOG_LEVEL` – logging level for the API and workers.
 
+## Request Caching
+
+All outgoing requests made with the `requests` library are cached automatically
+when the application starts. Set `CACHE_BACKEND` to `redis` or `filesystem` to
+choose the cache store. `CACHE_REDIS_URL`, `CACHE_DIR` and `CACHE_EXPIRE`
+control the connection URL, cache directory and expiration time. Using a cache
+avoids re-fetching identical URLs during scraping and when obtaining proxies.
+
 ## Proxy Configuration
 
 Configure proxy rotation using provider classes. Supply one or more providers to
