@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Iterable, Tuple
 
-import hashlib
 import json
 import time
 import urllib.parse
@@ -18,16 +17,6 @@ from business_intel_scraper.backend.db.models import Base, Location
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 GOOGLE_GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
-
-
-def _deterministic_coords(address: str) -> tuple[float, float]:
-    """Return reproducible coordinates for an address."""
-
-    digest = hashlib.sha1(address.encode()).hexdigest()
-    num = int(digest[:8], 16)
-    latitude = float((num % 180) - 90)
-    longitude = float(((num // 180) % 360) - 180)
-    return latitude, longitude
 
 
 def _parse_nominatim_response(
@@ -107,34 +96,26 @@ def geocode_addresses(
         Tuples containing address and latitude/longitude.
     """
 
-    fetch_remote = engine is None
     if engine is None:
         engine = create_engine("sqlite:///geo.db")
 
     Base.metadata.create_all(engine)
 
-    local_results: list[Tuple[str, float, float]] = []
+    results: list[Tuple[str, float | None, float | None]] = []
+    lookup = (
+        _nominatim_lookup
+        if use_nominatim
+        else (lambda addr: _google_lookup(addr, google_api_key or ""))
+    )
+
     with Session(engine) as session:
         for address in addresses:
-            latitude, longitude = _deterministic_coords(address)
-
-            session.add(
-                Location(address=address, latitude=latitude, longitude=longitude)
-            )
-            local_results.append((address, latitude, longitude))
+            lat, lon = lookup(address)
+            if lat is not None and lon is not None:
+                session.add(Location(address=address, latitude=lat, longitude=lon))
+            results.append((address, lat, lon))
+            time.sleep(1)
 
         session.commit()
 
-    if not fetch_remote:
-        return local_results
-
-    final_results: list[Tuple[str, float | None, float | None]] = []
-    for address, _lat, _lon in local_results:
-        if use_nominatim:
-            lat, lon = _nominatim_lookup(address)
-        else:
-            lat, lon = _google_lookup(address, google_api_key or "")
-        final_results.append((address, lat, lon))
-        time.sleep(1)
-
-    return final_results
+    return results
