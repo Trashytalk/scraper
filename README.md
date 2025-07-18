@@ -106,6 +106,7 @@ Configuration values are read from environment variables or an optional `.env` f
 Common settings include:
 
 - `API_KEY` – credentials for external APIs.
+- `GOOGLE_API_KEY` – API key for Google geocoding.
 - `DATABASE_URL` – SQLAlchemy connection string (default `sqlite:///data.db`).
 - `PROXY_URL` – proxy server address if scraping through a proxy.
 - `PROXY_ROTATE` – set to `true` to rotate proxies on each request.
@@ -181,7 +182,7 @@ The repository contains working examples for scraping, simple NLP and OSINT task
 
 - **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
-- **Geocoding helpers** – the geocoding pipeline currently returns deterministic coordinates and does not fully use online providers.
+- **Geocoding helpers** – addresses are geocoded via OpenStreetMap Nominatim or Google when a `GOOGLE_API_KEY` is provided.
 - **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
 - **Additional OSINT tools** – Shodan and Nmap scans are now available as Celery tasks.
 

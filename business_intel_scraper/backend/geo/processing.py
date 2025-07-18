@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Iterable, Tuple
 
+import os
+
 import json
 import time
 import urllib.parse
@@ -105,7 +107,11 @@ def geocode_addresses(
     lookup = (
         _nominatim_lookup
         if use_nominatim
-        else (lambda addr: _google_lookup(addr, google_api_key or ""))
+        else (
+            lambda addr: _google_lookup(
+                addr, google_api_key or os.getenv("GOOGLE_API_KEY", "")
+            )
+        )
     )
 
     with Session(engine) as session:
