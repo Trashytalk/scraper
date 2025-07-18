@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import os
 import base64
+import os
 import time
 from typing import Any
 
@@ -70,6 +70,17 @@ class TwoCaptchaSolver(CaptchaSolver):
     def solve(self, image: bytes, **kwargs: Any) -> str:  # noqa: D401 - see base class
         captcha_id = self._submit(image)
         return self._retrieve(captcha_id)
+
+
+class EnvTwoCaptchaSolver(TwoCaptchaSolver):
+    """2Captcha solver initialized from environment variables."""
+
+    def __init__(self, poll_interval: float = 5.0) -> None:
+        api_key = os.getenv("CAPTCHA_API_KEY")
+        api_url = os.getenv("CAPTCHA_API_URL", "https://2captcha.com")
+        if not api_key:
+            raise NotImplementedError("CAPTCHA_API_KEY not configured")
+        super().__init__(api_key, api_url, poll_interval=poll_interval)
 
 
 class HTTPCaptchaSolver(CaptchaSolver):
