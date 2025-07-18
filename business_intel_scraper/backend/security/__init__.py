@@ -23,7 +23,6 @@ __all__ = [
     "require_role",
     "solve_captcha",
     "CaptchaSolver",
-    "HTTPCaptchaSolver",
     "TwoCaptchaSolver",
     "RateLimitMiddleware",
 ]
