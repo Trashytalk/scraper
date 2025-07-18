@@ -11,5 +11,6 @@ pyjwt
 passlib
 prometheus-client
 gevent
+strawberry-graphql[fastapi]
 requests-cache
 redis
