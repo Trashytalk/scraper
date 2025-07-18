@@ -18,19 +18,12 @@ class ExampleSpider(scrapy.Spider):
     start_urls = ["https://example.com"]
 
     # Configure proxy middleware and provider
+    base = "business_intel_scraper.backend.modules.crawlers.middleware"
     custom_settings = {
         "DOWNLOADER_MIDDLEWARES": {
-            (
-                "business_intel_scraper.backend.modules.crawlers.middleware." "ProxyMiddleware"
-            ): 543,
-            (
-                "business_intel_scraper.backend.modules.crawlers.middleware."
-                "RandomUserAgentMiddleware"
-            ): 544,
-            (
-                "business_intel_scraper.backend.modules.crawlers.middleware."
-                "RandomDelayMiddleware"
-            ): 545,
+            f"{base}.ProxyMiddleware": 543,
+            f"{base}.RandomUserAgentMiddleware": 544,
+            f"{base}.RandomDelayMiddleware": 545,
         },
         "PROXY_PROVIDER": DummyProxyProvider(["http://localhost:8000"]),
     }
