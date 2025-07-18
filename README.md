@@ -122,6 +122,14 @@ Common settings include:
 - `CACHE_DIR` – directory used for the filesystem cache.
 - `CACHE_EXPIRE` – cache expiration time in seconds (default `3600`).
 
+## Request Caching
+
+All outgoing requests made with the `requests` library are cached automatically
+when the application starts. Set `CACHE_BACKEND` to `redis` or `filesystem` to
+choose the cache store. `CACHE_REDIS_URL`, `CACHE_DIR` and `CACHE_EXPIRE`
+control the connection URL, cache directory and expiration time. Using a cache
+avoids re-fetching identical URLs during scraping and when obtaining proxies.
+
 ## Proxy Configuration
 
 Configure proxy rotation using provider classes. Supply one or more providers to
