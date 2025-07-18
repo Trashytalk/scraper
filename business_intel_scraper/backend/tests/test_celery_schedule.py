@@ -16,3 +16,9 @@ def test_periodic_task_registered() -> None:
         entry["task"]
         == "business_intel_scraper.backend.workers.tasks.scheduled_example_scrape"
     )
+    assert "run_all_spiders_daily" in tasks.celery_app.conf.beat_schedule
+    entry2 = tasks.celery_app.conf.beat_schedule["run_all_spiders_daily"]
+    assert (
+        entry2["task"]
+        == "business_intel_scraper.backend.workers.tasks.scheduled_run_all_spiders"
+    )

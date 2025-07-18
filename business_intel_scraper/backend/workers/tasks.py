@@ -77,7 +77,11 @@ celery_app.conf.beat_schedule = {
     "example_spider_hourly": {
         "task": "business_intel_scraper.backend.workers.tasks.scheduled_example_scrape",
         "schedule": crontab(minute=0, hour="*"),
-    }
+    },
+    "run_all_spiders_daily": {
+        "task": "business_intel_scraper.backend.workers.tasks.scheduled_run_all_spiders",
+        "schedule": crontab(minute=0, hour=0),
+    },
 }
 
 
@@ -176,6 +180,19 @@ def scheduled_example_scrape() -> str:
     """Periodically run the example spider and persist data."""
     job_id = str(uuid.uuid4())
     _run_example_spider(job_id)
+    return job_id
+
+
+def _run_all_spiders(job_id: str) -> None:
+    """Run all configured spiders sequentially."""
+    _run_example_spider(job_id)
+
+
+@celery_app.task
+def scheduled_run_all_spiders() -> str:
+    """Periodic task that runs all spiders."""
+    job_id = str(uuid.uuid4())
+    _run_all_spiders(job_id)
     return job_id
 
 
@@ -313,7 +330,7 @@ def geocode_task(addresses: list[str]) -> list[tuple[str, float | None, float | 
     TASK_DURATION.labels(task="geocode").observe(time.perf_counter() - start)
     return result
 
-
+@celery_app.task
 def theharvester_scan(domain: str) -> dict[str, str]:
     """Run TheHarvester OSINT scan.
 

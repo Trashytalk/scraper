@@ -51,5 +51,6 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credentials"
         )
-    token = create_token(str(db_user.id), db_user.role.value)
+    role = db_user.role.value if hasattr(db_user.role, "value") else db_user.role
+    token = create_token(str(db_user.id), role)
     return {"access_token": token, "token_type": "bearer"}
