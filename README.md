@@ -228,3 +228,16 @@ The repository contains working examples for scraping, simple NLP and OSINT task
 
 Contributions are welcome to help flesh out these areas.
 
+
+## Desktop GUI
+
+A Python desktop interface is now scaffolded in the `gui/` directory. It uses
+PyQt and provides placeholders for a dashboard, job manager, log viewer and data
+table. Run the application with:
+
+```bash
+python -m gui.main
+```
+
+The GUI currently relies on stub implementations. Hook up the components to the
+scraper modules to launch and monitor jobs without using the CLI.
