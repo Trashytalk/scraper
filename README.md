@@ -134,6 +134,11 @@ If background tasks are used, run a Celery worker in a separate terminal:
 ```bash
 celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
 ```
+To run scrapes automatically on a schedule, start Celery beat:
+
+```bash
+celery -A business_intel_scraper.backend.workers.tasks.celery_app beat --loglevel=info
+```
 
 With the services running you can interact with the API:
 
@@ -143,6 +148,16 @@ curl -X POST http://localhost:8000/scrape # launch the example spider
 ```
 
 Task progress can be queried at `/tasks/<task_id>` and log messages stream from `/logs/stream`.
+
+### Command Line Client
+
+A small CLI is included for interacting with the API. It defaults to http://localhost:8000 and reads a bearer token from the BI_SCRAPER_TOKEN environment variable.
+
+```bash
+python -m business_intel_scraper.cli scrape       # launch a job
+python -m business_intel_scraper.cli status <id>  # check status
+python -m business_intel_scraper.cli download -o results.json
+```
 
 The repository also provides a `docker-compose.yml` in `business_intel_scraper/` for launching Redis, the API and a worker together:
 
@@ -159,7 +174,7 @@ The repository contains working examples for scraping, simple NLP and OSINT task
 
 - **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
-- **Geocoding helpers** – the geocoding pipeline currently returns deterministic coordinates and does not fully use online providers.
+- **Geocoding helpers** – the geocoding pipeline integrates with Nominatim or Google's API for real coordinates.
 - **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
 - **Additional OSINT tools** – future releases will integrate more external tools and reporting features.
 
