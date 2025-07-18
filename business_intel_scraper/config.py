@@ -28,6 +28,7 @@ class Settings:
     """Container for application settings."""
 
     api_key: str = os.getenv("API_KEY", "")
+    google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///data.db")
     use_https: bool = os.getenv("USE_HTTPS", "false").lower() == "true"
     rate_limit: int = int(os.getenv("RATE_LIMIT", "60"))

@@ -106,6 +106,7 @@ Configuration values are read from environment variables or an optional `.env` f
 Common settings include:
 
 - `API_KEY` – credentials for external APIs.
+- `GOOGLE_API_KEY` – API key for Google geocoding.
 - `DATABASE_URL` – SQLAlchemy connection string (default `sqlite:///data.db`).
 - `PROXY_URL` – proxy server address if scraping through a proxy.
 - `PROXY_ROTATE` – set to `true` to rotate proxies on each request.
@@ -177,13 +178,22 @@ docker compose up --build
 ```
 See `docs/deployment.md` for Kubernetes deployment instructions.
 
+## Third-Party Integrations
+
+Lightweight wrappers for several external scraping projects are available in
+`business_intel_scraper.backend.integrations`. They expose helper functions for
+running tools like `crawl4ai`, `SecretScraper`, `colly`, `proxy_pool`,
+`spiderfoot` and ProjectDiscovery's `katana`. Each wrapper simply invokes the
+underlying CLI when present and raises ``NotImplementedError`` if the tool is
+missing.
+
 ## Roadmap and Incomplete Features
 
 The repository contains working examples for scraping, simple NLP and OSINT tasks, but several pieces are intentionally stubbed out or incomplete:
 
 - **Captcha solving** – `business_intel_scraper.backend.security.captcha` integrates with configurable providers like 2Captcha.
 - **Advanced proxy management** – proxy rotation works with simple providers; integration with commercial proxy APIs is planned.
-- **Geocoding helpers** – the geocoding pipeline currently returns deterministic coordinates and does not fully use online providers.
+- **Geocoding helpers** – addresses are geocoded via OpenStreetMap Nominatim or Google when a `GOOGLE_API_KEY` is provided.
 - **Full frontend dashboard** – the included frontend is a minimal placeholder meant for development.
 - **Additional OSINT tools** – Shodan and Nmap scans are now available as Celery tasks.
 

@@ -27,6 +27,7 @@ class APISettings:
     """Settings related to external API access."""
 
     api_key: str = os.getenv("API_KEY", "")
+    google_api_key: str = os.getenv("GOOGLE_API_KEY", "")
 
 
 @dataclass
