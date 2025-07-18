@@ -42,6 +42,31 @@ def download_data(url: str, token: str, output: str | None) -> None:
         print(json.dumps(data, indent=2))
 
 
+def export_data(
+    url: str,
+    token: str,
+    fmt: str,
+    output: str | None,
+    bucket: str | None,
+    key: str | None,
+) -> None:
+    params = {"format": fmt}
+    if bucket:
+        params["bucket"] = bucket
+    if key:
+        params["key"] = key
+    resp = httpx.get(f"{url}/export", params=params, headers=_headers(token))
+    resp.raise_for_status()
+    if fmt == "s3":
+        print(resp.json().get("location", ""))
+    else:
+        text = resp.text
+        if output:
+            Path(output).write_text(text)
+        else:
+            print(text)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Interact with the Business Intelligence Scraper API"
@@ -58,6 +83,12 @@ def main() -> None:
     dl = sub.add_parser("download", help="Download scraped data")
     dl.add_argument("-o", "--output")
 
+    exp = sub.add_parser("export", help="Export data in various formats")
+    exp.add_argument("--format", choices=["csv", "jsonl", "s3"], default="jsonl")
+    exp.add_argument("--bucket")
+    exp.add_argument("--key")
+    exp.add_argument("-o", "--output")
+
     args = parser.parse_args()
 
     if args.cmd == "scrape":
@@ -66,6 +97,15 @@ def main() -> None:
         check_status(args.url, args.token, args.task_id)
     elif args.cmd == "download":
         download_data(args.url, args.token, args.output)
+    elif args.cmd == "export":
+        export_data(
+            args.url,
+            args.token,
+            args.format,
+            args.output,
+            args.bucket,
+            args.key,
+        )
 
 
 if __name__ == "__main__":

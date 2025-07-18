@@ -5,6 +5,13 @@ DB_PATH = "./test_auth.db"
 if os.path.exists(DB_PATH):
     os.remove(DB_PATH)
 os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH}"
+import importlib
+import settings as settings_module
+
+importlib.reload(settings_module)
+import business_intel_scraper.backend.db as db
+
+importlib.reload(db)
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient

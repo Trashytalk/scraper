@@ -167,6 +167,7 @@ A small CLI is included for interacting with the API. It defaults to http://loca
 python -m business_intel_scraper.cli scrape       # launch a job
 python -m business_intel_scraper.cli status <id>  # check status
 python -m business_intel_scraper.cli download -o results.json
+python -m business_intel_scraper.cli export --format csv -o results.csv
 ```
 
 The repository also provides a `docker-compose.yml` in `business_intel_scraper/` for launching Redis, the API and a worker together:
