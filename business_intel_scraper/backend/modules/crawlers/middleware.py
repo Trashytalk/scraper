@@ -9,7 +9,7 @@ from typing import Iterable
 from scrapy import Request
 from scrapy.crawler import Spider
 
-from ..proxy.manager import ProxyManager
+from ...proxy.manager import ProxyManager
 
 
 class ProxyMiddleware:

@@ -48,8 +48,8 @@ DOWNLOAD_DELAY = 1
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     # Custom middlewares for proxy handling and request randomization
-    "business_intel_scraper.backend.crawlers.middleware.RandomUserAgentMiddleware": 400,
-    "business_intel_scraper.backend.crawlers.middleware.RandomDelayMiddleware": 410,
+    "business_intel_scraper.backend.modules.crawlers.middleware.RandomUserAgentMiddleware": 400,
+    "business_intel_scraper.backend.modules.crawlers.middleware.RandomDelayMiddleware": 410,
 }
 
 # Default list of User-Agent strings for RandomUserAgentMiddleware

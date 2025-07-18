@@ -18,7 +18,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Pool = None  # type: ignore
     async_sleep = time.sleep  # type: ignore
     GEVENT_AVAILABLE = False
-from business_intel_scraper.backend.osint.integrations import (
+from business_intel_scraper.backend.modules.scrapers.integrations import (
     run_spiderfoot,
     run_theharvester,
     run_sherlock,
@@ -235,7 +235,9 @@ def run_spider_task(
         raise ValueError(f"Unknown spider '{spider}'")
 
     try:
-        module = import_module("business_intel_scraper.backend.crawlers.spider")
+        module = import_module(
+            "business_intel_scraper.backend.modules.crawlers.spider"
+        )
         spider_cls = getattr(module, "ExampleSpider")
     except Exception:  # pragma: no cover - unexpected import failure
         return []

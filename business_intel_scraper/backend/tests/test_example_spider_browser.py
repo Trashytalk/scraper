@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from business_intel_scraper.backend.crawlers.spider import ExampleSpider
+from business_intel_scraper.backend.modules.crawlers.spider import ExampleSpider
 
 
 def test_example_spider_browser_mode(monkeypatch) -> None:
@@ -14,7 +14,7 @@ def test_example_spider_browser_mode(monkeypatch) -> None:
             return "<html></html>"
 
     monkeypatch.setattr(
-        "business_intel_scraper.backend.crawlers.spider.BrowserCrawler",
+        "business_intel_scraper.backend.modules.crawlers.spider.BrowserCrawler",
         DummyCrawler,
     )
     spider = ExampleSpider(use_browser=True, headless=False)

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import scrapy
 
-from ..security import solve_captcha
+from ...security import solve_captcha
 
-from ..proxy.provider import DummyProxyProvider
+from ...proxy.provider import DummyProxyProvider
 from .browser import BrowserCrawler
 
 
@@ -21,14 +21,14 @@ class ExampleSpider(scrapy.Spider):
     custom_settings = {
         "DOWNLOADER_MIDDLEWARES": {
             (
-                "business_intel_scraper.backend.crawlers.middleware." "ProxyMiddleware"
+                "business_intel_scraper.backend.modules.crawlers.middleware." "ProxyMiddleware"
             ): 543,
             (
-                "business_intel_scraper.backend.crawlers.middleware."
+                "business_intel_scraper.backend.modules.crawlers.middleware."
                 "RandomUserAgentMiddleware"
             ): 544,
             (
-                "business_intel_scraper.backend.crawlers.middleware."
+                "business_intel_scraper.backend.modules.crawlers.middleware."
                 "RandomDelayMiddleware"
             ): 545,
         },
