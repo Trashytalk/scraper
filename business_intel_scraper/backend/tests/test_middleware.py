@@ -8,7 +8,7 @@ from unittest import mock
 import scrapy
 from scrapy.http import Request
 
-from business_intel_scraper.backend.crawlers.middleware import (
+from business_intel_scraper.backend.modules.crawlers.middleware import (
     RandomDelayMiddleware,
     RandomUserAgentMiddleware,
 )

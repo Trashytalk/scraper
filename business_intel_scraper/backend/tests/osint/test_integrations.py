@@ -10,7 +10,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 
-from business_intel_scraper.backend.osint.integrations import (
+from business_intel_scraper.backend.modules.scrapers.integrations import (
     run_spiderfoot,
     run_theharvester,
     run_sherlock,

@@ -6,7 +6,7 @@ from typing import Optional
 
 from playwright.async_api import async_playwright
 
-from ..proxy.manager import ProxyManager
+from ...proxy.manager import ProxyManager
 
 
 async def fetch_with_playwright(

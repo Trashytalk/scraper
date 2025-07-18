@@ -14,5 +14,5 @@ CONCURRENT_REQUESTS = 16
 
 # Enable item pipelines.
 ITEM_PIPELINES = {
-    "business_intel_scraper.backend.crawlers.pipelines.ExamplePipeline": 300,
+    "business_intel_scraper.backend.modules.crawlers.pipelines.ExamplePipeline": 300,
 }

@@ -1,7 +1,7 @@
 import scrapy
 from typing import Iterable
 
-from ...security import solve_captcha
+from ....security import solve_captcha
 
 
 class QuotesSpider(scrapy.Spider):
