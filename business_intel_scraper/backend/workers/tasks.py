@@ -27,6 +27,7 @@ from business_intel_scraper.backend.osint.integrations import (
 from business_intel_scraper.backend.nlp import pipeline
 from business_intel_scraper.backend.geo.processing import geocode_addresses
 from ..audit.logger import log_job_start, log_job_finish, log_job_error
+from celery.schedules import crontab
 
 
 try:
@@ -69,6 +70,13 @@ try:  # pragma: no cover - optional dependency
     )
 except ModuleNotFoundError:
     pass
+
+celery_app.conf.beat_schedule = {
+    "example_spider_hourly": {
+        "task": "business_intel_scraper.backend.workers.tasks.scheduled_example_scrape",
+        "schedule": crontab(minute=0, hour="*"),
+    }
+}
 
 
 try:
@@ -159,6 +167,14 @@ def _run_example_spider(job_id: str) -> str:
     log_job_finish(job_id)
     TASK_DURATION.labels(task="example_spider").observe(time.perf_counter() - start)
     return "scraping complete"
+
+
+@celery_app.task
+def scheduled_example_scrape() -> str:
+    """Periodically run the example spider and persist data."""
+    job_id = str(uuid.uuid4())
+    _run_example_spider(job_id)
+    return job_id
 
 
 def launch_scraping_task() -> str:

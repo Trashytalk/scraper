@@ -134,6 +134,11 @@ If background tasks are used, run a Celery worker in a separate terminal:
 ```bash
 celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
 ```
+To run scrapes automatically on a schedule, start Celery beat:
+
+```bash
+celery -A business_intel_scraper.backend.workers.tasks.celery_app beat --loglevel=info
+```
 
 With the services running you can interact with the API:
 
