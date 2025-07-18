@@ -75,11 +75,15 @@ except ModuleNotFoundError:
 
 celery_app.conf.beat_schedule = {
     "example_spider_hourly": {
-        "task": "business_intel_scraper.backend.workers.tasks.scheduled_example_scrape",
+        "task": (
+            "business_intel_scraper.backend.workers.tasks" ".scheduled_example_scrape"
+        ),
         "schedule": crontab(minute=0, hour="*"),
     },
     "run_all_spiders_daily": {
-        "task": "business_intel_scraper.backend.workers.tasks.scheduled_run_all_spiders",
+        "task": (
+            "business_intel_scraper.backend.workers.tasks" ".scheduled_run_all_spiders"
+        ),
         "schedule": crontab(minute=0, hour=0),
     },
 }

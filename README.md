@@ -161,12 +161,12 @@ Task progress can be queried at `/tasks/<task_id>` and log messages stream from 
 
 ### Command Line Client
 
-A small CLI is included for interacting with the API. It defaults to http://localhost:8000 and reads a bearer token from the BI_SCRAPER_TOKEN environment variable.
+A small CLI is included for interacting with the API. It defaults to http://localhost:8000 and reads a bearer token from the `BI_SCRAPER_TOKEN` environment variable.
 
 ```bash
-python -m business_intel_scraper.cli scrape       # launch a job
-python -m business_intel_scraper.cli status <id>  # check status
-python -m business_intel_scraper.cli download -o results.json
+bi-scraper scrape             # launch a job
+bi-scraper status <id>        # check status
+bi-scraper download -o results.json
 ```
 
 The repository also provides a `docker-compose.yml` in `business_intel_scraper/` for launching Redis, the API and a worker together:
