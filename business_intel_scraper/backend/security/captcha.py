@@ -72,6 +72,18 @@ class TwoCaptchaSolver(CaptchaSolver):
         return self._retrieve(captcha_id)
 
 
+class HTTPCaptchaSolver(CaptchaSolver):
+    """Simplified CAPTCHA solver using a generic HTTP endpoint."""
+
+    def __init__(self, endpoint: str) -> None:
+        self.endpoint = endpoint.rstrip("/")
+
+    def solve(self, image: bytes, **kwargs: Any) -> str:  # noqa: D401 - see base class
+        response = requests.post(self.endpoint, files={"file": image}, timeout=15)
+        response.raise_for_status()
+        return response.text.strip()
+
+
 def solve_captcha(
     image: bytes, solver: CaptchaSolver | None = None, **kwargs: Any
 ) -> str:
