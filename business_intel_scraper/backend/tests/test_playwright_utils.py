@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from business_intel_scraper.backend.crawlers.playwright_utils import (
+from business_intel_scraper.backend.modules.crawlers.playwright_utils import (
     fetch_with_playwright,
 )
 from business_intel_scraper.backend.proxy.manager import ProxyManager
@@ -48,7 +48,7 @@ async def test_fetch_with_playwright_uses_proxy(monkeypatch) -> None:
         return DummyPlaywrightCM()
 
     monkeypatch.setattr(
-        "business_intel_scraper.backend.crawlers.playwright_utils.async_playwright",
+        "business_intel_scraper.backend.modules.crawlers.playwright_utils.async_playwright",
         dummy_async_playwright,
     )
     provider = DummyProxyProvider(["http://proxy"])
