@@ -1,3 +1,4 @@
+"""Placeholder spiders for future implementation."""
 """Regional Scrapy spider definitions."""
 """Collection of additional business intelligence spiders."""
 
