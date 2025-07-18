@@ -3,7 +3,12 @@
 This project provides a modular framework for scraping and analyzing business intelligence data.
 
 ## Overview
+
 The Business Intelligence Scraper is an experimental platform for collecting business data from the web and open-source intelligence (OSINT) tools. It combines Scrapy-based spiders, optional browser automation, and a FastAPI backend with Celery workers for asynchronous jobs.
+
+## Architecture
+
+The repository is organised as a single package named `business_intel_scraper`.  A FastAPI API coordinates scraping tasks executed by Celery workers.  Proxy rotation, NLP helpers and OSINT integrations live in dedicated modules.  Data can be persisted via SQLAlchemy models and Alembic migrations.  A small React dashboard and infrastructure scripts (Docker Compose and Kubernetes) are provided for local and production deployments.  See [docs/architecture.md](docs/architecture.md) for a detailed breakdown.
 
 ## API
 
@@ -159,6 +164,17 @@ curl -X POST http://localhost:8000/scrape # launch the example spider
 ```
 
 Task progress can be queried at `/tasks/<task_id>` and log messages stream from `/logs/stream`.
+
+## Workflow
+
+1. Install dependencies and copy `.env.example` to `.env`.
+2. Start Redis, then run the API and a Celery worker.
+3. Queue jobs via `POST /scrape` or the CLI.
+4. Check `/tasks/<id>` and `/logs/stream` to monitor progress.
+5. Download results from `/export` or via the CLI once jobs complete.
+6. Optional: run Celery beat to execute periodic jobs.
+
+See [docs/workflow.md](docs/workflow.md) for a more detailed walk-through.
 
 ### Command Line Client
 
