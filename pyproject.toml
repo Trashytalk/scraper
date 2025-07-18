@@ -32,6 +32,9 @@ dependencies = [
     "passlib",
     "prometheus-client",
     "gevent",
+    "requests-cache",
+    "redis",
+    "strawberry-graphql[fastapi]",
 ]
 
 [project.scripts]
