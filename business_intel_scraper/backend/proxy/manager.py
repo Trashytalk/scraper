@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Callable, Iterable, List
 
-import requests
-
 from .provider import ProxyProvider
 
 

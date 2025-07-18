@@ -21,6 +21,9 @@ from sqlalchemy.orm import relationship
 
 def test_article_repository_add_and_list() -> None:
     Location.companies = relationship("Company", back_populates="location")
+    db_file = Path("business_intel.db")
+    if db_file.exists():
+        db_file.unlink()
     init_db()
     session = SessionLocal()
     repo = ArticleRepository(session)

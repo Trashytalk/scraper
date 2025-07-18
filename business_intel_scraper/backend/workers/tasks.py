@@ -86,7 +86,7 @@ celery_app.conf.beat_schedule = {
     },
     "run_all_spiders_daily": {
         "task": (
-            "business_intel_scraper.backend.workers.tasks" ".scheduled_run_all_spiders"
+            "business_intel_scraper.backend.workers.tasks." "scheduled_run_all_spiders"
         ),
         "schedule": crontab(minute=0, hour=0),
     },

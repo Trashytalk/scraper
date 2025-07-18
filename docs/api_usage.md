@@ -30,6 +30,14 @@ curl http://localhost:8000/tasks/<task_id>
 curl http://localhost:8000/data
 ```
 
+## Export Scraped Data
+
+Request a different format using the `/export` route:
+
+```bash
+curl "http://localhost:8000/export?format=csv"
+```
+
 ## Job Information
 
 List all known jobs:

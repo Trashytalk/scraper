@@ -9,12 +9,14 @@ sys.path.insert(
 )
 api = pytest.importorskip("business_intel_scraper.backend.api.main")
 from fastapi.testclient import TestClient
+from business_intel_scraper.infra.monitoring import prometheus_exporter
 
 app = api.app
 
 
 def test_metrics_endpoint_exposes_prometheus() -> None:
     client = TestClient(app)
+    prometheus_exporter.record_scrape()
     resp = client.get("/metrics")
     assert resp.status_code == 200
     assert "bi_requests_total" in resp.text
