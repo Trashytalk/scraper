@@ -7,4 +7,5 @@ This directory contains supplementary documentation for the Business Intelligenc
 * [Developer Guide](developer_guide.md) – coding standards and local development
 * [Security](security.md) – JWT configuration and best practices
 * [Deployment Guide](deployment.md) – deploy with Docker Compose or Kubernetes
+* [Logging](logging.md) – forward logs and aggregate them with ELK
 
