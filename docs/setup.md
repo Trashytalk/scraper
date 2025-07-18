@@ -57,5 +57,5 @@ cd business_intel_scraper/frontend
 npm start
 ```
 
-You can now access the frontend on [http://localhost:8000](http://localhost:8000)
-while the backend handles API requests.
+You can now access the dashboard on [http://localhost:8000](http://localhost:8000)
+to monitor jobs and view results in real time while the backend handles API requests.

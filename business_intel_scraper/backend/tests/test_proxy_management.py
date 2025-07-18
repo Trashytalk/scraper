@@ -10,7 +10,7 @@ from business_intel_scraper.backend.proxy.provider import (
 
 def test_dummy_provider_cycle() -> None:
     provider = DummyProxyProvider(["p1", "p2"])
-    manager = ProxyManager(provider)
+    manager = ProxyManager(provider, validator=lambda p: True)
     assert manager.get_proxy() == "p1"
     assert manager.rotate_proxy() == "p2"
     assert manager.get_proxy() == "p2"
@@ -94,7 +94,7 @@ def test_commercial_proxy_api_provider(monkeypatch) -> None:
 def test_proxy_manager_fallback(monkeypatch) -> None:
     primary = DummyProxyProvider(["a"])
     secondary = DummyProxyProvider(["b"])
-    manager = ProxyManager([primary, secondary])
+    manager = ProxyManager([primary, secondary], validator=lambda p: True)
 
     assert manager.get_proxy() == "a"
 
@@ -106,3 +106,15 @@ def test_proxy_manager_fallback(monkeypatch) -> None:
     rotated = manager.rotate_proxy()
     assert rotated == "b"
     assert manager.get_proxy() == "b"
+
+
+def test_proxy_manager_health_check(monkeypatch) -> None:
+    primary = DummyProxyProvider(["bad"])
+    secondary = DummyProxyProvider(["good"])
+
+    def validator(proxy: str) -> bool:
+        return proxy != "bad"
+
+    manager = ProxyManager([primary, secondary], validator=validator)
+
+    assert manager.get_proxy() == "good"

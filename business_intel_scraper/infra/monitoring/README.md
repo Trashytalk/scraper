@@ -28,3 +28,9 @@ scrape_configs:
 
 Metrics from background workers and HTTP endpoints will then be
 collected automatically.
+
+### Log Forwarding
+
+Application logs are written locally but can also be shipped to an external
+service. See [docs/logging.md](../../docs/logging.md) for how to enable log
+forwarding and aggregate records with an ELK stack.
