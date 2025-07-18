@@ -7,6 +7,35 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 from .browser import BrowserCrawler
 from .playwright_utils import fetch_with_playwright
+from .spiders.southeast_asia import (
+    AseanPepCorruptionCaseSpider,
+    CambodiaMinistryOfCommerceFilingsSpider,
+    IndonesiaOJKEnforcementSpider,
+    MalaysiaSCDisclosureSpider,
+    PhilippinesPhilgepsProcurementSpider,
+    RegionalTaxTribunalJudgmentSpider,
+    SeAsiaRenewableEnergyCarbonCreditRegistrySpider,
+    SingaporeMASEnforcementActionsSpider,
+    SingaporeStraitsTimesMalaysianStarCorporateNewsSpider,
+    ThailandBoardOfInvestmentSpider,
+    VietnamExportProcessingZoneRegistrySpider,
+    VietnamStateSecuritiesCommissionPenaltySpider,
+)
+from .spiders.middle_east import (
+    AbuDhabiDubaiFreeZoneCompanyListSpider,
+    DubaiCourtsLitigationAnnouncementSpider,
+    DubaiLandDepartmentTitleDeedSpider,
+    EgyptPublicBusinessSectorCompanyReportsSpider,
+    GCCTaxAuthoritySpider,
+    GCCTenderBlacklistAnnouncementsSpider,
+    IranChamberOfCommerceMembershipSpider,
+    IsraelInnovationAuthorityGrantsSpider,
+    JordanCompaniesControlDepartmentRegistrySpider,
+    KuwaitSaudiPublicProcurementSpider,
+    QatarCentralBankAMLEnforcementSpider,
+    SaudiNitaqatComplianceSpider,
+    TurkeyKAPPublicDisclosurePlatformSpider,
+)
 
 # Regional spider modules
 from .spiders.asean_customs_trade import AseanCustomsTradeSpider
@@ -77,3 +106,31 @@ __all__ = [
 
 if ExampleSpider is not None:
     __all__.insert(0, "ExampleSpider")
+
+__all__ += [
+    "SingaporeStraitsTimesMalaysianStarCorporateNewsSpider",
+    "SingaporeMASEnforcementActionsSpider",
+    "ThailandBoardOfInvestmentSpider",
+    "VietnamExportProcessingZoneRegistrySpider",
+    "IndonesiaOJKEnforcementSpider",
+    "MalaysiaSCDisclosureSpider",
+    "CambodiaMinistryOfCommerceFilingsSpider",
+    "AseanPepCorruptionCaseSpider",
+    "RegionalTaxTribunalJudgmentSpider",
+    "SeAsiaRenewableEnergyCarbonCreditRegistrySpider",
+    "PhilippinesPhilgepsProcurementSpider",
+    "VietnamStateSecuritiesCommissionPenaltySpider",
+    "DubaiLandDepartmentTitleDeedSpider",
+    "GCCTaxAuthoritySpider",
+    "AbuDhabiDubaiFreeZoneCompanyListSpider",
+    "KuwaitSaudiPublicProcurementSpider",
+    "JordanCompaniesControlDepartmentRegistrySpider",
+    "QatarCentralBankAMLEnforcementSpider",
+    "IsraelInnovationAuthorityGrantsSpider",
+    "IranChamberOfCommerceMembershipSpider",
+    "EgyptPublicBusinessSectorCompanyReportsSpider",
+    "SaudiNitaqatComplianceSpider",
+    "GCCTenderBlacklistAnnouncementsSpider",
+    "TurkeyKAPPublicDisclosurePlatformSpider",
+    "DubaiCourtsLitigationAnnouncementSpider",
+]
