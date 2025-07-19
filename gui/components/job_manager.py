@@ -18,8 +18,8 @@ except ImportError:  # pragma: no cover - optional dependency
 class JobManagerWidget(QtWidgets.QWidget):
     """Manage spider jobs and show their status."""
 
-    job_started = QtCore.pyqtSignal(str)  # type: ignore[attr-defined]
-    job_finished = QtCore.pyqtSignal(str)  # type: ignore[attr-defined]
+    job_started = QtCore.pyqtSignal(str)
+    job_finished = QtCore.pyqtSignal(str)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
