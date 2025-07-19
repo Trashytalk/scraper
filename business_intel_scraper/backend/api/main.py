@@ -18,6 +18,8 @@ from pydantic import BaseModel
 from business_intel_scraper.settings import settings
 from ..utils import setup_request_cache
 from .auth import router as auth_router
+from .analytics import router as analytics_router
+from ..analytics.middleware import AnalyticsMiddleware
 from fastapi import Depends
 from ..security import require_token, require_role
 from .notifications import ConnectionManager
@@ -56,6 +58,31 @@ app.add_middleware(
     window=settings.rate_limit.window,
 )
 app.include_router(auth_router)
+
+# Include analytics router
+app.include_router(analytics_router)
+
+# Include performance router
+try:
+    from .performance import router as performance_router
+    app.include_router(performance_router)
+except ImportError as e:
+    print(f"Warning: Could not import performance router: {e}")
+
+# Include marketplace router
+try:
+    from ..marketplace.api import router as marketplace_router
+    app.include_router(marketplace_router)
+except ImportError as e:
+    print(f"Warning: Could not import marketplace router: {e}")
+
+# Include AI router
+try:
+    from ..ai.api import router as ai_router
+    app.include_router(ai_router)
+except ImportError as e:
+    print(f"Warning: Could not import AI router: {e}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.api.allowed_origins,
@@ -63,6 +90,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AnalyticsMiddleware)
 app.add_middleware(MetricsMiddleware)
 app.mount("/metrics", metrics_app)
 

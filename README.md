@@ -1,53 +1,103 @@
-# Business Intelligence Scraper
+# 🔍 Business Intelligence Scraper
 
-This project provides a modular framework for scraping and analyzing business intelligence data.
+> **A comprehensive, modular framework for collecting and analyzing business intelligence data from web sources and OSINT tools.**
 
-## Overview
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-The Business Intelligence Scraper is an experimental platform for collecting business data from the web and open-source intelligence (OSINT) tools. It combines Scrapy-based spiders, optional browser automation, and a FastAPI backend with Celery workers for asynchronous jobs.
+## 🚀 Quick Start
 
-## Architecture
+### One-Command Setup
+```bash
+# Clone and setup everything automatically
+git clone https://github.com/Trashytalk/scraper.git
+cd scraper
+./setup.sh
 
-The repository is organised as a single package named `business_intel_scraper`.  A FastAPI API coordinates scraping tasks executed by Celery workers.  Proxy rotation, NLP helpers and OSINT integrations live in dedicated modules.  Data can be persisted via SQLAlchemy models and Alembic migrations.  A small React dashboard and infrastructure scripts (Docker Compose and Kubernetes) are provided for local and production deployments.  See [docs/architecture.md](docs/architecture.md) for a detailed breakdown.
-
-## API
-
-The backend is built with FastAPI and exposes a simple health check at `/`.
-Production deployments should enable HTTPS and can configure request rate
-limits via environment variables.
-Proxy rotation should be enabled to avoid blocking when scraping at scale.
-
-### WebSocket Notifications
-
-Real-time notifications are available via a WebSocket endpoint at `/ws/notifications`. Messages sent by any connected client are broadcast to all clients.
-
-## Configuration
-
-Copy `.env.example` to `.env` and update the values as needed. The application
-recognizes the following settings:
-
-```
-API_KEY=your_api_key_here
-DATABASE_URL=sqlite:///data.db
-PROXY_URL=
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
+# Run the demo
+./demo.sh
 ```
 
-# scraper
+**🎯 [Complete Quick Start Guide](QUICKSTART.md)**
 
-## Log Streaming
+## 🎪 **Project Templates**
 
-The backend exposes an SSE endpoint to stream log messages in real time.
+Create specialized projects with pre-configured templates:
 
+```bash
+# Business research project
+./create-project.sh business-research my-research
+
+# Competitor analysis
+./create-project.sh competitor-analysis acme-analysis
+
+# Security audit (OSINT)
+./create-project.sh security-audit pentest-recon
+
+# Development/testing
+./create-project.sh development test-project
 ```
-GET /logs/stream
+
+| **Template** | **Use Case** | **Features** |
+|-------------|-------------|-------------|
+| `business-research` | Market analysis, due diligence | Company data, financials, news monitoring |
+| `competitor-analysis` | Competitive intelligence | Pricing tracking, product analysis, positioning |
+| `security-audit` | OSINT, penetration testing | Domain recon, vulnerability assessment |
+| `development` | Testing, prototyping | Fast setup, mock data, debugging tools |
+
+That's it! The demo will start the API server and run an example scraper. Visit `http://localhost:8000` to see the dashboard.
+
+## ✨ Key Features
+
+- **🕷️ Multi-Engine Scraping**: Scrapy spiders + Playwright browser automation
+- **🌐 Web Dashboard**: Real-time job monitoring and data visualization  
+- **⚡ Async Processing**: Celery task queue with Redis backend
+- **🔌 OSINT Integrations**: SpiderFoot, theHarvester, Shodan, Nmap, and more
+- **🗃️ Flexible Storage**: SQLite, PostgreSQL, MySQL support
+- **📊 Built-in Analytics**: NLP processing, geolocation, entity extraction
+- **🛡️ Production Ready**: JWT auth, rate limiting, monitoring, Docker deployment
+- **🎯 Industry Templates**: Pre-configured workflows for common use cases
+
+## 📋 Use Cases
+
+| Use Case | Description | Example Spiders |
+|----------|-------------|----------------|
+| **Due Diligence** | Company verification and background checks | Company registries, business listings |
+| **Competitor Analysis** | Market research and competitive intelligence | News feeds, social media, tech stacks |
+| **Supply Chain Mapping** | Vendor and partner discovery | Business directories, procurement databases |
+| **Security Research** | Domain analysis and threat intelligence | OSINT tools, subdomain enumeration |
+| **Market Research** | Industry trends and opportunity analysis | News scraping, financial data |
+
+## 🏃‍♂️ Quick Examples
+
+### Start a Company Registry Search
+```bash
+# Activate environment
+source .venv/bin/activate
+
+# Search UK Companies House
+curl -X POST http://localhost:8000/scrape \
+  -H "Content-Type: application/json" \
+  -d '{"spider": "national_company_registry", "country": "uk"}'
 ```
 
-Use this route from the frontend to monitor running jobs or debug output. Logs
-are also written to `business_intel_scraper/backend/logs/app.log`. To forward
-them to a centralized collector set `LOG_FORWARD_URL` in your environment and
-see [docs/logging.md](docs/logging.md) for an example ELK setup.
+### Run OSINT Scan
+```bash
+# Subdomain enumeration
+curl -X POST http://localhost:8000/osint/subfinder \
+  -H "Content-Type: application/json" \
+  -d '{"domain": "example.com"}'
+```
+
+### Export Data
+```bash
+# Export as CSV
+curl "http://localhost:8000/export?format=csv" > companies.csv
+
+# Export as JSON
+curl "http://localhost:8000/export?format=json" > companies.json
+```
 
 ## Metrics
 

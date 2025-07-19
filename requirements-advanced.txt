@@ -1,0 +1,56 @@
+# Additional requirements for advanced features
+
+# Data Visualization
+plotly>=5.17.0
+networkx>=3.2.1
+numpy>=1.24.3
+
+# OSINT Integration
+aiohttp>=3.9.0
+beautifulsoup4>=4.12.2
+
+# Data Enrichment
+requests>=2.31.0
+
+# Advanced Parsing (ML)
+spacy>=3.7.2
+transformers>=4.36.0
+torch>=2.1.0
+opencv-python>=4.8.1.78
+pytesseract>=0.3.10
+
+# TOR Integration
+stem>=1.8.2
+pysocks>=1.7.1
+
+# Network and Proxy Management
+python-socks>=2.4.3
+urllib3>=2.0.7
+
+# Browser Integration
+selenium>=4.15.2
+
+# GUI Framework (already in main requirements but listed for reference)
+# PyQt6>=6.6.0
+
+# OCR Dependencies
+Pillow>=10.1.0
+
+# Natural Language Processing
+nltk>=3.8.1
+textblob>=0.17.1
+
+# Data Processing
+pandas>=2.1.4
+sqlalchemy>=2.0.23
+
+# Async Processing
+asyncio-mqtt>=0.11.1
+
+# Security and Authentication
+cryptography>=41.0.7
+bcrypt>=4.1.2
+
+# Logging and Monitoring
+structlog>=23.2.0
+prometheus-client>=0.19.0

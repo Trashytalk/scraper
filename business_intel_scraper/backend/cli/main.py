@@ -1,5 +1,6 @@
 import argparse
 import json
+import click
 
 from business_intel_scraper.backend.workers.tasks import run_spider_task
 from business_intel_scraper.backend.modules.scrapers.integrations import (
@@ -8,6 +9,18 @@ from business_intel_scraper.backend.modules.scrapers.integrations import (
     run_shodan,
     run_nmap,
 )
+
+# Import marketplace CLI
+try:
+    from ..marketplace.cli import marketplace
+except ImportError:
+    marketplace = None
+
+# Import analytics CLI
+try:
+    from ..analytics.cli import analytics_cli
+except ImportError:
+    analytics_cli = None
 
 
 def main() -> None:
@@ -40,6 +53,16 @@ def main() -> None:
     shodan_parser = subparsers.add_parser("shodan", help="Run Shodan search")
     shodan_parser.add_argument("target", help="IP or query string")
 
+    # Add marketplace command if available
+    if marketplace:
+        marketplace_parser = subparsers.add_parser("marketplace", help="Spider marketplace commands")
+        marketplace_parser.set_defaults(func=lambda args: marketplace.main(standalone_mode=False))
+
+    # Add analytics command if available
+    if analytics_cli:
+        analytics_parser = subparsers.add_parser("analytics", help="Analytics dashboard commands")
+        analytics_parser.set_defaults(func=lambda args: analytics_cli.main(standalone_mode=False))
+
     nmap_parser = subparsers.add_parser("nmap", help="Run Nmap scan")
     nmap_parser.add_argument("target", help="Target host")
 
@@ -48,6 +71,14 @@ def main() -> None:
     if args.command == "scrape":
         items = run_spider_task(args.spider, html=args.html)
         print(json.dumps(items, indent=2))
+    elif args.command == "marketplace" and marketplace:
+        # Handle marketplace commands through Click
+        import sys
+        marketplace.main(sys.argv[2:], standalone_mode=False)
+    elif args.command == "analytics" and analytics_cli:
+        # Handle analytics commands through Click
+        import sys
+        analytics_cli.main(sys.argv[2:], standalone_mode=False)
     elif args.command == "spiderfoot":
         result = run_spiderfoot(args.domain)
         print(json.dumps(result, indent=2))

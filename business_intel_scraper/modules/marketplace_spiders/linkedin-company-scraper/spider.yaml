@@ -1,0 +1,21 @@
+author: DataHunters
+category: business-intelligence
+description: Extract company information and employee data from LinkedIn profiles
+downloads: 1250
+entry_point: linkedin_scraper.CompanySpider
+installed: false
+license: MIT
+name: linkedin-company-scraper
+package_url: https://github.com/datahunters/linkedin-scraper/archive/v1.2.0.zip
+rating: 4.6
+rating_count: 89
+requirements:
+- selenium
+- beautifulsoup4
+tags:
+- linkedin
+- companies
+- employees
+- social
+verified: true
+version: 1.2.0

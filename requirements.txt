@@ -14,3 +14,7 @@ gevent
 strawberry-graphql[fastapi]
 requests-cache
 redis
+aiofiles
+sse-starlette
+alembic
+python-multipart

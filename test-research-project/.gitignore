@@ -1,0 +1,30 @@
+# Environment and secrets
+.env.local
+*.key
+*.pem
+
+# Data and outputs
+data/output/*
+!data/output/.gitkeep
+results/*
+!results/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Cache and temporary files
+cache/
+*.tmp
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db

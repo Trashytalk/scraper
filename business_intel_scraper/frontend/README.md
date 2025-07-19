@@ -1,22 +1,69 @@
-# Frontend Development Setup
+# Frontend Development Guide
 
-This directory contains a small React dashboard for monitoring scraping jobs. The only dependency is listed in `package.json`, but running `npm install` ensures all Node modules are present.
+The frontend is now a modern React application with real-time capabilities built with Vite and Tailwind CSS.
 
-## Install Node dependencies
+## Quick Start
 
-```bash
-npm install
-```
+### Prerequisites
 
-## Start the development server
+- Node.js 16+ and npm
+- Backend API running on port 8000
 
-Use the following command to serve the `public` folder locally.
+### Development Setup
 
-```bash
-npm start
-```
+1. **Quick Start (Recommended)**:
+   ```bash
+   cd business_intel_scraper/frontend
+   ./frontend.sh dev
+   ```
 
-The server runs on [http://localhost:8000](http://localhost:8000) by default and serves a dashboard showing job progress, streaming logs and scraped data.
+2. **Manual Setup**:
+   ```bash
+   cd business_intel_scraper/frontend
+   npm install
+   npm run dev
+   ```
+
+The frontend will be available at `http://localhost:3000` with automatic proxy to the backend API.
+
+## Features
+
+### 🎛️ Real-time Dashboard
+- Live job monitoring with WebSocket updates
+- Interactive charts showing scraping metrics
+- Status indicators for system health
+- Real-time notifications
+
+### 📊 Data Visualization
+- Job success rate tracking
+- Activity timeline charts
+- Performance metrics
+- Export capabilities (CSV/JSON)
+
+### 🎨 Modern UI/UX
+- Responsive design with Tailwind CSS
+- Professional component library
+- Loading states and animations
+- Mobile-friendly interface
+
+## Available Scripts
+
+The `frontend.sh` script provides convenient commands:
+
+- `./frontend.sh install` - Install dependencies
+- `./frontend.sh dev` - Start development server  
+- `./frontend.sh build` - Build for production
+- `./frontend.sh preview` - Preview production build
+- `./frontend.sh help` - Show all commands
+
+## Technology Stack
+
+- **React 18**: Modern React with hooks
+- **Vite**: Fast development and build tool
+- **Tailwind CSS**: Utility-first styling
+- **Recharts**: Data visualization
+- **React Query**: Data fetching
+- **WebSocket**: Real-time updates
 
 ## Building and running
 

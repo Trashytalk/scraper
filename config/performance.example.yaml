@@ -1,0 +1,151 @@
+# Performance Optimization Configuration
+# Copy this file to config/performance.yaml for custom performance settings
+
+performance:
+  # Global performance settings
+  enabled: true
+  profile: "balanced"  # balanced, memory_focused, performance_focused
+  monitoring_interval: 60  # seconds
+  
+  # Cache configuration
+  cache:
+    enabled: true
+    backend: "hybrid"  # redis, local, hybrid
+    redis:
+      url: "redis://localhost:6379/0"
+      enabled: true
+      connection_pool_size: 20
+      socket_timeout: 5
+      socket_connect_timeout: 5
+    local:
+      max_size: 10000
+      ttl_seconds: 3600
+    compression:
+      enabled: true
+      algorithm: "lz4"  # lz4, gzip, zlib
+      min_size: 1024  # bytes
+    patterns:
+      dashboard: 3600    # 1 hour
+      analytics: 7200    # 2 hours
+      insights: 1800     # 30 minutes
+      metrics: 900       # 15 minutes
+      reports: 14400     # 4 hours
+  
+  # Database optimization
+  database:
+    enabled: true
+    connection_pooling:
+      pool_size: 20
+      max_overflow: 30
+      pool_timeout: 30
+      pool_recycle: 3600
+      pool_pre_ping: true
+    query_optimization:
+      enable_cache: true
+      cache_size: 1000
+      cache_ttl: 300
+    batch_processing:
+      enabled: true
+      batch_size: 100
+      max_wait_time: 5
+  
+  # Task processing optimization
+  tasks:
+    enabled: true
+    background_processing: true
+    max_workers: 10
+    queue_size: 1000
+    timeout: 300
+    retry_policy:
+      max_retries: 3
+      backoff_factor: 2
+      max_delay: 60
+    priority_levels:
+      high: 1
+      normal: 5
+      low: 10
+  
+  # Memory management
+  memory:
+    enabled: true
+    monitoring: true
+    optimization:
+      gc_threshold: 0.8  # 80% memory usage
+      cleanup_interval: 300  # 5 minutes
+      object_pooling: true
+      pool_sizes:
+        small_objects: 1000
+        medium_objects: 500
+        large_objects: 100
+    limits:
+      max_memory_percent: 85
+      warning_threshold: 75
+      critical_threshold: 90
+  
+  # System monitoring
+  monitoring:
+    enabled: true
+    system_metrics: true
+    performance_metrics: true
+    custom_metrics: true
+    collection_interval: 30
+    retention_period: 86400  # 24 hours
+    thresholds:
+      cpu_warning: 70
+      cpu_critical: 85
+      memory_warning: 75
+      memory_critical: 90
+      disk_warning: 80
+      disk_critical: 95
+    alerts:
+      enabled: false  # Set to true to enable alerting
+      email_notifications: false
+      webhook_url: ""
+  
+  # Analytics integration
+  analytics:
+    cache_dashboard_data: true
+    cache_ttl: 3600
+    background_processing: true
+    optimize_queries: true
+    batch_insights: true
+    precompute_metrics: true
+  
+  # API optimization
+  api:
+    response_caching: true
+    compression: true
+    connection_pooling: true
+    request_deduplication: true
+    rate_limiting: true
+    
+# Environment-specific overrides
+environments:
+  development:
+    performance:
+      cache:
+        local:
+          ttl_seconds: 300  # 5 minutes for dev
+      monitoring:
+        collection_interval: 60
+  
+  production:
+    performance:
+      cache:
+        local:
+          ttl_seconds: 7200  # 2 hours for prod
+      monitoring:
+        collection_interval: 15
+        alerts:
+          enabled: true
+      memory:
+        limits:
+          max_memory_percent: 80  # More conservative in prod
+  
+  testing:
+    performance:
+      enabled: false  # Disable performance optimization during tests
+      cache:
+        enabled: false
+      monitoring:
+        enabled: false

@@ -1,0 +1,63 @@
+marketplace:
+  registry_url: "https://api.spider-registry.com"
+  local_registry: true
+  auto_update: true
+  verify_signatures: true
+  
+  allowed_categories:
+    - "business-intelligence"
+    - "news-scraping"
+    - "social-media"
+    - "e-commerce"
+    - "job-boards"
+    - "research"
+    - "monitoring"
+    - "osint"
+    - "competitive-analysis"
+    - "market-research"
+    - "financial-data"
+    - "real-estate"
+    - "healthcare"
+    - "legal"
+    - "education"
+  
+  validation:
+    max_package_size: "10MB"
+    scan_timeout: 30
+    test_timeout: 60
+    required_files:
+      - "spider.yaml"
+      - "requirements.txt"
+    
+    security:
+      scan_for_malware: true
+      check_signatures: true
+      sandbox_test: false
+    
+    quality:
+      min_rating: 0.0
+      require_documentation: false
+      require_tests: false
+  
+  featured:
+    criteria:
+      - verified: true
+      - min_rating: 4.0
+      - min_downloads: 100
+    
+    max_featured: 10
+    update_interval: "24h"
+  
+  community:
+    enable_ratings: true
+    enable_comments: true
+    moderation: true
+    
+  caching:
+    cache_duration: "1h"
+    max_cache_size: "100MB"
+    
+  notifications:
+    new_spiders: true
+    updates: true
+    security_alerts: true

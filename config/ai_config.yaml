@@ -1,0 +1,158 @@
+"""
+AI Configuration YAML
+Default configuration for AI models and processing
+"""
+
+# AI System Configuration
+enabled: true
+cache_dir: "./data/ai_cache"
+log_level: "INFO"
+max_text_length: 10000
+parallel_processing: true
+max_workers: 4
+
+# Model Configurations
+models:
+  # SpaCy NLP Model for Named Entity Recognition
+  spacy_en:
+    name: "en_core_web_sm"
+    type: "spacy"
+    enabled: true
+    cache_size: 1000
+    batch_size: 32
+    timeout: 30
+    custom_params:
+      disable: ["parser", "tagger"]  # Keep only NER for performance
+      max_length: 1000000
+
+  # Sentiment Analysis Model
+  sentiment_classifier:
+    name: "cardiffnlp/twitter-roberta-base-sentiment-latest"
+    type: "transformers"
+    enabled: true
+    cache_size: 500
+    batch_size: 16
+    timeout: 30
+    custom_params:
+      return_all_scores: true
+      truncation: true
+      max_length: 512
+
+  # Text Classification Model
+  text_classifier:
+    name: "facebook/bart-large-mnli"
+    type: "transformers"
+    enabled: true
+    cache_size: 500
+    batch_size: 8
+    timeout: 60
+    custom_params:
+      candidate_labels:
+        - "business"
+        - "technology"
+        - "finance"
+        - "news"
+        - "job posting"
+        - "product"
+        - "service"
+        - "research"
+        - "social media"
+        - "e-commerce"
+
+  # Text Summarization Model
+  summarizer:
+    name: "facebook/bart-large-cnn"
+    type: "transformers"
+    enabled: true
+    cache_size: 200
+    batch_size: 4
+    timeout: 90
+    custom_params:
+      max_length: 150
+      min_length: 30
+      do_sample: false
+
+  # Sentence Embeddings for Similarity
+  sentence_embeddings:
+    name: "all-MiniLM-L6-v2"
+    type: "sentence_transformers"
+    enabled: true
+    cache_size: 1000
+    batch_size: 32
+    timeout: 30
+    custom_params:
+      normalize_embeddings: true
+
+  # OpenAI GPT Model (disabled by default)
+  openai_gpt:
+    name: "gpt-3.5-turbo"
+    type: "openai"
+    enabled: false  # Enable when API key is available
+    api_key: null   # Set via environment variable OPENAI_API_KEY
+    cache_size: 100
+    batch_size: 1
+    timeout: 60
+    custom_params:
+      temperature: 0.3
+      max_tokens: 150
+
+# Processing Pipeline Configuration
+pipeline:
+  # Entity Extraction Settings
+  entities:
+    enabled: true
+    custom_patterns:
+      - label: "EMAIL"
+        pattern: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"
+      - label: "URL"
+        pattern: "https?://(?:[-\\w.])+(?:[:\\d]+)?(?:/(?:[\\w/_.])*(?:\\?(?:[\\w&=%.])*)?(?:\\#(?:\\w*))?)??"
+      - label: "PHONE"
+        pattern: "\\b(?:\\+?1[-.]?)?\\(?[0-9]{3}\\)?[-.]?[0-9]{3}[-.]?[0-9]{4}\\b"
+
+  # Text Classification Settings
+  classification:
+    enabled: true
+    confidence_threshold: 0.5
+    multi_label: false
+
+  # Sentiment Analysis Settings
+  sentiment:
+    enabled: true
+    models: ["sentiment_classifier"]  # Can use multiple models
+    aggregation: "average"  # How to combine multiple model results
+
+  # Text Summarization Settings
+  summarization:
+    enabled: true
+    max_length: 150
+    min_length: 30
+    trigger_length: 500  # Only summarize texts longer than this
+
+  # Duplicate Detection Settings
+  duplicates:
+    enabled: true
+    similarity_threshold: 0.85
+    method: "sentence_embeddings"  # or "tfidf", "jaccard"
+
+  # Quality Scoring Settings
+  quality:
+    enabled: true
+    factors:
+      length: 0.2      # Text length factor
+      entities: 0.3    # Named entities factor
+      structure: 0.2   # Text structure factor
+      uniqueness: 0.3  # Uniqueness factor
+
+# Environment-specific configurations
+environments:
+  development:
+    log_level: "DEBUG"
+    cache_dir: "./data/dev_cache"
+    
+  production:
+    log_level: "INFO"
+    parallel_processing: true
+    max_workers: 8
+    
+  testing:
+    enabled: false  # Disable AI for tests by default

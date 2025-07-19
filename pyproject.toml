@@ -18,30 +18,184 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
 authors = [{name = "Trashytalk"}]
-dependencies = [
-    "fastapi",
-    "uvicorn[standard]",
-    "celery",
-    "scrapy",
-    "sqlalchemy",
-    "requests",
-    "httpx",
-    "spacy",
-    "playwright",
-    "pyjwt",
-    "passlib",
-    "prometheus-client",
-    "gevent",
-    "requests-cache",
-    "redis",
-    "strawberry-graphql[fastapi]",
+keywords = ["scraping", "business-intelligence", "osint", "data-collection"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
+
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0",
+    "celery[redis]>=5.3.0",
+    "scrapy>=2.10.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.12.0",
+    "requests>=2.31.0",
+    "httpx>=0.24.0",
+    "spacy>=3.6.0",
+    "playwright>=1.35.0",
+    "pyjwt>=2.8.0",
+    "passlib[bcrypt]>=1.7.4",
+    "prometheus-client>=0.17.0",
+    "gevent>=23.0.0",
+    "strawberry-graphql[fastapi]>=0.190.0",
+    "requests-cache>=1.1.0",
+    "redis>=4.6.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.0.0",
+    "sse-starlette>=1.6.0",
+    "click>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.11.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.7.0",
+    "ruff>=0.0.280",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+    "factory-boy>=3.3.0",
+    "httpx>=0.24.0",
+]
+
+analysis = [
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "plotly>=5.15.0",
+    "jupyter>=1.0.0",
+    "notebook>=7.0.0",
+    "ipykernel>=6.24.0",
+]
+
+monitoring = [
+    "memory-profiler>=0.61.0",
+    "py-spy>=0.3.14",
+    "psutil>=5.9.0",
+]
+
+databases = [
+    "psycopg2-binary>=2.9.0",  # PostgreSQL
+    "pymysql>=1.1.0",         # MySQL
+    "asyncpg>=0.28.0",        # Async PostgreSQL
+]
+
+performance = [
+    "psutil>=5.9.0",          # System monitoring
+    "memory-profiler>=0.61.0", # Memory profiling
+    "redis>=4.6.0",           # Advanced caching (already in main deps)
+]
+
+all = [
+    "business-intel-scraper[dev,analysis,monitoring,databases,performance]"
+]
+
+[project.urls]
+Homepage = "https://github.com/Trashytalk/scraper"
+Documentation = "https://github.com/Trashytalk/scraper/blob/main/docs"
+Repository = "https://github.com/Trashytalk/scraper"
+"Bug Tracker" = "https://github.com/Trashytalk/scraper/issues"
 
 [project.scripts]
 biscraper = "business_intel_scraper.backend.cli.main:main"
 bi-scraper = "business_intel_scraper.cli:main"
+bi-scraper-enhanced = "business_intel_scraper.cli_enhanced:cli"
+bi-performance = "business_intel_scraper.cli.performance:performance"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["business_intel_scraper*", "gui*"]
+
+[tool.pytest.ini_options]
+testpaths = ["business_intel_scraper/backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=business_intel_scraper",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "integration: marks tests as integration tests (may be slow)",
+    "unit: marks tests as unit tests (fast)",
+    "osint: marks tests that require external OSINT tools",
+]
+
+[tool.coverage.run]
+source = ["business_intel_scraper"]
+omit = [
+    "business_intel_scraper/backend/tests/*",
+    "business_intel_scraper/backend/db/migrations/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "scrapy.*",
+    "celery.*",
+    "spacy.*",
+    "playwright.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "B905",  # zip without explicit strict parameter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # imported but unused
+"business_intel_scraper/backend/tests/*" = ["B011"]  # assert false
 

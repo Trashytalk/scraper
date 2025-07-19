@@ -1,0 +1,89 @@
+cache_dir: ./data/ai_cache
+enabled: true
+log_level: INFO
+max_text_length: 10000
+max_workers: 4
+models:
+  openai_gpt:
+    api_key: null
+    batch_size: 32
+    cache_size: 1000
+    custom_params:
+      max_tokens: 150
+      temperature: 0.3
+    enabled: false
+    model_path: null
+    name: gpt-3.5-turbo
+    timeout: 30
+    type: openai
+  sentence_embeddings:
+    api_key: null
+    batch_size: 32
+    cache_size: 1000
+    custom_params:
+      normalize_embeddings: true
+    enabled: true
+    model_path: null
+    name: all-MiniLM-L6-v2
+    timeout: 30
+    type: sentence_transformers
+  sentiment_classifier:
+    api_key: null
+    batch_size: 16
+    cache_size: 1000
+    custom_params:
+      max_length: 512
+      return_all_scores: true
+      truncation: true
+    enabled: true
+    model_path: null
+    name: cardiffnlp/twitter-roberta-base-sentiment-latest
+    timeout: 30
+    type: transformers
+  spacy_en:
+    api_key: null
+    batch_size: 32
+    cache_size: 1000
+    custom_params:
+      disable:
+      - parser
+      - tagger
+      max_length: 1000000
+    enabled: true
+    model_path: null
+    name: en_core_web_sm
+    timeout: 30
+    type: spacy
+  summarizer:
+    api_key: null
+    batch_size: 32
+    cache_size: 1000
+    custom_params:
+      do_sample: false
+      max_length: 150
+      min_length: 30
+    enabled: true
+    model_path: null
+    name: facebook/bart-large-cnn
+    timeout: 30
+    type: transformers
+  text_classifier:
+    api_key: null
+    batch_size: 32
+    cache_size: 1000
+    custom_params:
+      candidate_labels:
+      - business
+      - technology
+      - finance
+      - news
+      - job posting
+      - product
+      - service
+      - research
+    enabled: true
+    model_path: null
+    name: facebook/bart-large-mnli
+    timeout: 30
+    type: transformers
+parallel_processing: true
