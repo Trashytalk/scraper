@@ -4,3 +4,47 @@ __pycache__/
 business_intel_scraper/backend/logs/app.log
 node_modules/
 
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# HTTP cache
+http_cache/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Analytics and monitoring
+analytics.db
+data.db
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
