@@ -74,7 +74,7 @@ class ProxyTester(QThread):
             "http://icanhazip.com"
         ]
         
-    def run(self):
+    def run(self) -> None:
         """Test all proxies"""
         total = len(self.proxies)
         
@@ -86,7 +86,7 @@ class ProxyTester(QThread):
             
     def test_proxy(self, proxy: ProxyConfig) -> Dict[str, Any]:
         """Test individual proxy"""
-        results = {
+        results: Dict[str, Any] = {
             'working': False,
             'response_time': 0.0,
             'ip_address': None,
@@ -129,22 +129,22 @@ class VPNManager(QThread):
     connection_changed = pyqtSignal(bool, str)  # connected, server
     status_updated = pyqtSignal(str)
     
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.current_vpn = None
+        self.current_vpn: Optional[VPNConfig] = None
         self.connected = False
         
-    def connect_vpn(self, vpn_config: VPNConfig):
+    def connect_vpn(self, vpn_config: VPNConfig) -> None:
         """Connect to VPN"""
         self.current_vpn = vpn_config
         self.start()
         
-    def disconnect_vpn(self):
+    def disconnect_vpn(self) -> None:
         """Disconnect from VPN"""
         if self.connected:
             self.disconnect_current()
             
-    def run(self):
+    def run(self) -> None:
         """VPN connection thread"""
         if not self.current_vpn:
             return
@@ -174,7 +174,7 @@ class VPNManager(QThread):
         time.sleep(2)  # Simulate connection time
         return True
         
-    def disconnect_current(self):
+    def disconnect_current(self) -> None:
         """Disconnect current VPN"""
         # Implementation for disconnecting
         self.connected = False
@@ -184,18 +184,18 @@ class VPNManager(QThread):
 class NetworkConfigWidget(QWidget):
     """Main network configuration widget"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.proxy_configs: List[ProxyConfig] = []
         self.vpn_configs: List[VPNConfig] = []
-        self.proxy_tester = None
+        self.proxy_tester: Optional[ProxyTester] = None
         self.vpn_manager = VPNManager()
         
         self.setup_ui()
         self.load_configurations()
         self.connect_signals()
         
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         """Setup the network configuration UI"""
         layout = QVBoxLayout(self)
         
@@ -243,7 +243,9 @@ class NetworkConfigWidget(QWidget):
             "Host", "Port", "Type", "Country", "Provider", 
             "Score", "Response Time", "Status", "Actions"
         ])
-        self.proxy_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        header = self.proxy_table.horizontalHeader()
+        if header is not None:
+            header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         
         # Test progress
         self.test_progress = QProgressBar()
@@ -432,7 +434,7 @@ class NetworkConfigWidget(QWidget):
         
         return widget
         
-    def connect_signals(self):
+    def connect_signals(self) -> None:
         """Connect UI signals"""
         # Proxy signals
         self.add_proxy_btn.clicked.connect(self.add_proxy)
@@ -448,17 +450,17 @@ class NetworkConfigWidget(QWidget):
         self.vpn_manager.connection_changed.connect(self.on_vpn_connection_changed)
         self.vpn_manager.status_updated.connect(self.on_vpn_status_updated)
         
-    def add_proxy(self):
+    def add_proxy(self) -> None:
         """Add new proxy configuration"""
         # Implementation for adding proxy dialog
         pass
         
-    def import_proxies(self):
+    def import_proxies(self) -> None:
         """Import proxy list from file"""
         # Implementation for importing proxies
         pass
         
-    def test_all_proxies(self):
+    def test_all_proxies(self) -> None:
         """Test all configured proxies"""
         if not self.proxy_configs:
             return
@@ -472,12 +474,12 @@ class NetworkConfigWidget(QWidget):
         self.proxy_tester.finished.connect(lambda: self.test_progress.setVisible(False))
         self.proxy_tester.start()
         
-    def on_proxy_test_completed(self, proxy_id: str, results: Dict[str, Any]):
+    def on_proxy_test_completed(self, proxy_id: str, results: Dict[str, Any]) -> None:
         """Handle proxy test completion"""
         # Update proxy table with test results
         logger.info(f"Proxy {proxy_id} test completed: {results}")
         
-    def connect_vpn(self):
+    def connect_vpn(self) -> None:
         """Connect to selected VPN"""
         provider = VPNProvider(self.vpn_provider_combo.currentText())
         username = self.vpn_username.text()
@@ -499,16 +501,16 @@ class NetworkConfigWidget(QWidget):
         
         self.vpn_manager.connect_vpn(vpn_config)
         
-    def disconnect_vpn(self):
+    def disconnect_vpn(self) -> None:
         """Disconnect from VPN"""
         self.vpn_manager.disconnect_vpn()
         
-    def refresh_servers(self):
+    def refresh_servers(self) -> None:
         """Refresh available VPN servers"""
         # Implementation for refreshing server list
         pass
         
-    def on_vpn_connection_changed(self, connected: bool, server: str):
+    def on_vpn_connection_changed(self, connected: bool, server: str) -> None:
         """Handle VPN connection state change"""
         self.connect_vpn_btn.setEnabled(not connected)
         self.disconnect_vpn_btn.setEnabled(connected)
@@ -520,17 +522,17 @@ class NetworkConfigWidget(QWidget):
             self.vpn_status_label.setText("Status: Disconnected")
             self.vpn_status_label.setStyleSheet("color: red;")
             
-    def on_vpn_status_updated(self, status: str):
+    def on_vpn_status_updated(self, status: str) -> None:
         """Handle VPN status updates"""
         self.vpn_status_label.setText(f"Status: {status}")
         
-    def load_configurations(self):
+    def load_configurations(self) -> None:
         """Load saved configurations"""
         settings = QSettings()
         # Load proxy and VPN configurations from settings
         pass
         
-    def save_configurations(self):
+    def save_configurations(self) -> None:
         """Save current configurations"""
         settings = QSettings()
         # Save proxy and VPN configurations to settings
