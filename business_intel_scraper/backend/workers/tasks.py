@@ -5,19 +5,19 @@ from __future__ import annotations
 import uuid
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Dict
+from typing import Dict, Union, Any, Callable
 
 from ..utils import setup_request_cache
 from prometheus_client import Counter, Histogram
 
 try:
-    from gevent.pool import Pool
-    from gevent import sleep as async_sleep
+    from gevent.pool import Pool  # type: ignore[import-untyped]
+    from gevent import sleep as async_sleep  # type: ignore[import-untyped]
 
     GEVENT_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    Pool = None  # type: ignore
-    async_sleep = time.sleep  # type: ignore
+    Pool = None
+    async_sleep = time.sleep
     GEVENT_AVAILABLE = False
 from business_intel_scraper.backend.modules.scrapers.integrations import (
     run_spiderfoot,
@@ -53,7 +53,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def config_from_object(self, *args: object, **kwargs: object) -> None:
             return None
 
-        def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
+        def task(self, func: F) -> F:
             return func
 
 
@@ -123,13 +123,13 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
 if GEVENT_AVAILABLE:
     _executor = Pool()
-    _tasks: Dict[str, object] = {}
+    _tasks: Dict[str, Union[object, Future[Any]]] = {}
 else:  # pragma: no cover - fallback when gevent is missing
     _executor = ThreadPoolExecutor()
-    _tasks: Dict[str, Future] = {}
+    _tasks = {}
 
 
-def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
+def _submit(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
     """Submit a callable to the underlying executor."""
 
     if GEVENT_AVAILABLE:
@@ -137,7 +137,7 @@ def _submit(func, *args, **kwargs):  # type: ignore[no-untyped-def]
     return _executor.submit(func, *args, **kwargs)
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def example_task(x: int, y: int) -> int:
     """Add two numbers together.
 
@@ -174,7 +174,7 @@ def _run_example_spider(job_id: str) -> str:
         log_job_error(job_id, str(exc))
         raise
 
-    if init_db and save_companies:
+    if init_db is not None and save_companies is not None:
         try:
             init_db()
             save_companies(item.get("url", "") for item in items)
@@ -186,7 +186,7 @@ def _run_example_spider(job_id: str) -> str:
     return "scraping complete"
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def scheduled_example_scrape() -> str:
     """Periodically run the example spider and persist data."""
     job_id = str(uuid.uuid4())
@@ -199,7 +199,7 @@ def _run_all_spiders(job_id: str) -> None:
     _run_example_spider(job_id)
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def scheduled_run_all_spiders() -> str:
     """Periodic task that runs all spiders."""
     job_id = str(uuid.uuid4())
@@ -229,7 +229,7 @@ def get_task_status(task_id: str) -> str:
     if future is None:
         return "not_found"
     if GEVENT_AVAILABLE:
-        if future.ready():
+        if hasattr(future, 'ready') and future.ready():
             return "completed"
     else:
         if isinstance(future, Future) and future.done():
@@ -237,7 +237,7 @@ def get_task_status(task_id: str) -> str:
     return "running"
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def run_spider_task(
     spider: str = "example", html: str | None = None
 ) -> list[dict[str, str]]:
@@ -277,7 +277,7 @@ def run_spider_task(
     items: list[dict[str, str]] = []
     process = CrawlerProcess(settings={"LOG_ENABLED": False})
 
-    def _collect(item: dict) -> None:
+    def _collect(item: dict[str, Any]) -> None:
         items.append(dict(item))
 
     process.crawl(spider_cls)
@@ -288,7 +288,7 @@ def run_spider_task(
     return items
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def spiderfoot_scan(domain: str) -> dict[str, str]:
     """Run SpiderFoot OSINT scan.
 
@@ -310,7 +310,7 @@ def spiderfoot_scan(domain: str) -> dict[str, str]:
     return result
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def preprocess_texts(texts: list[str]) -> list[str]:
     """Clean and normalize raw text strings asynchronously."""
     TASK_COUNTER.labels(task="preprocess_texts").inc()
@@ -320,7 +320,7 @@ def preprocess_texts(texts: list[str]) -> list[str]:
     return result
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def extract_entities_task(texts: list[str]) -> list[str]:
     """Extract named entities from ``texts`` asynchronously."""
     TASK_COUNTER.labels(task="extract_entities").inc()
@@ -330,7 +330,7 @@ def extract_entities_task(texts: list[str]) -> list[str]:
     return result
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def geocode_task(addresses: list[str]) -> list[tuple[str, float | None, float | None]]:
     """Geocode ``addresses`` using the built-in helper."""
     TASK_COUNTER.labels(task="geocode").inc()
@@ -340,7 +340,7 @@ def geocode_task(addresses: list[str]) -> list[tuple[str, float | None, float | 
     return result
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def theharvester_scan(domain: str) -> dict[str, str]:
     """Run TheHarvester OSINT scan.
 
@@ -362,28 +362,28 @@ def theharvester_scan(domain: str) -> dict[str, str]:
     return result
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def sherlock_scan(username: str) -> dict[str, str]:
     """Run Sherlock username search."""
 
     return run_sherlock(username)
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def subfinder_scan(domain: str) -> dict[str, str]:
     """Run subfinder subdomain enumeration."""
 
     return run_subfinder(domain)
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def shodan_scan(target: str) -> dict[str, str]:
     """Run Shodan search."""
 
     return run_shodan(target)
 
 
-@celery_app.task
+@celery_app.task  # type: ignore[misc]
 def nmap_scan(target: str) -> dict[str, str]:
     """Run Nmap service scan."""
 
@@ -410,13 +410,13 @@ def queue_spiderfoot_scan(
         Identifier of the queued task.
     """
 
-    options = {}
+    options: dict[str, Any] = {}
     if queue is not None:
         options["queue"] = queue
     if countdown is not None:
         options["countdown"] = countdown
     result = spiderfoot_scan.apply_async(args=[domain], **options)
-    return result.id
+    return str(result.id)
 
 
 def queue_theharvester_scan(
@@ -439,13 +439,13 @@ def queue_theharvester_scan(
         Identifier of the queued task.
     """
 
-    options = {}
+    options: dict[str, Any] = {}
     if queue is not None:
         options["queue"] = queue
     if countdown is not None:
         options["countdown"] = countdown
     result = theharvester_scan.apply_async(args=[domain], **options)
-    return result.id
+    return str(result.id)
 
 
 def queue_sherlock_scan(
@@ -453,13 +453,13 @@ def queue_sherlock_scan(
 ) -> str:
     """Queue :func:`sherlock_scan` via Celery."""
 
-    options = {}
+    options: dict[str, Any] = {}
     if queue is not None:
         options["queue"] = queue
     if countdown is not None:
         options["countdown"] = countdown
     result = sherlock_scan.apply_async(args=[username], **options)
-    return result.id
+    return str(result.id)
 
 
 def queue_subfinder_scan(
@@ -467,13 +467,13 @@ def queue_subfinder_scan(
 ) -> str:
     """Queue :func:`subfinder_scan` via Celery."""
 
-    options = {}
+    options: dict[str, Any] = {}
     if queue is not None:
         options["queue"] = queue
     if countdown is not None:
         options["countdown"] = countdown
     result = subfinder_scan.apply_async(args=[domain], **options)
-    return result.id
+    return str(result.id)
 
 
 def queue_shodan_scan(
@@ -481,13 +481,13 @@ def queue_shodan_scan(
 ) -> str:
     """Queue :func:`shodan_scan` via Celery."""
 
-    options = {}
+    options: dict[str, Any] = {}
     if queue is not None:
         options["queue"] = queue
     if countdown is not None:
         options["countdown"] = countdown
     result = shodan_scan.apply_async(args=[target], **options)
-    return result.id
+    return str(result.id)
 
 
 def queue_nmap_scan(
@@ -495,10 +495,10 @@ def queue_nmap_scan(
 ) -> str:
     """Queue :func:`nmap_scan` via Celery."""
 
-    options = {}
+    options: dict[str, Any] = {}
     if queue is not None:
         options["queue"] = queue
     if countdown is not None:
         options["countdown"] = countdown
     result = nmap_scan.apply_async(args=[target], **options)
-    return result.id
+    return str(result.id)

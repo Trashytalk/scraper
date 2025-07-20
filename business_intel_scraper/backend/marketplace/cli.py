@@ -12,7 +12,7 @@ from . import SpiderMarketplace
 
 
 @click.group()
-def marketplace():
+def marketplace() -> None:
     """Spider Marketplace commands"""
     pass
 
@@ -23,7 +23,7 @@ def marketplace():
 @click.option('--tags', '-t', default='', help='Comma-separated tags')
 @click.option('--limit', '-l', default=20, help='Maximum results')
 @click.option('--format', '-f', type=click.Choice(['table', 'json', 'yaml']), default='table', help='Output format')
-def search(query, category, tags, limit, format):
+def search(query: str, category: str, tags: str, limit: int, format: str) -> None:
     """Search for spiders in the marketplace"""
     mp = SpiderMarketplace()
     
@@ -58,7 +58,7 @@ def search(query, category, tags, limit, format):
 @marketplace.command()
 @click.argument('spider_name')
 @click.option('--version', '-v', default='latest', help='Spider version')
-def install(spider_name, version):
+def install(spider_name: str, version: str) -> None:
     """Install a spider from the marketplace"""
     mp = SpiderMarketplace()
     
@@ -74,7 +74,7 @@ def install(spider_name, version):
 
 @marketplace.command()
 @click.argument('spider_name')
-def uninstall(spider_name):
+def uninstall(spider_name: str) -> None:
     """Uninstall a spider"""
     mp = SpiderMarketplace()
     
@@ -89,7 +89,7 @@ def uninstall(spider_name):
 
 @marketplace.command()
 @click.option('--format', '-f', type=click.Choice(['table', 'json', 'yaml']), default='table', help='Output format')
-def list_installed(format):
+def list_installed(format: str) -> None:
     """List installed spiders"""
     mp = SpiderMarketplace()
     
@@ -118,7 +118,7 @@ def list_installed(format):
 
 @marketplace.command()
 @click.argument('spider_name')
-def info(spider_name):
+def info(spider_name: str) -> None:
     """Get detailed information about a spider"""
     mp = SpiderMarketplace()
     
@@ -153,7 +153,7 @@ def info(spider_name):
 
 @marketplace.command()
 @click.argument('spider_path', type=click.Path(exists=True))
-def validate(spider_path):
+def validate(spider_path: str) -> None:
     """Validate a spider package"""
     mp = SpiderMarketplace()
     
@@ -183,7 +183,8 @@ def validate(spider_path):
 @click.option('--tags', '-t', default='', help='Comma-separated tags')
 @click.option('--requirements', '-r', default='', help='Comma-separated requirements')
 @click.option('--entry-point', '-e', required=True, help='Entry point (module.ClassName)')
-def publish(spider_path, name, version, author, description, category, license, tags, requirements, entry_point):
+def publish(spider_path: str, name: str, version: str, author: str, description: str, 
+           category: str, license: str, tags: str, requirements: str, entry_point: str) -> None:
     """Publish a spider to the marketplace"""
     mp = SpiderMarketplace()
     
@@ -211,7 +212,7 @@ def publish(spider_path, name, version, author, description, category, license, 
 
 
 @marketplace.command()
-def categories():
+def categories() -> None:
     """List available categories"""
     mp = SpiderMarketplace()
     
@@ -223,7 +224,7 @@ def categories():
 
 
 @marketplace.command()
-def stats():
+def stats() -> None:
     """Show marketplace statistics"""
     mp = SpiderMarketplace()
     
@@ -241,7 +242,7 @@ def stats():
 @marketplace.command()
 @click.argument('spider_name')
 @click.argument('template_path', type=click.Path())
-def create_template(spider_name, template_path):
+def create_template(spider_name: str, template_path: str) -> None:
     """Create a spider template"""
     template_dir = Path(template_path)
     template_dir.mkdir(parents=True, exist_ok=True)

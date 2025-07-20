@@ -6,13 +6,13 @@ Provides command-line interface for analytics and monitoring operations.
 import asyncio
 import json
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict, Any, List
 
 import click
 
 
 @click.group()
-def analytics():
+def analytics() -> None:
     """Analytics and monitoring commands."""
     pass
 
@@ -20,11 +20,11 @@ def analytics():
 @analytics.command()
 @click.option('--hours', default=24, help='Hours of data to show (default: 24)')
 @click.option('--format', 'output_format', default='table', type=click.Choice(['table', 'json']), help='Output format')
-def overview(hours: int, output_format: str):
+def overview(hours: int, output_format: str) -> None:
     """Show analytics overview and key metrics."""
     from ..analytics.core import analytics_engine
     
-    async def get_overview():
+    async def get_overview() -> Dict[str, Any]:
         # Get analytics summary
         summary = await analytics_engine.get_analytics_summary()
         return summary
@@ -81,11 +81,11 @@ def overview(hours: int, output_format: str):
 @click.option('--metric', required=True, help='Metric name to query')
 @click.option('--hours', default=24, help='Hours of historical data (default: 24)')
 @click.option('--format', 'output_format', default='table', type=click.Choice(['table', 'json', 'csv']), help='Output format')
-def historical(metric: str, hours: int, output_format: str):
+def historical(metric: str, hours: int, output_format: str) -> None:
     """Get historical data for a specific metric."""
     from ..analytics.core import analytics_engine
     
-    async def get_historical_data():
+    async def get_historical_data() -> List[Dict[str, Any]]:
         return await analytics_engine.get_historical_data(metric, hours)
     
     try:
@@ -125,12 +125,12 @@ def historical(metric: str, hours: int, output_format: str):
 
 
 @analytics.command()
-def realtime():
+def realtime() -> None:
     """Show real-time metrics dashboard."""
     from ..analytics.metrics import metrics_collector
     
     try:
-        metrics = metrics_collector.get_realtime_metrics()
+        metrics = metrics_collector.get_metrics_summary()  # Use existing method
         
         click.echo("🔍 Real-time Metrics")
         click.echo("=" * 50)
@@ -173,11 +173,11 @@ def realtime():
 
 @analytics.command()
 @click.option('--format', 'output_format', default='table', type=click.Choice(['table', 'json']), help='Output format')
-def insights():
+def insights(output_format: str) -> None:
     """Generate AI insights and recommendations."""
     from ..analytics.insights import insights_generator
     
-    async def get_insights():
+    async def get_insights() -> Dict[str, Any]:
         return await insights_generator.generate_comprehensive_report()
     
     try:
@@ -235,11 +235,11 @@ def insights():
 @analytics.command()
 @click.option('--days', default=30, help='Delete data older than this many days')
 @click.confirmation_option(prompt='Are you sure you want to delete old analytics data?')
-def cleanup(days: int):
+def cleanup(days: int) -> None:
     """Clean up old analytics data."""
     from ..analytics.core import analytics_engine
     
-    async def cleanup_data():
+    async def cleanup_data() -> None:
         await analytics_engine.cleanup_old_data(days)
     
     try:
@@ -253,7 +253,7 @@ def cleanup(days: int):
 @click.option('--name', required=True, help='Metric name')
 @click.option('--value', required=True, type=float, help='Metric value')
 @click.option('--tags', help='Tags as key=value pairs, comma-separated')
-def record(name: str, value: float, tags: Optional[str]):
+def record(name: str, value: float, tags: Optional[str]) -> None:
     """Record a custom metric."""
     from ..analytics.core import analytics_engine
     
@@ -265,7 +265,7 @@ def record(name: str, value: float, tags: Optional[str]):
                 key, val = tag_pair.split('=', 1)
                 tag_dict[key.strip()] = val.strip()
     
-    async def record_metric():
+    async def record_metric() -> None:
         await analytics_engine.record_metric(name, value, tag_dict)
     
     try:
@@ -278,7 +278,7 @@ def record(name: str, value: float, tags: Optional[str]):
 
 
 @analytics.command()
-def status():
+def status() -> None:
     """Check analytics system status."""
     from ..analytics.core import analytics_engine
     from ..analytics.metrics import metrics_collector
@@ -308,7 +308,7 @@ def status():
     
     # System resources
     try:
-        import psutil
+        import psutil  # type: ignore[import-untyped]
         cpu = psutil.cpu_percent()
         memory = psutil.virtual_memory().percent
         click.echo(f"\n🖥️  System Resources:")
@@ -319,11 +319,11 @@ def status():
 
 
 @analytics.command()
-def flush():
+def flush() -> None:
     """Manually flush metrics buffer to storage."""
     from ..analytics.core import analytics_engine
     
-    async def flush_metrics():
+    async def flush_metrics() -> None:
         await analytics_engine.flush_metrics()
     
     try:

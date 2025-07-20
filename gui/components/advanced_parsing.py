@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                             QGroupBox, QLabel, QPushButton, QComboBox, QCheckBox,
                             QTextEdit, QTabWidget, QTableWidget, QTableWidgetItem,
                             QProgressBar, QSlider, QSpinBox, QListWidget,
-                            QFileDialog, QSplitter)
+                            QFileDialog, QSplitter, QLineEdit)
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt6.QtGui import QFont, QPixmap, QTextCursor
 import json
@@ -25,7 +25,7 @@ from pathlib import Path
 # ML and NLP imports
 try:
     import spacy
-    from transformers import pipeline, AutoTokenizer, AutoModel
+    from transformers import pipeline, AutoTokenizer, AutoModel  # type: ignore
     import torch
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.cluster import KMeans
@@ -78,10 +78,10 @@ class MLModelConfig:
 class AdvancedParser:
     """Advanced parsing engine with ML capabilities"""
     
-    def __init__(self):
-        self.nlp_models = {}
-        self.transformers_models = {}
-        self.custom_rules = []
+    def __init__(self) -> None:
+        self.nlp_models: Dict[str, Any] = {}
+        self.transformers_models: Dict[str, Any] = {}
+        self.custom_rules: List[ParsingRule] = []
         self.preprocessing_functions = {
             'lowercase': lambda x: x.lower(),
             'remove_html': lambda x: re.sub(r'<[^>]+>', '', x),
@@ -93,7 +93,7 @@ class AdvancedParser:
         if ADVANCED_PARSING_AVAILABLE:
             self.initialize_models()
             
-    def initialize_models(self):
+    def initialize_models(self) -> None:
         """Initialize ML models"""
         try:
             # Load spaCy model
@@ -102,10 +102,10 @@ class AdvancedParser:
             logger.warning("spaCy English model not found. Install with: python -m spacy download en_core_web_sm")
             
         try:
-            # Load transformer models
-            self.transformers_models['ner'] = pipeline("ner", aggregation_strategy="simple")
-            self.transformers_models['classification'] = pipeline("text-classification")
-            self.transformers_models['summarization'] = pipeline("summarization")
+            # Load transformer models  
+            self.transformers_models['ner'] = pipeline("token-classification", aggregation_strategy="simple")  # type: ignore
+            self.transformers_models['classification'] = pipeline("text-classification")  # type: ignore
+            self.transformers_models['summarization'] = pipeline("summarization")  # type: ignore
         except Exception as e:
             logger.warning(f"Failed to load transformer models: {e}")
             
@@ -230,7 +230,7 @@ class AdvancedParser:
             
     def _apply_parsing_rules(self, content: str, rules: List[ParsingRule]) -> Dict[str, Any]:
         """Apply parsing rules to content"""
-        results = {
+        results: Dict[str, Any] = {
             'raw_content': content,
             'extracted_data': {},
             'entities': [],
@@ -247,7 +247,7 @@ class AdvancedParser:
                 
             for preprocess in rule.preprocessing:
                 if preprocess in self.preprocessing_functions:
-                    processed_content = self.preprocessing_functions[preprocess](processed_content)
+                    processed_content = self.preprocessing_functions[preprocess](processed_content)  # type: ignore
                     
         # Apply extraction rules
         for rule in rules:
@@ -329,7 +329,7 @@ class AdvancedParser:
             
         return ml_results
         
-    def _xml_to_dict(self, element) -> Dict[str, Any]:
+    def _xml_to_dict(self, element: Any) -> Dict[str, Any]:
         """Convert XML element to dictionary"""
         result = {}
         
@@ -360,14 +360,14 @@ class BatchProcessor(QThread):
     file_processed = pyqtSignal(str, dict)
     processing_completed = pyqtSignal(int, int)  # total, successful
     
-    def __init__(self, files: List[str], rules: List[ParsingRule], parser: AdvancedParser):
+    def __init__(self, files: List[str], rules: List[ParsingRule], parser: AdvancedParser) -> None:
         super().__init__()
         self.files = files
         self.rules = rules
         self.parser = parser
         self.running = True
         
-    def run(self):
+    def run(self) -> None:
         """Process files in batch"""
         total_files = len(self.files)
         successful = 0
@@ -396,7 +396,7 @@ class BatchProcessor(QThread):
                 
         self.processing_completed.emit(total_files, successful)
         
-    def stop(self):
+    def stop(self) -> None:
         """Stop batch processing"""
         self.running = False
         
@@ -424,18 +424,18 @@ class BatchProcessor(QThread):
 class ParsingWidget(QWidget):
     """Advanced data parsing configuration widget"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.parser = AdvancedParser()
-        self.parsing_rules = []
-        self.batch_processor = None
-        self.processed_results = {}
+        self.parsing_rules: List[ParsingRule] = []
+        self.batch_processor: Optional[BatchProcessor] = None
+        self.processed_results: Dict[str, Any] = {}
         
         self.setup_ui()
         self.connect_signals()
         self.load_default_rules()
         
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         """Setup parsing widget UI"""
         layout = QVBoxLayout(self)
         
@@ -660,7 +660,7 @@ class ParsingWidget(QWidget):
         
         return widget
         
-    def connect_signals(self):
+    def connect_signals(self) -> None:
         """Connect UI signals"""
         # Rules tab
         self.add_rule_btn.clicked.connect(self.add_parsing_rule)
@@ -679,7 +679,7 @@ class ParsingWidget(QWidget):
         self.export_results_btn.clicked.connect(self.export_results)
         self.clear_results_btn.clicked.connect(self.clear_results)
         
-    def update_model_status(self):
+    def update_model_status(self) -> None:
         """Update ML model availability status"""
         if ADVANCED_PARSING_AVAILABLE:
             if 'default' in self.parser.nlp_models:
@@ -692,11 +692,11 @@ class ParsingWidget(QWidget):
             except ImportError:
                 pass
                 
-    def update_confidence_label(self, value):
+    def update_confidence_label(self, value: int) -> None:
         """Update confidence threshold label"""
         self.confidence_label.setText(f"{value/100:.2f}")
         
-    def load_default_rules(self):
+    def load_default_rules(self) -> None:
         """Load default parsing rules"""
         default_rules = [
             ParsingRule("Email Addresses", r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
@@ -709,7 +709,7 @@ class ParsingWidget(QWidget):
         self.parsing_rules.extend(default_rules)
         self.refresh_rules_table()
         
-    def add_parsing_rule(self):
+    def add_parsing_rule(self) -> None:
         """Add new parsing rule"""
         name = self.rule_name_edit.text() or f"Rule {len(self.parsing_rules) + 1}"
         pattern = self.rule_pattern_edit.toPlainText()
@@ -730,14 +730,14 @@ class ParsingWidget(QWidget):
             self.rule_name_edit.clear()
             self.rule_pattern_edit.clear()
             
-    def remove_parsing_rule(self):
+    def remove_parsing_rule(self) -> None:
         """Remove selected parsing rule"""
         current_row = self.rules_table.currentRow()
         if current_row >= 0:
             del self.parsing_rules[current_row]
             self.refresh_rules_table()
             
-    def test_parsing_rule(self):
+    def test_parsing_rule(self) -> None:
         """Test current parsing rule"""
         pattern = self.rule_pattern_edit.toPlainText()
         test_text = self.test_input.toPlainText()
@@ -749,7 +749,7 @@ class ParsingWidget(QWidget):
             except Exception as e:
                 self.test_output.setText(f"Error: {str(e)}")
                 
-    def refresh_rules_table(self):
+    def refresh_rules_table(self) -> None:
         """Refresh parsing rules table"""
         self.rules_table.setRowCount(len(self.parsing_rules))
         
@@ -764,12 +764,12 @@ class ParsingWidget(QWidget):
             enabled_cb.stateChanged.connect(lambda state, r=row: self.toggle_rule_enabled(r, state))
             self.rules_table.setCellWidget(row, 4, enabled_cb)
             
-    def toggle_rule_enabled(self, row: int, state: int):
+    def toggle_rule_enabled(self, row: int, state: int) -> None:
         """Toggle rule enabled state"""
         if 0 <= row < len(self.parsing_rules):
-            self.parsing_rules[row].enabled = state == Qt.CheckState.Checked.value
+            self.parsing_rules[row].enabled = state == 2  # Qt.CheckState.Checked value
             
-    def add_files(self):
+    def add_files(self) -> None:
         """Add files for batch processing"""
         files, _ = QFileDialog.getOpenFileNames(
             self,
@@ -781,7 +781,7 @@ class ParsingWidget(QWidget):
         for file_path in files:
             self.files_list.addItem(file_path)
             
-    def add_folder(self):
+    def add_folder(self) -> None:
         """Add folder for batch processing"""
         folder = QFileDialog.getExistingDirectory(self, "Select Folder")
         
@@ -791,13 +791,17 @@ class ParsingWidget(QWidget):
                 if file_path.is_file():
                     self.files_list.addItem(str(file_path))
                     
-    def clear_files(self):
+    def clear_files(self) -> None:
         """Clear files list"""
         self.files_list.clear()
         
-    def start_batch_processing(self):
+    def start_batch_processing(self) -> None:
         """Start batch processing"""
-        files = [self.files_list.item(i).text() for i in range(self.files_list.count())]
+        files = []
+        for i in range(self.files_list.count()):
+            item = self.files_list.item(i)
+            if item is not None:
+                files.append(item.text())
         
         if not files:
             return
@@ -813,17 +817,17 @@ class ParsingWidget(QWidget):
         
         self.batch_processor.start()
         
-    def stop_batch_processing(self):
+    def stop_batch_processing(self) -> None:
         """Stop batch processing"""
         if self.batch_processor:
             self.batch_processor.stop()
             
-    def update_batch_progress(self, progress: int, status: str):
+    def update_batch_progress(self, progress: int, status: str) -> None:
         """Update batch processing progress"""
         self.batch_progress.setValue(progress)
         self.batch_status.setText(status)
         
-    def add_batch_result(self, file_path: str, results: Dict[str, Any]):
+    def add_batch_result(self, file_path: str, results: Dict[str, Any]) -> None:
         """Add batch processing result"""
         self.processed_results[file_path] = results
         
@@ -844,13 +848,13 @@ class ParsingWidget(QWidget):
         cursor.movePosition(QTextCursor.MoveOperation.End)
         self.results_text.setTextCursor(cursor)
         
-    def batch_processing_completed(self, total: int, successful: int):
+    def batch_processing_completed(self, total: int, successful: int) -> None:
         """Handle batch processing completion"""
         self.start_batch_btn.setEnabled(True)
         self.stop_batch_btn.setEnabled(False)
         self.batch_status.setText(f"Completed: {successful}/{total} files processed successfully")
         
-    def export_results(self):
+    def export_results(self) -> None:
         """Export processing results"""
         if not self.processed_results:
             return
@@ -879,7 +883,7 @@ class ParsingWidget(QWidget):
                 df = pd.DataFrame(flattened_data)
                 df.to_csv(file_path, index=False)
                 
-    def clear_results(self):
+    def clear_results(self) -> None:
         """Clear all results"""
         self.processed_results.clear()
         self.results_text.clear()

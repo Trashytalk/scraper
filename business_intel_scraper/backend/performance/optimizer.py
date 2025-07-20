@@ -15,7 +15,7 @@ import logging
 import time
 import statistics
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, AsyncGenerator
 from dataclasses import dataclass, asdict
 from contextlib import asynccontextmanager
 import weakref
@@ -24,7 +24,7 @@ import pickle
 from functools import wraps, lru_cache
 import threading
 from collections import defaultdict, deque
-import psutil
+import psutil  # type: ignore[import-untyped]
 import json
 
 try:
@@ -81,8 +81,8 @@ class PerformanceCache:
     
     def __init__(self, config: OptimizationConfig):
         self.config = config
-        self.local_cache = {}
-        self.cache_stats = defaultdict(int)
+        self.local_cache: Dict[str, Any] = {}
+        self.cache_stats: defaultdict[str, int] = defaultdict(int)
         self.redis_client = None
         
         if REDIS_AVAILABLE and config.cache_enabled:
@@ -103,10 +103,10 @@ class PerformanceCache:
                 self.redis_client = None
         
         # Start cache cleanup task
-        self._cleanup_task = None
+        self._cleanup_task: Optional[asyncio.Task[Any]] = None
         self._start_cleanup_task()
     
-    def _start_cleanup_task(self):
+    def _start_cleanup_task(self) -> None:
         """Start background cache cleanup task."""
         try:
             loop = asyncio.get_event_loop()
@@ -114,7 +114,7 @@ class PerformanceCache:
         except RuntimeError:
             logger.warning("No event loop available for cache cleanup")
     
-    async def _periodic_cleanup(self):
+    async def _periodic_cleanup(self) -> None:
         """Periodically clean up expired cache entries."""
         while True:
             try:
@@ -288,14 +288,14 @@ class DatabaseOptimizer:
     def __init__(self, config: OptimizationConfig, database_url: str):
         self.config = config
         self.database_url = database_url
-        self.engine = None
-        self.query_cache = {}
-        self.query_stats = defaultdict(lambda: {'count': 0, 'total_time': 0.0})
+        self.engine: Optional[Any] = None
+        self.query_cache: Dict[str, Any] = {}
+        self.query_stats: defaultdict[str, Dict[str, Union[int, float]]] = defaultdict(lambda: {'count': 0, 'total_time': 0.0})
         
         if SQLALCHEMY_AVAILABLE:
             self._initialize_engine()
     
-    def _initialize_engine(self):
+    def _initialize_engine(self) -> None:
         """Initialize optimized database engine with connection pooling."""
         try:
             self.engine = create_engine(
@@ -313,7 +313,7 @@ class DatabaseOptimizer:
             logger.error(f"Failed to initialize database engine: {e}")
     
     @asynccontextmanager
-    async def get_connection(self):
+    async def get_connection(self) -> AsyncGenerator[Any, None]:
         """Get database connection with automatic cleanup."""
         if not self.engine:
             raise RuntimeError("Database engine not initialized")
@@ -326,7 +326,7 @@ class DatabaseOptimizer:
             if conn:
                 conn.close()
     
-    async def execute_query(self, query: str, params: Optional[Dict] = None) -> List[Dict]:
+    async def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Execute optimized database query with caching and metrics."""
         start_time = time.time()
         query_key = f"{query}:{hash(str(params))}"
@@ -335,21 +335,23 @@ class DatabaseOptimizer:
         if query_key in self.query_cache:
             cached_result, cached_time = self.query_cache[query_key]
             if time.time() - cached_time < 300:  # 5-minute cache
-                self.query_stats[query]['count'] += 1
-                return cached_result
+                self.query_stats[query]['count'] = int(self.query_stats[query]['count']) + 1
+                if isinstance(cached_result, list):
+                    return cached_result
+                return []
         
         try:
             async with self.get_connection() as conn:
                 result = conn.execute(text(query), params or {})
-                rows = [dict(row._mapping) for row in result.fetchall()]
+                rows: List[Dict[str, Any]] = [dict(row._mapping) for row in result.fetchall()]
                 
                 # Cache result
                 self.query_cache[query_key] = (rows, time.time())
                 
                 # Update stats
                 execution_time = time.time() - start_time
-                self.query_stats[query]['count'] += 1
-                self.query_stats[query]['total_time'] += execution_time
+                self.query_stats[query]['count'] = int(self.query_stats[query]['count']) + 1
+                self.query_stats[query]['total_time'] = float(self.query_stats[query]['total_time']) + execution_time
                 
                 return rows
                 
@@ -357,7 +359,7 @@ class DatabaseOptimizer:
             logger.error(f"Database query error: {e}")
             raise
     
-    async def execute_batch(self, query: str, batch_params: List[Dict]) -> bool:
+    async def execute_batch(self, query: str, batch_params: List[Dict[str, Any]]) -> bool:
         """Execute batch queries for improved performance."""
         if not batch_params:
             return True
@@ -378,14 +380,14 @@ class DatabaseOptimizer:
         total_time = 0.0
         
         for query, data in self.query_stats.items():
-            count = data['count']
+            count = int(data['count'])
             total_queries += count
-            total_time += data['total_time']
+            total_time += float(data['total_time'])
             
             stats[query[:100]] = {  # Truncate query for readability
                 'count': count,
-                'avg_time': data['total_time'] / count if count > 0 else 0,
-                'total_time': data['total_time']
+                'avg_time': float(data['total_time']) / count if count > 0 else 0,
+                'total_time': float(data['total_time'])
             }
         
         return {
@@ -401,18 +403,18 @@ class TaskOptimizer:
     
     def __init__(self, config: OptimizationConfig):
         self.config = config
-        self.task_queue = asyncio.Queue(maxsize=config.task_queue_size)
-        self.priority_queue = asyncio.PriorityQueue()
+        self.task_queue: asyncio.Queue[tuple[Any, tuple[Any, ...], Dict[str, Any], str]] = asyncio.Queue(maxsize=config.task_queue_size)
+        self.priority_queue: asyncio.PriorityQueue[tuple[int, Any, tuple[Any, ...], Dict[str, Any], str]] = asyncio.PriorityQueue()
         self.thread_pool = ThreadPoolExecutor(max_workers=config.max_workers)
         self.process_pool = ProcessPoolExecutor(max_workers=min(4, config.max_workers))
-        self.task_stats = defaultdict(lambda: {'count': 0, 'total_time': 0.0, 'errors': 0})
-        self.active_tasks = 0
-        self._worker_tasks = []
+        self.task_stats: defaultdict[str, Dict[str, Union[int, float]]] = defaultdict(lambda: {'count': 0, 'total_time': 0.0, 'errors': 0})
+        self.active_tasks: int = 0
+        self._worker_tasks: List[asyncio.Task[None]] = []
         
         # Start task workers
         self._start_workers()
     
-    def _start_workers(self):
+    def _start_workers(self) -> None:
         """Start background task workers."""
         try:
             loop = asyncio.get_event_loop()
@@ -431,7 +433,7 @@ class TaskOptimizer:
         except RuntimeError:
             logger.warning("No event loop available for task workers")
     
-    async def _queue_worker(self, worker_name: str):
+    async def _queue_worker(self, worker_name: str) -> None:
         """Background task queue worker."""
         while True:
             try:
@@ -473,7 +475,7 @@ class TaskOptimizer:
             except Exception as e:
                 logger.error(f"Worker {worker_name} error: {e}")
     
-    async def _priority_worker(self):
+    async def _priority_worker(self) -> None:
         """Priority task queue worker."""
         while True:
             try:
@@ -513,18 +515,18 @@ class TaskOptimizer:
             except Exception as e:
                 logger.error(f"Priority worker error: {e}")
     
-    async def submit_task(self, task_func, *args, task_name: str = "unknown", **kwargs):
+    async def submit_task(self, task_func: Any, *args: Any, task_name: str = "unknown", **kwargs: Any) -> None:
         """Submit task to queue for background processing."""
         try:
             await self.task_queue.put((task_func, args, kwargs, task_name))
         except asyncio.QueueFull:
             logger.warning(f"Task queue full, dropping task: {task_name}")
     
-    async def submit_priority_task(self, task_func, *args, priority: int = 0, task_name: str = "unknown", **kwargs):
+    async def submit_priority_task(self, task_func: Any, *args: Any, priority: int = 0, task_name: str = "unknown", **kwargs: Any) -> None:
         """Submit high-priority task for immediate processing."""
         await self.priority_queue.put((priority, task_func, args, kwargs, task_name))
     
-    async def process_batch(self, task_func, items: List[Any], batch_size: Optional[int] = None):
+    async def process_batch(self, task_func: Any, items: List[Any], batch_size: Optional[int] = None) -> None:
         """Process items in optimized batches."""
         batch_size = batch_size or self.config.batch_processing_size
         batches = [items[i:i + batch_size] for i in range(0, len(items), batch_size)]
@@ -559,14 +561,14 @@ class MemoryOptimizer:
     
     def __init__(self, config: OptimizationConfig):
         self.config = config
-        self.object_pools = {}
-        self.memory_stats = deque(maxlen=100)
-        self.gc_stats = {'collections': 0, 'freed_objects': 0}
+        self.object_pools: Dict[str, Dict[str, Any]] = {}
+        self.memory_stats: deque[Dict[str, Union[float, int]]] = deque(maxlen=100)
+        self.gc_stats: Dict[str, int] = {'collections': 0, 'freed_objects': 0}
         
         # Start memory monitoring
         self._start_memory_monitoring()
     
-    def _start_memory_monitoring(self):
+    def _start_memory_monitoring(self) -> None:
         """Start background memory monitoring."""
         try:
             loop = asyncio.get_event_loop()
@@ -574,7 +576,7 @@ class MemoryOptimizer:
         except RuntimeError:
             logger.warning("No event loop available for memory monitoring")
     
-    async def _memory_monitor(self):
+    async def _memory_monitor(self) -> None:
         """Monitor memory usage and trigger optimizations."""
         import gc
         
@@ -608,7 +610,7 @@ class MemoryOptimizer:
                 logger.error(f"Memory monitoring error: {e}")
                 await asyncio.sleep(60)
     
-    def get_object_pool(self, pool_name: str, factory_func):
+    def get_object_pool(self, pool_name: str, factory_func: Any) -> Any:
         """Get or create object pool for reusing expensive objects."""
         if pool_name not in self.object_pools:
             self.object_pools[pool_name] = {
@@ -627,7 +629,7 @@ class MemoryOptimizer:
             pool['created'] += 1
             return pool['factory']()
     
-    def return_object(self, pool_name: str, obj: Any):
+    def return_object(self, pool_name: str, obj: Any) -> None:
         """Return object to pool for reuse."""
         if pool_name in self.object_pools:
             # Reset object state if needed
@@ -670,13 +672,13 @@ class PerformanceOptimizer:
         self.cache = PerformanceCache(self.config)
         self.task_optimizer = TaskOptimizer(self.config)
         self.memory_optimizer = MemoryOptimizer(self.config)
-        self.database_optimizer = None
+        self.database_optimizer: Optional[DatabaseOptimizer] = None
         
         if database_url and SQLALCHEMY_AVAILABLE:
             self.database_optimizer = DatabaseOptimizer(self.config, database_url)
         
         # Performance metrics
-        self.performance_metrics = {
+        self.performance_metrics: Dict[str, Union[float, int]] = {
             'optimization_start_time': time.time(),
             'total_optimizations': 0
         }
@@ -684,11 +686,11 @@ class PerformanceOptimizer:
         logger.info("Performance optimization system initialized")
     
     # Decorators for automatic optimization
-    def cached(self, ttl: Optional[int] = None, key_func: Optional[callable] = None):
+    def cached(self, ttl: Optional[int] = None, key_func: Optional[Any] = None) -> Any:
         """Decorator for automatic function result caching."""
-        def decorator(func):
+        def decorator(func: Any) -> Any:
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
                 # Generate cache key
                 if key_func:
                     cache_key = key_func(*args, **kwargs)
@@ -712,11 +714,11 @@ class PerformanceOptimizer:
             return wrapper
         return decorator
     
-    def optimized_task(self, task_name: Optional[str] = None, priority: bool = False):
+    def optimized_task(self, task_name: Optional[str] = None, priority: bool = False) -> Any:
         """Decorator for automatic task optimization."""
-        def decorator(func):
+        def decorator(func: Any) -> Any:
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args: Any, **kwargs: Any) -> None:
                 name = task_name or func.__name__
                 
                 if priority:
@@ -727,11 +729,11 @@ class PerformanceOptimizer:
             return wrapper
         return decorator
     
-    def memory_optimized(self, pool_name: Optional[str] = None):
+    def memory_optimized(self, pool_name: Optional[str] = None) -> Any:
         """Decorator for automatic memory optimization."""
-        def decorator(func):
+        def decorator(func: Any) -> Any:
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 # Use object pooling if specified
                 if pool_name and hasattr(func, '_object_factory'):
                     obj = self.memory_optimizer.get_object_pool(pool_name, func._object_factory)
@@ -750,7 +752,7 @@ class PerformanceOptimizer:
         if not self.database_optimizer:
             return {'error': 'Database optimizer not available'}
         
-        optimization_results = {}
+        optimization_results: Dict[str, Dict[str, Any]] = {}
         
         for query in queries:
             start_time = time.time()
@@ -809,7 +811,7 @@ class PerformanceOptimizer:
     
     async def apply_optimizations(self, optimization_profile: str = 'balanced') -> Dict[str, Any]:
         """Apply optimization profile to the system."""
-        profiles = {
+        profiles: Dict[str, OptimizationConfig] = {
             'memory_focused': OptimizationConfig(
                 db_pool_size=10,
                 cache_max_memory=64 * 1024 * 1024,  # 64MB
@@ -829,7 +831,7 @@ class PerformanceOptimizer:
             new_config = profiles[optimization_profile]
             
             # Apply new configuration
-            optimization_results = {
+            optimization_results: Dict[str, Any] = {
                 'profile_applied': optimization_profile,
                 'changes': []
             }
@@ -847,7 +849,7 @@ class PerformanceOptimizer:
         
         return {'error': f'Unknown optimization profile: {optimization_profile}'}
     
-    async def cleanup_resources(self):
+    async def cleanup_resources(self) -> None:
         """Clean up optimization resources."""
         logger.info("Cleaning up performance optimization resources...")
         
@@ -885,7 +887,7 @@ def get_performance_optimizer(database_url: Optional[str] = None, config: Option
 
 
 # Utility functions for common optimizations
-async def optimize_batch_processing(items: List[Any], processor_func, batch_size: int = 100):
+async def optimize_batch_processing(items: List[Any], processor_func: Any, batch_size: int = 100) -> None:
     """Optimize batch processing with intelligent batching."""
     optimizer = get_performance_optimizer()
     await optimizer.task_optimizer.process_batch(processor_func, items, batch_size)
@@ -898,16 +900,16 @@ def cached_computation(input_data: str) -> Any:
     return hash(input_data)
 
 
-def memory_efficient_data_processing(data: List[Dict]) -> List[Dict]:
+def memory_efficient_data_processing(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Process data with memory-efficient techniques."""
     # Use generators for large datasets
-    def process_item(item):
+    def process_item(item: Dict[str, Any]) -> Dict[str, Any]:
         # Process individual item
         return {k: v.strip() if isinstance(v, str) else v for k, v in item.items()}
     
     # Process in chunks to avoid memory spikes
     chunk_size = 1000
-    results = []
+    results: List[Dict[str, Any]] = []
     
     for i in range(0, len(data), chunk_size):
         chunk = data[i:i + chunk_size]
@@ -923,14 +925,17 @@ class PerformanceMonitor:
     
     def __init__(self, operation_name: str):
         self.operation_name = operation_name
-        self.start_time = None
+        self.start_time: Optional[float] = None
     
-    def __enter__(self):
+    def __enter__(self) -> 'PerformanceMonitor':
         self.start_time = time.time()
         return self
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        execution_time = time.time() - self.start_time
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if self.start_time is not None:
+            execution_time = time.time() - self.start_time
+        else:
+            execution_time = 0.0
         logger.info(f"Performance: {self.operation_name} completed in {execution_time:.3f}s")
         
         # Record performance metric

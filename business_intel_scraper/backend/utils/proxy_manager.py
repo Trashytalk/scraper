@@ -50,6 +50,7 @@ class ProxyManager:
             logger.debug("Proxy pool is empty")
             return None
         if self._rotate:
+            assert self._cycle is not None  # _cycle is set when proxies exist
             proxy = next(self._cycle)
         else:
             proxy = choice(list(self.proxies))

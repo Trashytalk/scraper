@@ -16,7 +16,7 @@ except ImportError:
 
 
 @click.group()
-def performance():
+def performance() -> None:
     """Performance optimization commands."""
     if not PERFORMANCE_AVAILABLE:
         click.echo("❌ Performance optimization not available - install required dependencies")
@@ -24,7 +24,7 @@ def performance():
 
 
 @performance.command()
-def status():
+def status() -> None:
     """Show performance optimization status."""
     if not PERFORMANCE_AVAILABLE:
         return
@@ -83,7 +83,7 @@ def status():
 
 @performance.command()
 @click.option('--format', default='table', help='Output format: table, json')
-def metrics(format):
+def metrics(format: str) -> None:
     """Show detailed performance metrics."""
     if not PERFORMANCE_AVAILABLE:
         return
@@ -120,7 +120,7 @@ def metrics(format):
 
 @performance.command()
 @click.argument('profile', type=click.Choice(['memory_focused', 'performance_focused', 'balanced']))
-def optimize(profile):
+def optimize(profile: str) -> None:
     """Apply optimization profile."""
     if not PERFORMANCE_AVAILABLE:
         return
@@ -149,7 +149,7 @@ def optimize(profile):
 
 @performance.command()
 @click.option('--pattern', help='Clear specific cache pattern')
-def clear_cache(pattern):
+def clear_cache(pattern: str) -> None:
     """Clear performance cache."""
     if not PERFORMANCE_AVAILABLE:
         return
@@ -180,7 +180,7 @@ def clear_cache(pattern):
 
 
 @performance.command()
-def benchmark():
+def benchmark() -> None:
     """Run performance benchmark."""
     if not PERFORMANCE_AVAILABLE:
         return
@@ -197,7 +197,7 @@ def benchmark():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        async def cache_benchmark():
+        async def cache_benchmark() -> Dict[str, Any]:
             # Test cache set/get operations
             for i in range(100):
                 await optimizer.cache.set(f"benchmark_key_{i}", f"value_{i}")
@@ -208,18 +208,18 @@ def benchmark():
                 if result is not None:
                     hits += 1
             
-            return hits
+            return {'hits': hits, 'total': 100}
         
-        hits = loop.run_until_complete(cache_benchmark())
+        result = loop.run_until_complete(cache_benchmark())
         cache_time = time.time() - start_time
         
-        click.echo(f"✅ Cache benchmark: {hits}/100 hits in {cache_time:.3f}s")
+        click.echo(f"✅ Cache benchmark: {result['hits']}/{result['total']} hits in {cache_time:.3f}s")
         
         # Test task processing
         click.echo("Testing task processing...")
         start_time = time.time()
         
-        async def task_benchmark():
+        async def task_benchmark() -> None:
             tasks = []
             for i in range(10):
                 task = optimizer.task_optimizer.submit_task(
@@ -242,7 +242,7 @@ def benchmark():
 
 
 @performance.command()
-def recommendations():
+def recommendations() -> None:
     """Get performance optimization recommendations."""
     if not PERFORMANCE_AVAILABLE:
         return

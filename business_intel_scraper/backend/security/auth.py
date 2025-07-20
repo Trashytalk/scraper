@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any, Dict, Callable
 
 import jwt
 from fastapi import Depends, Header, HTTPException, status
@@ -71,7 +71,7 @@ def _decode_token(token: str) -> Dict[str, Any] | None:
     options: dict[str, Any] = {"verify_aud": audience is not None, "verify_exp": True}
 
     try:
-        return jwt.decode(
+        decoded = jwt.decode(
             token,
             secret,
             algorithms=[algorithm],
@@ -79,6 +79,7 @@ def _decode_token(token: str) -> Dict[str, Any] | None:
             issuer=issuer,
             options=options,
         )
+        return decoded if isinstance(decoded, dict) else None
     except jwt.PyJWTError:
         return None
 
@@ -126,7 +127,7 @@ def require_token(authorization: str = Header(...)) -> Dict[str, Any]:
     return payload
 
 
-def require_role(required: UserRole):
+def require_role(required: UserRole) -> Any:
     """Return dependency ensuring JWT has the given ``role``."""
 
     async def _checker(payload: Dict[str, Any] = Depends(require_token)) -> None:

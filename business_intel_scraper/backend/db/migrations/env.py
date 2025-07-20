@@ -25,7 +25,7 @@ target_metadata = models.Base.metadata
 
 def get_url() -> str:
     """Return database URL from env or config."""
-    return os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    return os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url") or "")
 
 
 # other values from the config, defined by the needs of env.py,

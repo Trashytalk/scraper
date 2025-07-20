@@ -73,7 +73,7 @@ class MarketplaceSpider(Base):
 class SpiderMarketplace:
     """Main spider marketplace manager"""
     
-    def __init__(self, config_path: str = None):
+    def __init__(self, config_path: Optional[str] = None):
         self.config_path = config_path or "config/marketplace.yaml"
         self.spiders_dir = Path("business_intel_scraper/modules/marketplace_spiders")
         self.cache_dir = Path("data/marketplace_cache")
@@ -124,7 +124,7 @@ class SpiderMarketplace:
         return default_config
 
     def search_spiders(self, query: str = "", category: str = "", 
-                      tags: List[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
+                      tags: Optional[List[str]] = None, limit: int = 20) -> List[Dict[str, Any]]:
         """Search for spiders in the marketplace"""
         # For now, return local spiders and sample marketplace data
         local_spiders = self._get_local_spiders()
@@ -313,7 +313,7 @@ class SpiderMarketplace:
         except Exception as e:
             return {"success": False, "error": f"Download failed: {str(e)}"}
 
-    def _create_sample_spider_structure(self, spider_dir: Path, spider_info: Dict[str, Any]):
+    def _create_sample_spider_structure(self, spider_dir: Path, spider_info: Dict[str, Any]) -> None:
         """Create a sample spider structure for demonstration"""
         spider_name = spider_info['name']
         
@@ -577,7 +577,8 @@ spider = {spider_name.replace('-', '_').title()}Spider()
 
     def get_categories(self) -> List[str]:
         """Get available spider categories"""
-        return self.config["marketplace"]["allowed_categories"]
+        categories = self.config["marketplace"]["allowed_categories"]
+        return list(categories) if categories else []
 
     def get_marketplace_stats(self) -> Dict[str, Any]:
         """Get marketplace statistics"""

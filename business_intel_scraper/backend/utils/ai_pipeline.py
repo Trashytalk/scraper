@@ -16,11 +16,11 @@ from ..ai import AIProcessor, ProcessedData
 class AIEnhancementPipeline:
     """Scrapy pipeline that enhances items with AI processing"""
     
-    def __init__(self, settings=None):
-        self.ai_processor = None
+    def __init__(self, settings: Optional[Any] = None) -> None:
+        self.ai_processor: Optional[Any] = None
         self.enabled = True
         self.batch_size = 10
-        self.batch_items = []
+        self.batch_items: List[Any] = []
         self.process_entities = True
         self.process_classification = True
         self.process_sentiment = True
@@ -36,10 +36,10 @@ class AIEnhancementPipeline:
             self.process_duplicates = settings.getbool('AI_PROCESS_DUPLICATES', True)
     
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Any) -> 'AIEnhancementPipeline':
         return cls(crawler.settings)
     
-    def open_spider(self, spider: Spider):
+    def open_spider(self, spider: Spider) -> None:
         """Initialize AI processor when spider opens"""
         if self.enabled:
             try:
@@ -55,7 +55,7 @@ class AIEnhancementPipeline:
                 self.logger.error(f"Failed to initialize AI processor: {e}")
                 self.enabled = False
     
-    def close_spider(self, spider: Spider):
+    def close_spider(self, spider: Spider) -> None:
         """Process any remaining batch items when spider closes"""
         if self.enabled and self.batch_items:
             try:
@@ -63,7 +63,7 @@ class AIEnhancementPipeline:
             except Exception as e:
                 self.logger.error(f"Error processing final batch: {e}")
     
-    def process_item(self, item, spider: Spider):
+    def process_item(self, item: Any, spider: Spider) -> Any:
         """Process individual items, batching for efficiency"""
         if not self.enabled or not self.ai_processor:
             return item
@@ -87,7 +87,7 @@ class AIEnhancementPipeline:
     
     def _process_batch(self, spider: Spider) -> List[Dict[str, Any]]:
         """Process a batch of items with AI enhancement"""
-        if not self.batch_items:
+        if not self.batch_items or self.ai_processor is None:
             return []
         
         try:
@@ -127,7 +127,7 @@ class AIEnhancementPipeline:
             self.batch_items.clear()
             return items
     
-    def _merge_ai_data(self, original_item, enhanced_data: ProcessedData) -> Dict[str, Any]:
+    def _merge_ai_data(self, original_item: Any, enhanced_data: ProcessedData) -> Dict[str, Any]:
         """Merge AI enhancement data into original item"""
         adapter = ItemAdapter(original_item)
         enhanced_item = dict(adapter)
@@ -164,10 +164,11 @@ class AIEnhancementPipeline:
         if self.process_sentiment and enhanced_data.sentiment:
             enhanced_item['ai_sentiment'] = enhanced_data.sentiment
             # Extract dominant sentiment
-            if enhanced_data.sentiment:
-                dominant_sentiment = max(enhanced_data.sentiment, key=enhanced_data.sentiment.get)
+            sentiment_dict = enhanced_data.sentiment
+            if sentiment_dict:
+                dominant_sentiment = max(sentiment_dict, key=lambda k: sentiment_dict[k])
                 enhanced_item['ai_sentiment_primary'] = dominant_sentiment
-                enhanced_item['ai_sentiment_score'] = enhanced_data.sentiment[dominant_sentiment]
+                enhanced_item['ai_sentiment_score'] = sentiment_dict[dominant_sentiment]
         
         # Add summary
         if enhanced_data.summary:
@@ -184,7 +185,7 @@ class AIEnhancementPipeline:
 class AIFilterPipeline:
     """Pipeline that filters items based on AI analysis"""
     
-    def __init__(self, settings=None):
+    def __init__(self, settings: Optional[Any] = None) -> None:
         self.min_quality_score = 0.5
         self.filter_duplicates = True
         self.required_entities = []
@@ -200,10 +201,10 @@ class AIFilterPipeline:
             self.min_sentiment_confidence = settings.getfloat('AI_MIN_SENTIMENT_CONFIDENCE', 0.0)
     
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Any) -> 'AIFilterPipeline':
         return cls(crawler.settings)
     
-    def process_item(self, item, spider: Spider):
+    def process_item(self, item: Any, spider: Spider) -> Any:
         """Filter items based on AI analysis"""
         adapter = ItemAdapter(item)
         

@@ -20,7 +20,7 @@ from .core import analytics_engine, PerformanceMetrics, DataQualityMetrics
 class InsightsGenerator:
     """Generate actionable business intelligence insights."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.anomaly_threshold = 2.0  # Standard deviations for anomaly detection
         self.performance_baseline = None
         self.quality_baseline = None
@@ -149,7 +149,7 @@ class InsightsGenerator:
     
     async def detect_anomalies(self, hours: int = 24) -> List[Dict[str, Any]]:
         """Detect anomalies in system behavior."""
-        anomalies = []
+        anomalies: List[Dict[str, Any]] = []
         
         # Get historical data
         response_time_data = await analytics_engine.get_historical_data("api.request", hours)

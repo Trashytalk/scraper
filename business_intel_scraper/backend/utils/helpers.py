@@ -7,6 +7,7 @@ import logging.config
 import json
 import os
 from pathlib import Path
+from typing import Any, Dict
 
 import requests
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class JsonFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> str:
         data = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
@@ -39,7 +40,7 @@ class HTTPLogHandler(logging.Handler):
         self.url = url
         self.timeout = timeout
 
-    def emit(self, record: logging.LogRecord) -> None:  # type: ignore[override]
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             payload = self.format(record)
             requests.post(
@@ -81,7 +82,7 @@ def setup_logging(
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    config = {
+    config: Dict[str, Any] = {
         "version": 1,
         "formatters": {
             "default": {

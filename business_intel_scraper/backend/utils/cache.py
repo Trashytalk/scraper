@@ -29,7 +29,7 @@ def setup_request_cache() -> None:
         requests_cache.install_cache(
             "bi_cache",
             backend="redis",
-            connection=redis_from_url(redis_url),
+            connection=redis_from_url(redis_url),  # type: ignore[no-untyped-call]
             expire_after=expire,
         )
     else:

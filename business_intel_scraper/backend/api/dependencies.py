@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable, Any
+
 from fastapi import Depends, Header, HTTPException, status
 
 from ..db.models import UserRole
@@ -16,7 +18,7 @@ def get_user_role(x_role: str = Header(...)) -> UserRole:
         ) from exc
 
 
-def require_role(required: UserRole):
+def require_role(required: UserRole) -> Any:
     """Return a dependency ensuring the current user has ``required`` role."""
 
     async def _checker(role: UserRole = Depends(get_user_role)) -> None:

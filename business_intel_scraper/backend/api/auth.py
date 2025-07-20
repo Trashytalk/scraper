@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -28,7 +30,7 @@ class UserLogin(BaseModel):
 
 
 @router.post("/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, db: Session = Depends(get_db)) -> dict[str, Any]:
     existing = db.query(User).filter_by(username=user.username).first()
     if existing:
         raise HTTPException(
@@ -43,7 +45,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+def login(credentials: UserLogin, db: Session = Depends(get_db)) -> dict[str, str]:
     db_user = db.query(User).filter_by(username=credentials.username).first()
     if not db_user or not pwd_context.verify(
         credentials.password, db_user.hashed_password

@@ -62,7 +62,7 @@ async def search_spiders(
     category: str = Query("", description="Filter by category"),
     tags: str = Query("", description="Comma-separated tags"),
     limit: int = Query(20, le=100, description="Maximum results")
-):
+) -> List[Dict[str, Any]]:
     """Search for spiders in the marketplace"""
     try:
         tag_list = [tag.strip() for tag in tags.split(",")] if tags else []
@@ -81,7 +81,7 @@ async def search_spiders(
 
 
 @router.get("/spider/{spider_name}", response_model=Dict[str, Any])
-async def get_spider_info(spider_name: str):
+async def get_spider_info(spider_name: str) -> Dict[str, Any]:
     """Get detailed information about a specific spider"""
     try:
         spider_info = marketplace.get_spider_info(spider_name)
@@ -98,7 +98,7 @@ async def get_spider_info(spider_name: str):
 
 
 @router.post("/install", response_model=SpiderResponse)
-async def install_spider(request: SpiderInstallRequest):
+async def install_spider(request: SpiderInstallRequest) -> SpiderResponse:
     """Install a spider from the marketplace"""
     try:
         result = marketplace.install_spider(request.name, request.version)
@@ -115,7 +115,7 @@ async def install_spider(request: SpiderInstallRequest):
 
 
 @router.delete("/uninstall/{spider_name}", response_model=SpiderResponse)
-async def uninstall_spider(spider_name: str):
+async def uninstall_spider(spider_name: str) -> SpiderResponse:
     """Uninstall a spider"""
     try:
         result = marketplace.uninstall_spider(spider_name)
@@ -132,7 +132,7 @@ async def uninstall_spider(spider_name: str):
 
 
 @router.get("/installed", response_model=List[Dict[str, Any]])
-async def list_installed_spiders():
+async def list_installed_spiders() -> List[Dict[str, Any]]:
     """List all installed spiders"""
     try:
         spiders = marketplace.list_installed_spiders()
@@ -143,7 +143,7 @@ async def list_installed_spiders():
 
 
 @router.post("/validate", response_model=Dict[str, Any])
-async def validate_spider_package(file: UploadFile = File(...)):
+async def validate_spider_package(file: UploadFile = File(...)) -> Dict[str, Any]:
     """Validate a spider package"""
     try:
         # Create temporary directory for uploaded file
@@ -151,12 +151,13 @@ async def validate_spider_package(file: UploadFile = File(...)):
             temp_path = Path(temp_dir)
             
             # Save uploaded file
-            file_path = temp_path / file.filename
+            filename = file.filename or "uploaded_file"
+            file_path = temp_path / filename
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
             
             # Extract if it's a zip file
-            if file.filename.endswith('.zip'):
+            if filename.endswith('.zip'):
                 import zipfile
                 with zipfile.ZipFile(file_path, 'r') as zip_ref:
                     zip_ref.extractall(temp_path / "extracted")
@@ -177,7 +178,7 @@ async def validate_spider_package(file: UploadFile = File(...)):
 async def publish_spider(
     file: UploadFile = File(...),
     metadata: str = Query(..., description="JSON metadata for the spider")
-):
+) -> SpiderResponse:
     """Publish a spider to the marketplace"""
     try:
         import json
@@ -193,12 +194,13 @@ async def publish_spider(
             temp_path = Path(temp_dir)
             
             # Save uploaded file
-            file_path = temp_path / file.filename
+            filename = file.filename or "uploaded_spider"
+            file_path = temp_path / filename
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
             
             # Extract if it's a zip file
-            if file.filename.endswith('.zip'):
+            if filename.endswith('.zip'):
                 import zipfile
                 with zipfile.ZipFile(file_path, 'r') as zip_ref:
                     zip_ref.extractall(temp_path / "extracted")
@@ -223,7 +225,7 @@ async def publish_spider(
 
 
 @router.get("/categories", response_model=List[str])
-async def get_categories():
+async def get_categories() -> List[str]:
     """Get available spider categories"""
     try:
         return marketplace.get_categories()
@@ -233,7 +235,7 @@ async def get_categories():
 
 
 @router.get("/stats", response_model=Dict[str, Any])
-async def get_marketplace_stats():
+async def get_marketplace_stats() -> Dict[str, Any]:
     """Get marketplace statistics"""
     try:
         return marketplace.get_marketplace_stats()
@@ -243,7 +245,7 @@ async def get_marketplace_stats():
 
 
 @router.get("/featured", response_model=List[Dict[str, Any]])
-async def get_featured_spiders(limit: int = Query(10, le=20)):
+async def get_featured_spiders(limit: int = Query(10, le=20)) -> List[Dict[str, Any]]:
     """Get featured/popular spiders"""
     try:
         # Get popular spiders (highest rated and most downloaded)
@@ -267,7 +269,7 @@ async def rate_spider(
     spider_name: str,
     rating: float = Query(..., ge=1, le=5),
     comment: str = Query("", description="Optional review comment")
-):
+) -> SpiderResponse:
     """Rate a spider (placeholder for future implementation)"""
     try:
         # In a real implementation, this would store the rating in the database
@@ -277,12 +279,11 @@ async def rate_spider(
         if not spider_info:
             raise HTTPException(status_code=404, detail=f"Spider {spider_name} not found")
         
-        return {
-            "success": True,
-            "message": f"Rating submitted for {spider_name}",
-            "rating": rating,
-            "comment": comment
-        }
+        return SpiderResponse(
+            success=True,
+            message=f"Rating submitted for {spider_name}",
+            data={"rating": rating, "comment": comment}
+        )
         
     except HTTPException:
         raise
@@ -291,7 +292,7 @@ async def rate_spider(
 
 
 @router.get("/my-spiders", response_model=List[Dict[str, Any]])
-async def get_my_spiders():
+async def get_my_spiders() -> List[Dict[str, Any]]:
     """Get spiders published by the current user (placeholder)"""
     try:
         # In a real implementation, this would filter by user authentication
@@ -321,8 +322,8 @@ async def get_my_spiders():
 
 # Health check for marketplace
 @router.get("/health")
-async def marketplace_health():
-    """Check marketplace health"""
+async def marketplace_health() -> Dict[str, Any]:
+    """Health check endpoint"""
     try:
         stats = marketplace.get_marketplace_stats()
         

@@ -45,6 +45,7 @@ class MetricsCollector:
                 registry=self.registry
             )
             
+            self.request_duration = Histogram(
                 'bi_analytics_request_duration_seconds',
                 'Request duration in seconds',
                 ['endpoint'],

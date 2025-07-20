@@ -13,7 +13,7 @@ try:
     import PyQt6.QtWidgets as QtWidgets
 except ImportError:  # pragma: no cover - optional dependency
     from PyQt5 import QtWidgets  # type: ignore
-    from PyQt5.QtCore import Qt
+    from PyQt5.QtCore import Qt  # type: ignore
 
 try:
     from gui.components.job_manager import JobManagerWidget
@@ -24,10 +24,11 @@ try:
     from gui.components.tor_integration import TORWidget
     from gui.components.network_config import NetworkConfigWidget
     from gui.components.advanced_parsing import ParsingWidget
-    from gui.components.embedded_browser import EmbeddedBrowser
+    from gui.components.embedded_browser import EmbeddedBrowser, BrowserTabWidget, BrowserDockWidget
     from gui.components.data_visualization import SiteVisualizationWidget
     from gui.components.osint_integration import OSINTIntegrationWidget
     from gui.components.data_enrichment import DataEnrichmentWidget
+    from gui.components.tooltip_system import tooltip_manager, ExperienceLevelSelector, TooltipWidget
 except ImportError:
     # Fallback for relative imports
     from .job_manager import JobManagerWidget
@@ -38,20 +39,11 @@ except ImportError:
     from .tor_integration import TORWidget
     from .network_config import NetworkConfigWidget
     from .advanced_parsing import ParsingWidget
-    from .embedded_browser import EmbeddedBrowser
+    from .embedded_browser import EmbeddedBrowser, BrowserTabWidget, BrowserDockWidget
     from .data_visualization import SiteVisualizationWidget
     from .osint_integration import OSINTIntegrationWidget
     from .data_enrichment import DataEnrichmentWidget
-from .data_viewer import DataViewerWidget
-from .config_dialog import ConfigDialog
-from .tooltip_system import tooltip_manager, ExperienceLevelSelector, TooltipWidget
-from .tor_integration import TORWidget
-from .network_config import NetworkConfigWidget
-from .advanced_parsing import ParsingWidget
-from .embedded_browser import BrowserTabWidget, BrowserDockWidget
-from .data_visualization import SiteVisualizationWidget
-from .osint_integration import OSINTIntegrationWidget
-from .data_enrichment import DataEnrichmentWidget
+    from .tooltip_system import tooltip_manager, ExperienceLevelSelector, TooltipWidget
 
 
 class DashboardWindow(QMainWindow):
@@ -75,13 +67,13 @@ class DashboardWindow(QMainWindow):
         self.job_manager = TooltipJobManagerWidget()
         self.log_viewer = LogViewerWidget()
         self.data_viewer = DataViewerWidget()
-        self.tor_widget = TORWidget()
+        self.tor_widget = TORWidget()  # type: ignore
         self.network_config = NetworkConfigWidget()
-        self.parsing_widget = ParsingWidget()
-        self.browser_tabs = BrowserTabWidget()
-        self.visualization_widget = SiteVisualizationWidget()
-        self.osint_widget = OSINTIntegrationWidget()
-        self.enrichment_widget = DataEnrichmentWidget()
+        self.parsing_widget = ParsingWidget()  # type: ignore
+        self.browser_tabs = BrowserTabWidget()  # type: ignore
+        self.visualization_widget = SiteVisualizationWidget()  # type: ignore
+        self.osint_widget = OSINTIntegrationWidget()  # type: ignore
+        self.enrichment_widget = DataEnrichmentWidget()  # type: ignore
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(self.job_manager, "Jobs")
@@ -99,37 +91,48 @@ class DashboardWindow(QMainWindow):
         self._create_menu()
         
         # Add dockable browser option
-        self.browser_dock = BrowserDockWidget("Browser Panel", self)
+        self.browser_dock = BrowserDockWidget("Browser Panel", self)  # type: ignore
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.browser_dock)
         self.browser_dock.hide()  # Initially hidden
+
+        # Set references in job manager for browser controls
+        self.job_manager.browser_dock = self.browser_dock
+        self.job_manager.browser_tabs = self.browser_tabs
 
     def _create_menu(self) -> None:
         """Create basic menu actions."""
 
         menubar = self.menuBar()
-        file_menu = menubar.addMenu("File")
-        config_action = file_menu.addAction("Configuration")
-        config_action.triggered.connect(self.show_config_dialog)
-        quit_action = file_menu.addAction("Quit")
-        quit_action.triggered.connect(self.close)
+        if menubar is not None:
+            file_menu = menubar.addMenu("File")
+            if file_menu is not None:
+                config_action = file_menu.addAction("Configuration")
+                if config_action is not None:
+                    config_action.triggered.connect(self.show_config_dialog)
+                quit_action = file_menu.addAction("Quit")
+                if quit_action is not None:
+                    quit_action.triggered.connect(self.close)
+            
+            # Add browser menu
+            browser_menu = menubar.addMenu("Browser")
+            if browser_menu is not None:
+                toggle_dock_action = browser_menu.addAction("Toggle Browser Panel")
+                if toggle_dock_action is not None:
+                    toggle_dock_action.triggered.connect(self.toggle_browser_dock)
+                new_tab_action = browser_menu.addAction("New Browser Tab")
+                if new_tab_action is not None:
+                    new_tab_action.triggered.connect(self.add_browser_tab)
         
-        # Add browser menu
-        browser_menu = menubar.addMenu("Browser")
-        toggle_dock_action = browser_menu.addAction("Toggle Browser Panel")
-        toggle_dock_action.triggered.connect(self.toggle_browser_dock)
-        new_tab_action = browser_menu.addAction("New Browser Tab")
-        new_tab_action.triggered.connect(self.add_browser_tab)
-        
-    def toggle_browser_dock(self):
+    def toggle_browser_dock(self) -> None:
         """Toggle browser dock panel visibility"""
         if self.browser_dock.isVisible():
             self.browser_dock.hide()
         else:
             self.browser_dock.show()
             
-    def add_browser_tab(self):
+    def add_browser_tab(self) -> None:
         """Add new browser tab"""
-        self.browser_tabs.add_new_tab()
+        self.browser_tabs.add_new_tab()  # type: ignore
 
     def show_config_dialog(self) -> None:
         """Display the configuration dialog."""
@@ -147,7 +150,7 @@ class DashboardWindow(QMainWindow):
 class TooltipJobManagerWidget(TooltipWidget):
     """Job manager widget with tooltip support"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(tooltip_id="job_management", parent=parent)
         self.job_manager = JobManagerWidget(parent=self)
         
@@ -156,30 +159,22 @@ class TooltipJobManagerWidget(TooltipWidget):
         layout.addWidget(self.job_manager)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        menubar = self.menuBar()
-        file_menu = menubar.addMenu("File")
-        config_action = file_menu.addAction("Configuration")
-        config_action.triggered.connect(self.show_config_dialog)
-        quit_action = file_menu.addAction("Quit")
-        quit_action.triggered.connect(self.close)
+        # Initialize browser dock and tabs references (will be set by parent)
+        self.browser_dock: QtWidgets.QDockWidget | None = None
+        self.browser_tabs: BrowserTabWidget | None = None
         
-        # Add browser menu
-        browser_menu = menubar.addMenu("Browser")
-        toggle_dock_action = browser_menu.addAction("Toggle Browser Panel")
-        toggle_dock_action.triggered.connect(self.toggle_browser_dock)
-        new_tab_action = browser_menu.addAction("New Browser Tab")
-        new_tab_action.triggered.connect(self.add_browser_tab)
-        
-    def toggle_browser_dock(self):
+    def toggle_browser_dock(self) -> None:
         """Toggle browser dock panel visibility"""
-        if self.browser_dock.isVisible():
-            self.browser_dock.hide()
-        else:
-            self.browser_dock.show()
+        if self.browser_dock is not None:
+            if self.browser_dock.isVisible():
+                self.browser_dock.hide()
+            else:
+                self.browser_dock.show()
             
-    def add_browser_tab(self):
+    def add_browser_tab(self) -> None:
         """Add new browser tab"""
-        self.browser_tabs.add_new_tab()
+        if self.browser_tabs is not None:
+            self.browser_tabs.add_new_tab()  # type: ignore
 
     def show_config_dialog(self) -> None:
         """Display the configuration dialog."""

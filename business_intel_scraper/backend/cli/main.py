@@ -1,5 +1,6 @@
 import argparse
 import json
+from typing import Optional, Any
 import click
 
 from business_intel_scraper.backend.workers.tasks import run_spider_task
@@ -10,17 +11,18 @@ from business_intel_scraper.backend.modules.scrapers.integrations import (
     run_nmap,
 )
 
-# Import marketplace CLI
+# Import marketplace CLI  
 try:
     from ..marketplace.cli import marketplace
 except ImportError:
-    marketplace = None
+    marketplace: Optional[click.Group] = None
 
 # Import analytics CLI
 try:
-    from ..analytics.cli import analytics_cli
+    from ..analytics.cli import analytics
+    analytics_cli: Optional[click.Group] = analytics
 except ImportError:
-    analytics_cli = None
+    analytics_cli: Optional[click.Group] = None
 
 
 def main() -> None:

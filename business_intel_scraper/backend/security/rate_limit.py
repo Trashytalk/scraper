@@ -4,17 +4,19 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from time import time
+from typing import Callable, Awaitable, Any
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Limit requests per IP or user using a sliding window."""
 
-    def __init__(self, app, limit: int = 60, window: int = 60) -> None:
+    def __init__(self, app: Callable[..., Any], limit: int = 60, window: int = 60) -> None:
         super().__init__(app)
         self.limit = limit
         self.window = window
@@ -24,10 +26,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         user = request.headers.get("Authorization")
         if user:
             return f"user:{user}"
-        client_ip = request.client.host
+        client_ip = request.client.host if request.client else "unknown"
         return f"ip:{client_ip}"
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         key = self._key(request)
         now = time()
         history = self._requests[key]

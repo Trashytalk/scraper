@@ -2,23 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List, TypedDict
+from typing import Iterable, List, TypedDict, Any, Optional
 
 from business_intel_scraper.backend.nlp.cleaning import clean_text
 
-try:  # pragma: no cover - optional dependency
+# Optional spacy integration
+spacy: Optional[Any] = None
+try:
     import spacy
-    from spacy.language import Language
 except ModuleNotFoundError:  # pragma: no cover
-    spacy = None  # type: ignore
+    pass
 
-    class Language:  # type: ignore[override]
-        """Fallback type used when SpaCy is unavailable."""
-
-        pass
-
-
-_NLP_MODEL: Language | None = None
+_NLP_MODEL: Any = None
 
 
 class Entity(TypedDict):
@@ -30,7 +25,7 @@ class Entity(TypedDict):
     end: int
 
 
-def _get_nlp() -> Language | None:
+def _get_nlp() -> Any:
     """Load and cache the SpaCy language model if available."""
     global _NLP_MODEL
     if spacy is None:

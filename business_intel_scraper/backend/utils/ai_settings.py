@@ -16,8 +16,8 @@ AI_PROCESS_DUPLICATES = True  # Detect duplicates
 # AI Filter Pipeline Settings
 AI_MIN_QUALITY_SCORE = 0.5  # Minimum quality score to keep items
 AI_FILTER_DUPLICATES = True  # Drop duplicate items
-AI_REQUIRED_ENTITIES = []  # List of required entity types (e.g., ['PERSON', 'ORG'])
-AI_BLOCKED_CATEGORIES = []  # List of categories to block (e.g., ['spam', 'irrelevant'])
+AI_REQUIRED_ENTITIES: list[str] = []  # List of required entity types (e.g., ['PERSON', 'ORG'])
+AI_BLOCKED_CATEGORIES: list[str] = []  # List of categories to block (e.g., ['spam', 'irrelevant'])
 AI_MIN_SENTIMENT_CONFIDENCE = 0.0  # Minimum sentiment confidence
 
 # Pipeline Configuration

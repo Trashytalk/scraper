@@ -4,7 +4,7 @@ Performance optimization integration for analytics system.
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from functools import wraps
 
 from .optimizer import get_performance_optimizer, PerformanceMonitor, OptimizationConfig
@@ -15,15 +15,15 @@ logger = logging.getLogger(__name__)
 class AnalyticsPerformanceIntegration:
     """Integration layer between performance optimization and analytics system."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.optimizer = get_performance_optimizer()
-        self.performance_metrics = {}
+        self.performance_metrics: Dict[str, Any] = {}
     
-    def optimize_analytics_queries(self):
+    def optimize_analytics_queries(self) -> Any:
         """Decorator to optimize analytics database queries."""
-        def decorator(func):
+        def decorator(func: Any) -> Any:
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
                 with PerformanceMonitor(f"analytics_query_{func.__name__}"):
                     # Use cached results if available
                     cache_key = f"analytics:{func.__name__}:{hash(str(args))}{hash(str(kwargs))}"
@@ -44,11 +44,11 @@ class AnalyticsPerformanceIntegration:
             return wrapper
         return decorator
     
-    def optimize_metrics_collection(self):
+    def optimize_metrics_collection(self) -> Any:
         """Decorator to optimize metrics collection operations."""
-        def decorator(func):
+        def decorator(func: Any) -> Any:
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args: Any, **kwargs: Any) -> None:
                 # Submit to background task queue for non-blocking execution
                 await self.optimizer.task_optimizer.submit_task(
                     func, *args, task_name=f"metrics_{func.__name__}", **kwargs
@@ -57,11 +57,11 @@ class AnalyticsPerformanceIntegration:
             return wrapper
         return decorator
     
-    def batch_optimize_data_processing(self):
+    def batch_optimize_data_processing(self) -> Any:
         """Decorator for batch processing optimization."""
-        def decorator(func):
+        def decorator(func: Any) -> Any:
             @wraps(func)
-            async def wrapper(data_list, *args, **kwargs):
+            async def wrapper(data_list: Any, *args: Any, **kwargs: Any) -> Any:
                 if len(data_list) > 50:  # Use batch processing for large datasets
                     await self.optimizer.task_optimizer.process_batch(
                         lambda batch: func(batch, *args, **kwargs),
@@ -74,10 +74,10 @@ class AnalyticsPerformanceIntegration:
             return wrapper
         return decorator
     
-    async def optimize_dashboard_data_fetching(self, dashboard_requests: list) -> Dict[str, Any]:
+    async def optimize_dashboard_data_fetching(self, dashboard_requests: List[Any]) -> Dict[str, Any]:
         """Optimize multiple dashboard data requests with parallel fetching."""
         # Group requests by type for batch optimization
-        request_groups = {}
+        request_groups: Dict[str, List[Any]] = {}
         for request in dashboard_requests:
             request_type = request.get('type', 'unknown')
             if request_type not in request_groups:
@@ -85,7 +85,7 @@ class AnalyticsPerformanceIntegration:
             request_groups[request_type].append(request)
         
         # Process groups in parallel
-        results = {}
+        results: Dict[str, Any] = {}
         tasks = []
         
         for request_type, requests in request_groups.items():
@@ -104,12 +104,12 @@ class AnalyticsPerformanceIntegration:
         
         return results
     
-    async def _process_request_group(self, request_type: str, requests: list) -> Dict[str, Any]:
+    async def _process_request_group(self, request_type: str, requests: List[Any]) -> Dict[str, Any]:
         """Process a group of similar requests efficiently."""
         # Use batch processing for database queries
         if request_type in ['metrics', 'performance', 'jobs']:
             # Combine similar queries
-            combined_results = {}
+            combined_results: Dict[str, Any] = {}
             
             for request in requests:
                 cache_key = f"dashboard:{request_type}:{hash(str(request))}"

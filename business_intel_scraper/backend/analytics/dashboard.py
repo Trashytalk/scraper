@@ -24,18 +24,18 @@ try:
     from ..performance.optimizer import PerformanceMonitor
     PERFORMANCE_OPTIMIZATION_AVAILABLE = True
 except ImportError:
-    analytics_performance = None
-    PerformanceMonitor = None
+    analytics_performance = None  # type: ignore[misc,assignment]
+    PerformanceMonitor = None  # type: ignore[misc,assignment]
     PERFORMANCE_OPTIMIZATION_AVAILABLE = False
 
 
 class DashboardAnalytics:
     """Analytics integration for dashboard visualization with performance optimization."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache_duration = 30  # Cache for 30 seconds
-        self._cache = {}
-        self._cache_timestamps = {}
+        self._cache: Dict[str, Any] = {}
+        self._cache_timestamps: Dict[str, datetime] = {}
         
         # Use performance optimization cache if available
         self.use_performance_cache = PERFORMANCE_OPTIMIZATION_AVAILABLE and analytics_performance
@@ -53,7 +53,7 @@ class DashboardAnalytics:
             return self._cache[key]
         return None
     
-    def _set_cache(self, key: str, value: Any):
+    def _set_cache(self, key: str, value: Any) -> None:
         """Set cache value with timestamp."""
         self._cache[key] = value
         self._cache_timestamps[key] = datetime.now()
@@ -64,7 +64,7 @@ class DashboardAnalytics:
             return await analytics_performance.optimizer.cache.get(f"dashboard:{key}")
         return None
     
-    async def _set_optimized_cache(self, key: str, value: Any, ttl: int = 30):
+    async def _set_optimized_cache(self, key: str, value: Any, ttl: int = 30) -> None:
         """Set in performance-optimized cache."""
         if self.use_performance_cache and analytics_performance and hasattr(analytics_performance, 'optimizer'):
             await analytics_performance.optimizer.cache.set(f"dashboard:{key}", value, ttl)
@@ -74,7 +74,7 @@ class DashboardAnalytics:
         cache_key = "overview"
         cached = self._get_cached(cache_key)
         if cached:
-            return cached
+            return cached  # type: ignore[no-any-return]
         
         # Get real-time metrics - use summary instead of non-existent method
         metrics_summary = metrics_collector.get_metrics_summary()
@@ -246,7 +246,7 @@ class DashboardAnalytics:
     
     def _categorize_alerts_by_type(self, alerts: List[Dict[str, Any]]) -> Dict[str, int]:
         """Categorize alerts by type for summary."""
-        categories = defaultdict(int)
+        categories: Dict[str, int] = defaultdict(int)
         
         for alert in alerts:
             alert_type = alert.get("type", "unknown")
@@ -322,7 +322,7 @@ class DashboardAnalytics:
         durations = []
         successes = 0
         failures = 0
-        failure_reasons = defaultdict(int)
+        failure_reasons: Dict[str, int] = defaultdict(int)
         
         for job in recent_jobs:
             status = job.get("status")

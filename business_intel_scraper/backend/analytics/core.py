@@ -19,10 +19,11 @@ from typing import Any, Dict, List, Optional, Union
 try:
     from sqlalchemy import create_engine, text
     from sqlalchemy.orm import sessionmaker
+    SQLALCHEMY_AVAILABLE = True
 except ImportError:
-    create_engine = None
-    text = None
-    sessionmaker = None
+    SQLALCHEMY_AVAILABLE = False
+    engine = None  # type: ignore[assignment]
+    Session = None  # type: ignore[assignment]
 
 # Performance optimization imports
 try:
@@ -30,11 +31,11 @@ try:
     from ..performance.optimizer import PerformanceMonitor
     PERFORMANCE_OPTIMIZATION_AVAILABLE = True
 except ImportError:
-    analytics_performance = None
-    PerformanceMonitor = None
     PERFORMANCE_OPTIMIZATION_AVAILABLE = False
+    analytics_performance = None  # type: ignore[assignment]
+    PerformanceMonitor = None  # type: ignore[assignment]
 
-def get_config():
+def get_config() -> Dict[str, str]:
     """Get configuration with defaults."""
     return {
         "DATABASE_URL": "sqlite:///./analytics.db"
@@ -129,7 +130,7 @@ class ScrapingMetrics:
 class AnalyticsEngine:
     """Main analytics engine for collecting and analyzing metrics."""
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or get_config()
         self.metrics_buffer: List[MetricSnapshot] = []
         self.performance_history: List[PerformanceMetrics] = []
@@ -137,7 +138,8 @@ class AnalyticsEngine:
         self.scraping_history: List[ScrapingMetrics] = []
         
         # Database connection for historical data
-        self.db_engine = None
+        self.db_engine: Optional[Any] = None
+        self.Session: Optional[Any] = None
         self._init_database()
         
         # Real-time metrics tracking
@@ -146,16 +148,17 @@ class AnalyticsEngine:
         self._error_count = 0
         self._success_count = 0
         
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize database connection for analytics storage."""
-        if not create_engine:
+        if not SQLALCHEMY_AVAILABLE or create_engine is None:
             logger.warning("SQLAlchemy not available, using in-memory storage only")
             return
             
         try:
             db_url = self.config.get("DATABASE_URL", "sqlite:///./analytics.db")
             self.db_engine = create_engine(db_url)
-            self.Session = sessionmaker(bind=self.db_engine)
+            if sessionmaker is not None:
+                self.Session = sessionmaker(bind=self.db_engine)
             
             # Create analytics tables if they don't exist
             self._create_analytics_tables()
@@ -164,9 +167,9 @@ class AnalyticsEngine:
             logger.error(f"Failed to initialize analytics database: {e}")
             self.db_engine = None
     
-    def _create_analytics_tables(self):
+    def _create_analytics_tables(self) -> None:
         """Create analytics tables in the database."""
-        if not self.db_engine or not text:
+        if not self.db_engine or not SQLALCHEMY_AVAILABLE or text is None:
             return
             
         try:
@@ -208,10 +211,10 @@ class AnalyticsEngine:
     
     async def record_metric(self, name: str, value: Union[int, float], 
                           tags: Optional[Dict[str, str]] = None,
-                          metadata: Optional[Dict[str, Any]] = None):
+                          metadata: Optional[Dict[str, Any]] = None) -> None:
         """Record a single metric measurement with performance optimization."""
         # Use performance optimization if available
-        if PERFORMANCE_OPTIMIZATION_AVAILABLE and PerformanceMonitor:
+        if PERFORMANCE_OPTIMIZATION_AVAILABLE and PerformanceMonitor is not None:
             with PerformanceMonitor(f"record_metric_{name}"):
                 return await self._record_metric_impl(name, value, tags, metadata)
         else:
@@ -219,7 +222,7 @@ class AnalyticsEngine:
     
     async def _record_metric_impl(self, name: str, value: Union[int, float], 
                                 tags: Optional[Dict[str, str]] = None,
-                                metadata: Optional[Dict[str, Any]] = None):
+                                metadata: Optional[Dict[str, Any]] = None) -> None:
         """Internal metric recording implementation."""
         metric = MetricSnapshot(
             timestamp=datetime.now(),
@@ -235,9 +238,9 @@ class AnalyticsEngine:
         if len(self.metrics_buffer) > 1000:
             await self.flush_metrics()
     
-    async def flush_metrics(self):
-        """Flush metrics buffer to persistent storage."""
-        if not self.metrics_buffer or not self.db_engine or not text:
+    async def flush_metrics(self) -> None:
+        """Flush buffered metrics to database."""
+        if not self.metrics_buffer or not self.db_engine or not SQLALCHEMY_AVAILABLE or text is None:
             return
             
         try:
@@ -246,14 +249,14 @@ class AnalyticsEngine:
                     conn.execute(text("""
                         INSERT INTO analytics_metrics 
                         (timestamp, name, value, tags, metadata)
-                        VALUES (?, ?, ?, ?, ?)
-                    """), (
-                        metric.timestamp,
-                        metric.name,
-                        metric.value,
-                        json.dumps(metric.tags),
-                        json.dumps(metric.metadata)
-                    ))
+                        VALUES (:timestamp, :name, :value, :tags, :metadata)
+                    """), {
+                        "timestamp": metric.timestamp,
+                        "name": metric.name,
+                        "value": metric.value,
+                        "tags": json.dumps(metric.tags),
+                        "metadata": json.dumps(metric.metadata)
+                    })
                 conn.commit()
                 
             self.metrics_buffer.clear()
@@ -262,20 +265,20 @@ class AnalyticsEngine:
         except Exception as e:
             logger.error(f"Failed to flush metrics: {e}")
     
-    def record_request_time(self, duration: float):
-        """Record API request timing."""
+    def record_request_time(self, duration: float) -> None:
+        """Record request processing time."""
         self._request_times.append(duration)
         
-        # Keep only recent measurements
+        # Keep only recent request times (last 1000)
         if len(self._request_times) > 1000:
-            self._request_times = self._request_times[-500:]
+            self._request_times = self._request_times[-1000:]
     
-    def record_success(self):
-        """Record successful operation."""
+    def record_success(self) -> None:
+        """Record successful request."""
         self._success_count += 1
     
-    def record_error(self):
-        """Record failed operation."""
+    def record_error(self) -> None:
+        """Record failed request."""
         self._error_count += 1
     
     def get_performance_metrics(self) -> PerformanceMetrics:
@@ -364,11 +367,11 @@ class AnalyticsEngine:
             
             # Try to get from cache first
             cached_summary = await analytics_performance.optimizer.cache.get(cache_key)
-            if cached_summary:
-                return cached_summary
+            if cached_summary and isinstance(cached_summary, dict):
+                return cached_summary  # type: ignore[no-any-return]
             
             # Generate summary with performance monitoring
-            if PerformanceMonitor:
+            if PerformanceMonitor is not None:
                 with PerformanceMonitor("analytics_summary_generation"):
                     summary = await self._generate_analytics_summary()
             else:
@@ -379,6 +382,7 @@ class AnalyticsEngine:
             
             return summary
         else:
+            # Fallback without performance optimization
             return await self._generate_analytics_summary()
     
     async def _generate_analytics_summary(self) -> Dict[str, Any]:
@@ -489,7 +493,7 @@ class AnalyticsEngine:
     async def get_historical_data(self, metric_name: str, 
                                 hours: int = 24) -> List[Dict[str, Any]]:
         """Get historical data for a specific metric."""
-        if not self.db_engine or not text:
+        if not self.db_engine or text is None:
             return []
             
         try:
@@ -499,9 +503,9 @@ class AnalyticsEngine:
                 result = conn.execute(text("""
                     SELECT timestamp, value, tags, metadata
                     FROM analytics_metrics
-                    WHERE name = ? AND timestamp >= ?
+                    WHERE name = :name AND timestamp >= :since
                     ORDER BY timestamp
-                """), (metric_name, since))
+                """), {"name": metric_name, "since": since})
                 
                 return [
                     {
@@ -517,9 +521,9 @@ class AnalyticsEngine:
             logger.error(f"Failed to get historical data: {e}")
             return []
     
-    async def cleanup_old_data(self, days: int = 30):
+    async def cleanup_old_data(self, days: int = 30) -> None:
         """Remove analytics data older than specified days."""
-        if not self.db_engine or not text:
+        if not self.db_engine or not SQLALCHEMY_AVAILABLE or text is None:
             return
             
         try:
@@ -528,18 +532,18 @@ class AnalyticsEngine:
                 
                 conn.execute(text("""
                     DELETE FROM analytics_metrics 
-                    WHERE timestamp < ?
-                """), (cutoff,))
+                    WHERE timestamp < :cutoff
+                """), {"cutoff": cutoff})
                 
                 conn.execute(text("""
                     DELETE FROM performance_snapshots 
-                    WHERE timestamp < ?
-                """), (cutoff,))
+                    WHERE timestamp < :cutoff
+                """), {"cutoff": cutoff})
                 
                 conn.execute(text("""
                     DELETE FROM quality_snapshots 
-                    WHERE timestamp < ?
-                """), (cutoff,))
+                    WHERE timestamp < :cutoff
+                """), {"cutoff": cutoff})
                 
                 conn.commit()
                 logger.info(f"Cleaned up analytics data older than {days} days")

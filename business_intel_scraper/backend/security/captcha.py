@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import os
 import time
-from typing import Any
+from typing import Any, Dict, Union
 
 import requests
 
@@ -54,7 +54,7 @@ class TwoCaptchaSolver(CaptchaSolver):
         return str(result["request"])
 
     def _retrieve(self, captcha_id: str) -> str:
-        params = {"key": self.api_key, "action": "get", "id": captcha_id, "json": 1}
+        params: Dict[str, Union[str, int]] = {"key": self.api_key, "action": "get", "id": captcha_id, "json": 1}
         url = f"{self.api_url}/res.php"
         while True:
             response = requests.get(url, params=params, timeout=15)

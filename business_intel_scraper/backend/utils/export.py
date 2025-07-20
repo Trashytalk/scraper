@@ -6,9 +6,9 @@ import json
 from typing import Iterable, List, Dict
 
 try:
-    import boto3  # type: ignore
+    import boto3
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    boto3 = None  # type: ignore
+    boto3 = None
 
 
 def to_csv(items: List[Dict[str, str]]) -> str:

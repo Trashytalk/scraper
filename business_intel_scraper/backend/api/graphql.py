@@ -1,7 +1,12 @@
+from typing import Any
+
 import strawberry
 from strawberry.fastapi import GraphQLRouter
 from strawberry.scalars import JSON
 from strawberry import ID
+
+# Type alias for mypy
+JSONType = Any
 
 from . import main as api
 from ..workers.tasks import get_task_status
@@ -22,7 +27,7 @@ class Query:
     @strawberry.field
     def scraped_data(
         self, search: str | None = None, limit: int | None = None
-    ) -> list[JSON]:
+    ) -> list[Any]:
         """Return scraped items, optionally filtered by a search term."""
 
         data = api.scraped_data
@@ -44,15 +49,15 @@ class Query:
         status = api.jobs.get(str(id))
         if status is None:
             return None
-        if isinstance(status, dict):
-            status = status.get("status", "unknown")
-        return Job(id=id, status=str(status))
+        # Handle both dict and string status types
+        status_str = status.get("status", "unknown") if isinstance(status, dict) else str(status)  # type: ignore[unreachable]
+        return Job(id=id, status=status_str)
 
     @strawberry.field
     def jobs(self) -> list[Job]:
         """Return all known jobs."""
 
-        return [Job(id=jid, status=get_task_status(jid)) for jid in list(api.jobs)]
+        return [Job(id=ID(jid), status=get_task_status(jid)) for jid in list(api.jobs)]
 
 
 schema = strawberry.Schema(query=Query)

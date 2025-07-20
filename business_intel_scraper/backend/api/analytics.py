@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Depends, WebSocket
 from pydantic import BaseModel
 
-from ..auth import require_token
+from ..security import require_token
 from ..analytics.dashboard import dashboard_analytics
 from ..analytics.insights import insights_generator
 from ..analytics.metrics import metrics_collector
@@ -86,7 +86,7 @@ class InsightsResponse(BaseModel):
 
 
 @router.get("/overview", response_model=AnalyticsOverview, dependencies=[Depends(require_token)])
-async def get_analytics_overview():
+async def get_analytics_overview() -> AnalyticsOverview:
     """Get high-level analytics overview for dashboard."""
     try:
         overview = await dashboard_analytics.get_dashboard_overview()
@@ -98,7 +98,7 @@ async def get_analytics_overview():
 @router.get("/performance/charts", dependencies=[Depends(require_token)])
 async def get_performance_charts(
     hours: int = Query(default=6, ge=1, le=168, description="Hours of historical data (1-168)")
-):
+) -> Dict[str, Any]:
     """Get performance chart data for specified time period."""
     try:
         charts = await dashboard_analytics.get_performance_charts(hours)
@@ -108,7 +108,7 @@ async def get_performance_charts(
 
 
 @router.get("/alerts", response_model=AlertsResponse, dependencies=[Depends(require_token)])
-async def get_alerts_dashboard():
+async def get_alerts_dashboard() -> AlertsResponse:
     """Get alerts and notifications for dashboard."""
     try:
         alerts = await dashboard_analytics.get_alerts_dashboard()
@@ -118,7 +118,7 @@ async def get_alerts_dashboard():
 
 
 @router.get("/jobs", response_model=JobAnalyticsResponse, dependencies=[Depends(require_token)])
-async def get_job_analytics():
+async def get_job_analytics() -> JobAnalyticsResponse:
     """Get job performance analytics."""
     try:
         jobs = await dashboard_analytics.get_job_analytics()
@@ -128,7 +128,7 @@ async def get_job_analytics():
 
 
 @router.get("/data-quality", response_model=DataQualityResponse, dependencies=[Depends(require_token)])
-async def get_data_quality_dashboard():
+async def get_data_quality_dashboard() -> DataQualityResponse:
     """Get data quality metrics and trends."""
     try:
         quality = await dashboard_analytics.get_data_quality_dashboard()
@@ -138,7 +138,7 @@ async def get_data_quality_dashboard():
 
 
 @router.get("/insights", response_model=InsightsResponse, dependencies=[Depends(require_token)])
-async def get_analytics_insights():
+async def get_analytics_insights() -> InsightsResponse:
     """Get comprehensive analytics insights and recommendations."""
     try:
         insights = await insights_generator.generate_comprehensive_report()
@@ -148,7 +148,7 @@ async def get_analytics_insights():
 
 
 @router.get("/realtime", dependencies=[Depends(require_token)])
-async def get_realtime_metrics():
+async def get_realtime_metrics() -> Dict[str, Any]:
     """Get real-time system metrics."""
     try:
         metrics = metrics_collector.get_realtime_metrics()
@@ -158,7 +158,7 @@ async def get_realtime_metrics():
 
 
 @router.get("/dashboard", dependencies=[Depends(require_token)])
-async def get_complete_dashboard_data():
+async def get_complete_dashboard_data() -> Dict[str, Any]:
     """Get all dashboard data in a single request for efficiency."""
     try:
         dashboard_data = await dashboard_analytics.get_realtime_dashboard_data()
@@ -171,7 +171,7 @@ async def get_complete_dashboard_data():
 async def get_historical_metric(
     metric_name: str,
     hours: int = Query(default=24, ge=1, le=168, description="Hours of historical data")
-):
+) -> Dict[str, Any]:
     """Get historical data for a specific metric."""
     try:
         historical_data = await analytics_engine.get_historical_data(metric_name, hours)
@@ -190,7 +190,7 @@ async def record_custom_metric(
     value: float = Query(..., description="Metric value"),
     tags: Optional[Dict[str, str]] = None,
     metadata: Optional[Dict[str, Any]] = None
-):
+) -> Dict[str, str]:
     """Record a custom metric (for integrations and custom tracking)."""
     try:
         await analytics_engine.record_metric(name, value, tags, metadata)
@@ -203,7 +203,7 @@ async def record_custom_metric(
 
 
 @router.get("/endpoints/stats", dependencies=[Depends(require_token)])
-async def get_endpoint_statistics():
+async def get_endpoint_statistics() -> Dict[str, Any]:
     """Get detailed statistics by API endpoint."""
     try:
         stats = metrics_collector.get_endpoint_stats()
@@ -218,7 +218,7 @@ async def get_endpoint_statistics():
 @router.delete("/data/cleanup", dependencies=[Depends(require_token)])
 async def cleanup_analytics_data(
     days: int = Query(default=30, ge=1, le=365, description="Delete data older than this many days")
-):
+) -> Dict[str, str]:
     """Clean up old analytics data."""
     try:
         await analytics_engine.cleanup_old_data(days)
@@ -231,7 +231,7 @@ async def cleanup_analytics_data(
 
 
 @router.post("/flush", dependencies=[Depends(require_token)])
-async def flush_metrics_buffer():
+async def flush_metrics_buffer() -> Dict[str, str]:
     """Manually flush metrics buffer to persistent storage."""
     try:
         await analytics_engine.flush_metrics()
@@ -244,7 +244,7 @@ async def flush_metrics_buffer():
 
 
 @router.get("/health", dependencies=[Depends(require_token)])
-async def get_analytics_health():
+async def get_analytics_health() -> Dict[str, Any]:
     """Get analytics system health status."""
     try:
         # Get basic health indicators
@@ -285,7 +285,7 @@ async def get_analytics_health():
 
 # WebSocket endpoint for real-time analytics updates
 @router.websocket("/ws")
-async def analytics_websocket(websocket):
+async def analytics_websocket(websocket: WebSocket) -> None:
     """WebSocket endpoint for real-time analytics updates."""
     await websocket.accept()
     try:

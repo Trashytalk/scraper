@@ -18,7 +18,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         def __init__(self, *args: object, **kwargs: object) -> None:
             pass
 
-        def task(self, func: F) -> F:  # type: ignore[no-untyped-def]
+        def task(self, func: F) -> F:
             return func
 
 

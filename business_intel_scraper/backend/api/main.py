@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable, Awaitable, Union
 
 import aiofiles
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, HTTPException
@@ -96,7 +96,7 @@ app.mount("/metrics", metrics_app)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
@@ -206,7 +206,7 @@ async def get_data() -> list[dict[str, str]]:
 @app.get("/export", dependencies=[Depends(require_token)])
 async def export_data(
     format: str = "jsonl", bucket: str | None = None, key: str | None = None
-):
+) -> Union[Response, dict[str, str]]:
     """Export scraped data in the requested format."""
 
     if format == "csv":
@@ -243,7 +243,8 @@ async def get_jobs() -> dict[str, JobStatus]:
 async def get_job(job_id: str) -> dict[str, str]:
     """Return a single job status."""
 
-    return jobs.get(job_id, {"status": "unknown"})
+    result = jobs.get(job_id, {"status": "unknown"})
+    return result if isinstance(result, dict) else {"status": str(result)}
 
 
 @app.post("/nlp/process", dependencies=[Depends(require_token)])
