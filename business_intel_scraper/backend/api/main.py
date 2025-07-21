@@ -83,6 +83,20 @@ try:
 except ImportError as e:
     print(f"Warning: Could not import AI router: {e}")
 
+# Include storage router
+try:
+    from ..storage.api import router as storage_router
+    app.include_router(storage_router, prefix="/api/v1")
+except ImportError as e:
+    print(f"Warning: Could not import storage router: {e}")
+
+# Include visualization router
+try:
+    from .visualization import router as visualization_router
+    app.include_router(visualization_router, prefix="/api/v1")
+except ImportError as e:
+    print(f"Warning: Could not import visualization router: {e}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.api.allowed_origins,

@@ -1,0 +1,34 @@
+# Additional Requirements for Advanced Crawling System
+# 
+# These packages enable the full advanced crawling/discovery layer functionality.
+# Install with: pip install -r crawling_requirements.txt
+#
+# Note: If you get "externally-managed-environment" error, you can either:
+# 1. Use: pip install --user aiohttp beautifulsoup4 redis networkx
+# 2. Or: python -m pip install --user aiohttp beautifulsoup4 redis networkx
+
+# HTTP Client for async web requests
+aiohttp>=3.8.0
+
+# HTML/XML parsing for content extraction
+beautifulsoup4>=4.11.0
+lxml>=4.9.0
+
+# Redis for distributed caching and deduplication
+redis>=4.5.0
+
+# Graph analysis for crawl optimization
+networkx>=3.0
+
+# Additional useful packages for web scraping
+requests-html>=0.10.0  # Alternative HTTP client with JS support
+selenium>=4.15.0       # Browser automation for dynamic content
+playwright>=1.40.0     # Modern browser automation
+
+# Data processing and analysis
+pandas>=2.0.0         # Data analysis and manipulation
+numpy>=1.24.0         # Numerical computing
+
+# Optional: Machine learning for advanced classification
+scikit-learn>=1.3.0   # ML algorithms for link classification
+transformers>=4.35.0  # NLP models for content analysis

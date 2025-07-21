@@ -7,6 +7,7 @@ import httpx
 from pathlib import Path
 
 from .cli.performance import performance
+from .backend.storage.cli import storage_cli
 
 DEFAULT_URL = os.getenv("BI_SCRAPER_URL", "http://localhost:8000")
 DEFAULT_TOKEN = os.getenv("BI_SCRAPER_TOKEN", "")
@@ -267,8 +268,9 @@ def health(ctx, check):
         click.echo(f"❌ Error checking health: {e}")
 
 
-# Add the performance command group
+# Add command groups
 cli.add_command(performance)
+cli.add_command(storage_cli)
 
 if __name__ == "__main__":
     cli()

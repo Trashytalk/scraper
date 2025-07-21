@@ -29,6 +29,8 @@ try:
     from gui.components.osint_integration import OSINTIntegrationWidget
     from gui.components.data_enrichment import DataEnrichmentWidget
     from gui.components.tooltip_system import tooltip_manager, ExperienceLevelSelector, TooltipWidget
+    from gui.components.advanced_entity_graph_widget import AdvancedEntityGraphWidget
+    from gui.components.data_quality_dashboard import DataQualityDashboard
 except ImportError:
     # Fallback for relative imports
     from .job_manager import JobManagerWidget
@@ -44,6 +46,8 @@ except ImportError:
     from .osint_integration import OSINTIntegrationWidget
     from .data_enrichment import DataEnrichmentWidget
     from .tooltip_system import tooltip_manager, ExperienceLevelSelector, TooltipWidget
+    from .advanced_entity_graph_widget import AdvancedEntityGraphWidget
+    from .data_quality_dashboard import DataQualityDashboard
 
 
 class DashboardWindow(QMainWindow):
@@ -74,6 +78,8 @@ class DashboardWindow(QMainWindow):
         self.visualization_widget = SiteVisualizationWidget()  # type: ignore
         self.osint_widget = OSINTIntegrationWidget()  # type: ignore
         self.enrichment_widget = DataEnrichmentWidget()  # type: ignore
+        self.entity_graph_widget = AdvancedEntityGraphWidget()  # type: ignore
+        self.data_quality_widget = DataQualityDashboard()  # type: ignore
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(self.job_manager, "Jobs")
@@ -83,7 +89,9 @@ class DashboardWindow(QMainWindow):
         self.tabs.addTab(self.browser_tabs, "Browser")
         self.tabs.addTab(self.network_config, "Network")
         self.tabs.addTab(self.tor_widget, "TOR Network")
-        self.tabs.addTab(self.visualization_widget, "Visualization")
+        self.tabs.addTab(self.visualization_widget, "Site Visualization")
+        self.tabs.addTab(self.entity_graph_widget, "Entity Graphs")
+        self.tabs.addTab(self.data_quality_widget, "Data Quality")
         self.tabs.addTab(self.osint_widget, "OSINT")
         self.tabs.addTab(self.enrichment_widget, "Data Enrichment")
 

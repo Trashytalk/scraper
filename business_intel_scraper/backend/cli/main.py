@@ -24,6 +24,12 @@ try:
 except ImportError:
     analytics_cli: Optional[click.Group] = None
 
+# Import discovery CLI
+try:
+    from .discovery import setup_discovery_parser
+except ImportError:
+    setup_discovery_parser = None
+
 
 def main() -> None:
     """Entry point for the command line interface."""
@@ -65,6 +71,10 @@ def main() -> None:
         analytics_parser = subparsers.add_parser("analytics", help="Analytics dashboard commands")
         analytics_parser.set_defaults(func=lambda args: analytics_cli.main(standalone_mode=False))
 
+    # Add discovery command if available
+    if setup_discovery_parser:
+        setup_discovery_parser(subparsers)
+
     nmap_parser = subparsers.add_parser("nmap", help="Run Nmap scan")
     nmap_parser.add_argument("target", help="Target host")
 
@@ -81,6 +91,17 @@ def main() -> None:
         # Handle analytics commands through Click
         import sys
         analytics_cli.main(sys.argv[2:], standalone_mode=False)
+    elif args.command == "discovery" and setup_discovery_parser:
+        # Handle discovery commands
+        from .discovery import main as discovery_main
+        import sys
+        original_argv = sys.argv
+        try:
+            # Set up argv for discovery command
+            sys.argv = ['discovery'] + sys.argv[2:]  # Remove main script name and 'discovery'
+            discovery_main()
+        finally:
+            sys.argv = original_argv
     elif args.command == "spiderfoot":
         result = run_spiderfoot(args.domain)
         print(json.dumps(result, indent=2))
