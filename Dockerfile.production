@@ -1,0 +1,108 @@
+# Multi-stage Docker build for production optimization
+# This creates separate optimized containers for frontend and backend
+
+# ================================
+# Frontend Build Stage
+# ================================
+FROM node:18-alpine as frontend-build
+
+WORKDIR /app/frontend
+
+# Copy package files first for better Docker layer caching
+COPY business_intel_scraper/frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production --silent
+
+# Copy source code
+COPY business_intel_scraper/frontend/ .
+
+# Build the production bundle
+RUN npm run build
+
+# ================================
+# Backend Build Stage
+# ================================
+FROM python:3.11-slim as backend-build
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better Docker layer caching
+COPY requirements.txt .
+COPY business_intel_scraper/backend/requirements.txt ./backend_requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r backend_requirements.txt
+
+# Copy backend source code
+COPY business_intel_scraper/ ./business_intel_scraper/
+COPY config/ ./config/
+
+# ================================
+# Production Runtime Stage
+# ================================
+FROM python:3.11-slim as production
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    APP_ENV=production
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    curl \
+    nginx \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Copy Python dependencies from build stage
+COPY --from=backend-build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=backend-build /usr/local/bin /usr/local/bin
+
+# Copy backend application
+COPY --from=backend-build /app/business_intel_scraper ./business_intel_scraper
+COPY --from=backend-build /app/config ./config
+
+# Copy frontend build output
+COPY --from=frontend-build /app/frontend/dist ./static
+
+# Copy configuration files
+COPY docker/nginx.conf /etc/nginx/sites-available/default
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Create necessary directories
+RUN mkdir -p /var/log/supervisor /var/log/nginx /app/logs \
+    && chown -R appuser:appuser /app \
+    && chmod +x business_intel_scraper/backend/api/main_enhanced.py
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose ports
+EXPOSE 80 8000
+
+# Switch to non-root user
+USER appuser
+
+# Start supervisor to manage nginx and FastAPI
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
