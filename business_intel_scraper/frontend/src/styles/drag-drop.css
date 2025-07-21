@@ -1,0 +1,558 @@
+/* Drag and Drop Interface Styles */
+
+/* Base drag and drop styles */
+.draggable-item {
+  position: relative;
+  cursor: move;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.draggable-item.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg) scale(0.95);
+  z-index: var(--z-modal);
+  box-shadow: var(--shadow-lg);
+}
+
+.draggable-item.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.draggable-item:not(.disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Drag handle */
+.drag-handle {
+  cursor: move;
+  color: #999;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.drag-handle:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.drag-handle::before {
+  content: "⋮⋮";
+  font-size: 14px;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+/* Alternative grip pattern */
+.drag-handle.grip-dots::before {
+  content: "⋯";
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.drag-handle.grip-lines::before {
+  content: "≡";
+  font-size: 16px;
+}
+
+/* Drop zone styles */
+.drop-zone {
+  position: relative;
+  border: 2px dashed transparent;
+  border-radius: var(--border-radius-md);
+  transition: all 0.3s ease-in-out;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drop-zone.can-drop {
+  border-color: #e0e0e0;
+  background: rgba(248, 249, 250, 0.5);
+}
+
+.drop-zone.drag-over {
+  border-color: #007bff;
+  background: rgba(0, 123, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(0, 123, 255, 0.15);
+}
+
+.drop-zone.cannot-drop {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.05);
+}
+
+/* Drop indicator */
+.drop-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #007bff;
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  pointer-events: none;
+  z-index: var(--z-tooltip);
+  box-shadow: var(--shadow-md);
+}
+
+.drop-indicator::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #007bff;
+}
+
+/* Sortable list styles */
+.sortable-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+}
+
+.sortable-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.sortable-item:hover {
+  border-color: #ccc;
+  box-shadow: var(--shadow-sm);
+}
+
+.sortable-item.dragging {
+  opacity: 0.7;
+  transform: scale(0.98);
+  z-index: var(--z-modal);
+  box-shadow: var(--shadow-lg);
+  border-color: #007bff;
+}
+
+.sortable-item .drag-handle {
+  margin-right: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.sortable-item .item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Drag preview styles */
+.drag-preview {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-modal);
+  background: white;
+  border: 1px solid #007bff;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-sm);
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dashboard widget drag styles */
+.widget-container {
+  position: relative;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
+}
+
+.widget-container:hover {
+  border-color: #ccc;
+  box-shadow: var(--shadow-sm);
+}
+
+.widget-container.dragging {
+  transform: scale(0.95);
+  opacity: 0.8;
+  z-index: var(--z-modal);
+  border-color: #007bff;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.widget-title {
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  flex: 1;
+}
+
+.widget-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.widget-container:hover .widget-controls {
+  opacity: 1;
+}
+
+.widget-control {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.widget-control:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.widget-content {
+  padding: var(--spacing-md);
+}
+
+/* Grid layout drag styles */
+.grid-layout {
+  position: relative;
+}
+
+.grid-item {
+  position: absolute;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease-in-out;
+  overflow: hidden;
+}
+
+.grid-item.dragging {
+  z-index: var(--z-modal);
+  box-shadow: var(--shadow-lg);
+  border-color: #007bff;
+  transform: rotate(1deg);
+}
+
+.grid-item.resizing {
+  box-shadow: var(--shadow-md);
+  border-color: #28a745;
+}
+
+/* Resize handles */
+.resize-handle {
+  position: absolute;
+  background: transparent;
+  border: none;
+  cursor: se-resize;
+  width: 16px;
+  height: 16px;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-sticky);
+}
+
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-bottom: 8px solid #ccc;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.resize-handle:hover::after {
+  border-bottom-color: #007bff;
+}
+
+/* File drop zone */
+.file-drop-zone {
+  border: 2px dashed #ccc;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-2xl);
+  text-align: center;
+  background: #fafafa;
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.drag-over {
+  border-color: #007bff;
+  background: #f0f8ff;
+  color: #007bff;
+}
+
+.file-drop-zone.drag-over {
+  border-style: solid;
+  box-shadow: inset 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.file-drop-icon {
+  font-size: 48px;
+  color: #ccc;
+  margin-bottom: var(--spacing-md);
+  transition: color 0.3s ease-in-out;
+}
+
+.file-drop-zone:hover .file-drop-icon,
+.file-drop-zone.drag-over .file-drop-icon {
+  color: #007bff;
+}
+
+.file-drop-text {
+  font-size: var(--font-size-lg);
+  color: #666;
+  margin-bottom: var(--spacing-sm);
+}
+
+.file-drop-hint {
+  font-size: var(--font-size-sm);
+  color: #999;
+}
+
+/* Touch device adaptations */
+@media (hover: none) and (pointer: coarse) {
+  .draggable-item {
+    cursor: default;
+  }
+  
+  .drag-handle {
+    padding: var(--spacing-sm);
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .widget-controls {
+    opacity: 1; /* Always visible on touch devices */
+  }
+  
+  .widget-control {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .resize-handle {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .resize-handle::after {
+    border-left-width: 12px;
+    border-bottom-width: 12px;
+  }
+}
+
+/* Mobile specific drag styles */
+@media (max-width: 768px) {
+  .sortable-list {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-xs);
+  }
+  
+  .sortable-item {
+    padding: var(--spacing-sm);
+  }
+  
+  .widget-container {
+    border-radius: var(--border-radius-md);
+  }
+  
+  .widget-header {
+    padding: var(--spacing-sm);
+  }
+  
+  .widget-content {
+    padding: var(--spacing-sm);
+  }
+  
+  .drop-zone {
+    min-height: 80px;
+  }
+  
+  .file-drop-zone {
+    padding: var(--spacing-xl);
+  }
+  
+  .file-drop-icon {
+    font-size: 36px;
+  }
+  
+  .file-drop-text {
+    font-size: var(--font-size-base);
+  }
+}
+
+/* Animation keyframes */
+@keyframes dragFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dragFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes dropSuccess {
+  0% {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: #28a745;
+  }
+  100% {
+    background: transparent;
+    border-color: #e0e0e0;
+  }
+}
+
+@keyframes dropError {
+  0% {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: #dc3545;
+  }
+  100% {
+    background: transparent;
+    border-color: #e0e0e0;
+  }
+}
+
+/* Animation classes */
+.drag-enter {
+  animation: dragFadeIn 0.2s ease-out;
+}
+
+.drag-leave {
+  animation: dragFadeOut 0.2s ease-out;
+}
+
+.drop-success {
+  animation: dropSuccess 0.5s ease-out;
+}
+
+.drop-error {
+  animation: dropError 0.5s ease-out;
+}
+
+/* Accessibility */
+.draggable-item:focus,
+.drag-handle:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.drop-zone[aria-label] {
+  position: relative;
+}
+
+.drop-zone[aria-label]::before {
+  content: attr(aria-label);
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: #999;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dark theme adaptations */
+@media (prefers-color-scheme: dark) {
+  .draggable-item {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .drop-zone.can-drop {
+    background: rgba(45, 55, 72, 0.5);
+    border-color: #4a5568;
+  }
+  
+  .drop-zone.drag-over {
+    background: rgba(66, 153, 225, 0.1);
+    border-color: #4299e1;
+  }
+  
+  .sortable-item {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .widget-container {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .widget-header {
+    background: #1a202c;
+    border-color: #4a5568;
+  }
+  
+  .file-drop-zone {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .file-drop-zone:hover,
+  .file-drop-zone.drag-over {
+    background: rgba(66, 153, 225, 0.1);
+    border-color: #4299e1;
+    color: #4299e1;
+  }
+}
