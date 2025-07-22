@@ -82,7 +82,7 @@ nano .env
 code .env
 ```
 
-**Generate a new secret key**
+### Generate a new secret key
 
 '''bash
 # Generate a new, unique secret key
