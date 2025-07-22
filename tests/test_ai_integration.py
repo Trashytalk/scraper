@@ -106,7 +106,7 @@ async def main():
     print("  ✓ Data Quality Scoring")
     
     print(f"\n🚀 Next Steps:")
-    print("  • Install additional AI dependencies: pip install -r requirements-ai.txt")
+    print("  • AI dependencies are included in main requirements: pip install -r requirements.txt")
     print("  • Configure AI settings: python bis.py ai setup")
     print("  • Use in Scrapy pipelines for automatic enhancement")
     print("  • Access via REST API: /ai/process-text")

@@ -48,3 +48,31 @@ Thumbs.db
 *.log
 logs/
 
+
+# Archive directories
+archive/
+temp/
+
+# Database files
+*.db
+!data/schema.sql
+
+# Cache directories
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+http_cache/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Log files
+data/logs/*.log
+
+# Coverage files
+coverage.xml
+.coverage

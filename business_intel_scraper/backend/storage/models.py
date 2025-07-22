@@ -83,8 +83,8 @@ class RawDataModel(Base):
     attachments = Column(JSONB)  # URLs of images, PDFs, etc.
     linked_resources = Column(JSONB)  # CSS, JS, etc.
     
-    # Custom metadata
-    metadata = Column(JSONB)
+    # Custom metadata (renamed to avoid SQLAlchemy conflict)
+    entity_metadata = Column(JSONB)
     tags = Column(JSONB)
     
     # Audit trail
@@ -157,7 +157,7 @@ class StructuredEntityModel(Base):
     source_count = Column(Integer, default=1)
     
     # Custom metadata and tags
-    metadata = Column(JSONB)
+    entity_metadata = Column(JSONB)
     tags = Column(JSONB)
     
     # Status tracking
@@ -288,7 +288,7 @@ class EntityRelationshipModel(Base):
     
     # Custom attributes
     attributes = Column(JSONB)
-    metadata = Column(JSONB)
+    entity_metadata = Column(JSONB)
     
     # Status
     is_active = Column(Boolean, default=True, index=True)
@@ -362,7 +362,7 @@ class DataQualityMetricsModel(Base):
     calculation_version = Column(String, nullable=False)
     
     # Additional context
-    metadata = Column(JSONB)
+    entity_metadata = Column(JSONB)
     tags = Column(JSONB)
     
     # Relationships
@@ -432,7 +432,7 @@ class DataLineageModel(Base):
     last_refresh_attempt = Column(DateTime)
     
     # Custom metadata
-    metadata = Column(JSONB)
+    entity_metadata = Column(JSONB)
     
     # Indexes
     __table_args__ = (
@@ -482,7 +482,7 @@ class StorageMetricsModel(Base):
     alert_level = Column(String, index=True)  # normal, warning, critical
     
     # Additional data
-    metadata = Column(JSONB)
+    entity_metadata = Column(JSONB)
     
     # Indexes
     __table_args__ = (

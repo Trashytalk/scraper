@@ -157,7 +157,7 @@ def main():
     
     if passed == total:
         print("🎉 ALL TESTS PASSED! The basic structure is working correctly.")
-        print("💡 To get full functionality, install the dependencies in crawling_requirements.txt")
+        print("💡 All dependencies are now included in the main requirements.txt file")
     else:
         print("⚠️  Some tests failed. Check the implementation for issues.")
     

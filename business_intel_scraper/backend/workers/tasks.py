@@ -8,8 +8,13 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict, Union, Any, Callable, List
 from datetime import datetime, timedelta
 
+from celery import Celery
 from ..utils import setup_request_cache
 from prometheus_client import Counter, Histogram
+
+# Initialize Celery app
+app = Celery('business_intel_scraper')
+app.config_from_object('business_intel_scraper.backend.workers.celery_config')
 
 try:
     from gevent.pool import Pool  # type: ignore[import-untyped]

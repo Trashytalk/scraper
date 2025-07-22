@@ -40,8 +40,8 @@ python bis.py ai requirements
 ### 2. Install AI Dependencies
 
 ```bash
-# Install AI packages
-pip install -r requirements-ai.txt
+# AI packages are now included in main requirements
+pip install -r requirements.txt
 
 # For development
 python bis.py install --include-ai
@@ -321,8 +321,8 @@ AI_MIN_QUALITY_SCORE = 0.8
    # Check model status
    python bis.py ai status
    
-   # Reinstall models
-   pip install -r requirements-ai.txt
+   # Reinstall AI dependencies (now in main requirements.txt)
+   pip install -r requirements.txt
    ```
 
 2. **Performance Issues**

@@ -15,7 +15,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from business_intel_scraper.database.models import Entity, Connection, Event, Location
-from business_intel_scraper.database.config import get_session, create_tables, seed_database
+from business_intel_scraper.database.config import get_async_session, init_database
+from sqlalchemy import text
 from business_intel_scraper.backend.utils.performance import (
     cache_manager, query_optimizer, performance_monitor,
     initialize_performance_optimization
@@ -40,7 +41,7 @@ class TestComprehensiveIntegration:
     async def setup(self):
         """Setup test environment"""
         # Initialize database
-        await create_tables()
+        await init_database()
         
         # Initialize performance optimization
         await initialize_performance_optimization()
@@ -58,7 +59,7 @@ class TestComprehensiveIntegration:
         
     async def test_database_operations(self):
         """Test complete database operations with the new models"""
-        async with get_session() as session:
+        async with get_async_session() as session:
             # Test Entity creation
             entity1 = Entity(
                 name="Acme Corporation",
@@ -361,10 +362,9 @@ class TestComprehensiveIntegration:
     
     async def test_data_seeding(self):
         """Test database seeding with sample data"""
-        # Test seeding
-        await seed_database()
+        # Skip seeding test as it's handled in init_database
         
-        async with get_session() as session:
+        async with get_async_session() as session:
             # Check that data was seeded
             entities = await session.execute("SELECT COUNT(*) FROM entities")
             entity_count = entities.scalar()
@@ -426,7 +426,7 @@ class TestComprehensiveIntegration:
         
         # Step 5: Test performance monitoring
         async with query_optimizer.track_query("workflow_query"):
-            async with get_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute("SELECT COUNT(*) FROM entities WHERE entity_type = 'organization'")
                 count = result.scalar()
         

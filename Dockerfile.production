@@ -41,11 +41,9 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements first for better Docker layer caching
 COPY requirements.txt .
-COPY business_intel_scraper/backend/requirements.txt ./backend_requirements.txt
 
-# Install Python dependencies
+# Install Python dependencies (all dependencies now consolidated in requirements.txt)
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r backend_requirements.txt
 
 # Copy backend source code
 COPY business_intel_scraper/ ./business_intel_scraper/

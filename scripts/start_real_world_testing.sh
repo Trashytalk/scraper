@@ -27,7 +27,6 @@ echo "   ✅ Virtual environment activated"
 # 2. Install required packages
 echo "📦 Installing required packages..."
 pip install -q -r requirements.txt
-pip install -q -r requirements-dev.txt 2>/dev/null || echo "   Note: requirements-dev.txt not found, continuing..."
 echo "   ✅ Packages installed"
 
 # 3. Set up environment variables

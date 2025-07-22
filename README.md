@@ -710,18 +710,41 @@ python -m business_intel_scraper.backend.tests.performance_tests
 git clone https://github.com/Trashytalk/scraper.git
 cd scraper
 
-# Development environment
+# Development environment with consolidated requirements
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -r requirements.txt
+
+# Post-installation setup
+python -m spacy download en_core_web_sm
+playwright install
+
+# Initialize database
+python -c "from business_intel_scraper.database.config import init_database; import asyncio; asyncio.run(init_database())"
 
 # Install frontend dependencies
 cd business_intel_scraper/frontend
 npm install
 
 # Run development servers
-npm run dev        # Frontend development server
-uvicorn business_intel_scraper.backend.api.main:app --reload  # Backend API
+npm run dev        # Frontend development server (port 3000)
+uvicorn business_intel_scraper.backend.api.main:app --reload  # Backend API (port 8000)
+```
+
+### **Alternative: Advanced Installation**
+For granular dependency control:
+```bash
+# Core only
+pip install -e .
+
+# Full development environment  
+pip install -e ".[full]"
+
+# Production deployment
+pip install -e ".[production]"
+
+# Specific features only
+pip install -e ".[scraping,data,nlp]"
 ```
 
 ### **Code Quality**

@@ -334,7 +334,7 @@ def main():
     else:
         logger.error("❌ Some tests failed. Please check the errors above.")
         logger.info("\nTroubleshooting:")
-        logger.info("1. Install missing dependencies: pip install -r requirements-advanced.txt")
+        logger.info("1. Install dependencies: pip install -r requirements.txt")
         logger.info("2. Download missing models: python -m spacy download en_core_web_sm")
         logger.info("3. Check error messages for specific issues")
         return 1

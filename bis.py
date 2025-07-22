@@ -201,27 +201,13 @@ def install(include_ai: bool, include_dev: bool):
         click.echo("✗ Failed to install base dependencies", err=True)
         return
     
-    # AI requirements
+    # AI requirements (now included in main requirements.txt)
     if include_ai:
-        ai_requirements = Path(__file__).parent / "requirements-ai.txt"
-        if ai_requirements.exists():
-            try:
-                subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(ai_requirements)], check=True)
-                click.echo("✓ AI dependencies installed")
-            except subprocess.CalledProcessError:
-                click.echo("✗ Failed to install AI dependencies", err=True)
-        else:
-            click.echo("AI requirements file not found. Run 'bis ai requirements' to generate it.")
+        click.echo("✓ AI dependencies included in main requirements")
     
-    # Dev requirements
+    # Dev requirements (now included in main requirements.txt)
     if include_dev:
-        dev_requirements = Path(__file__).parent / "requirements-dev.txt"
-        if dev_requirements.exists():
-            try:
-                subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(dev_requirements)], check=True)
-                click.echo("✓ Development dependencies installed")
-            except subprocess.CalledProcessError:
-                click.echo("✗ Failed to install development dependencies", err=True)
+        click.echo("✓ Development dependencies included in main requirements")
 
 
 @cli.command()

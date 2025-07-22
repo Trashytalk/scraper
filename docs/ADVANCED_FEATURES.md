@@ -142,7 +142,7 @@ This document describes the 8 advanced features that have been integrated into t
 
 1. **Install Advanced Dependencies**:
    ```bash
-   pip install -r requirements-advanced.txt
+   pip install -r requirements.txt
    ```
 
 2. **Download Required Models**:

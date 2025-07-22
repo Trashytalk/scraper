@@ -13,6 +13,31 @@ from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 
 
+class RateLimiter:
+    """Rate limiter for controlling request frequency"""
+    
+    def __init__(self, limit: int = 60, window: int = 60):
+        self.limit = limit
+        self.window = window
+        self._requests: dict[str, deque[float]] = defaultdict(deque)
+    
+    def is_allowed(self, key: str) -> bool:
+        """Check if a request is allowed for the given key"""
+        now = time()
+        window_start = now - self.window
+        
+        # Clean old requests
+        requests = self._requests[key]
+        while requests and requests[0] < window_start:
+            requests.popleft()
+        
+        # Check if under limit
+        if len(requests) < self.limit:
+            requests.append(now)
+            return True
+        return False
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Limit requests per IP or user using a sliding window."""
 

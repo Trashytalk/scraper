@@ -236,13 +236,18 @@ def requirements():
         for req in reqs:
             click.echo(req)
         
-        # Save to requirements-ai.txt
-        req_file = Path("requirements-ai.txt")
+        # Note: AI requirements are now included in main requirements.txt
+        click.echo("\n📝 Note: AI requirements are now consolidated in the main requirements.txt file.")
+        click.echo("   No separate AI requirements file needed.")
+        
+        # Optional: save to separate file for reference
+        req_file = Path("ai-requirements-reference.txt")
         with open(req_file, 'w') as f:
+            f.write("# AI Requirements Reference (included in main requirements.txt)\n")
             for req in reqs:
                 f.write(f"{req}\n")
         
-        click.echo(f"\nRequirements saved to {req_file}")
+        click.echo(f"\nRequirements reference saved to {req_file}")
         click.echo(f"Install with: pip install -r {req_file}")
         
     except Exception as e:

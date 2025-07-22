@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Optional
 
 import strawberry
 from strawberry.fastapi import GraphQLRouter
@@ -6,10 +6,18 @@ from strawberry.scalars import JSON
 from strawberry import ID
 
 # Type alias for mypy
-JSONType = Any
+JSONType = JSON
 
 from . import main as api
 from ..workers.tasks import get_task_status
+
+
+@strawberry.type
+class ScrapedItem:
+    """A scraped data item."""
+    
+    id: str
+    data: str  # Simplified to string for now
 
 
 @strawberry.type
@@ -26,11 +34,11 @@ class Query:
 
     @strawberry.field
     def scraped_data(
-        self, search: str | None = None, limit: int | None = None
-    ) -> list[Any]:
+        self, search: Optional[str] = None, limit: Optional[int] = None
+    ) -> List[ScrapedItem]:
         """Return scraped items, optionally filtered by a search term."""
 
-        data = api.scraped_data
+        data = getattr(api, 'scraped_data', [])
         if search:
             lowered = search.lower()
             data = [
@@ -40,13 +48,18 @@ class Query:
             ]
         if limit is not None:
             data = data[:limit]
-        return data
+        
+        # Convert to ScrapedItem objects
+        return [
+            ScrapedItem(id=str(i), data=item) 
+            for i, item in enumerate(data)
+        ]
 
     @strawberry.field
-    def job(self, id: ID) -> Job | None:
+    def job(self, id: ID) -> Optional[Job]:
         """Return a single job by ID."""
 
-        status = api.jobs.get(str(id))
+        status = getattr(api, 'jobs', {}).get(str(id))
         if status is None:
             return None
         # Handle both dict and string status types

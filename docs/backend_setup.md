@@ -41,7 +41,6 @@ This document provides comprehensive information about the backend setup, archit
 3. **Install Dependencies**
    ```bash
    pip install -r requirements.txt
-   pip install -r requirements-dev.txt  # For development
    ```
 
 4. **Configure Environment**
@@ -52,11 +51,14 @@ This document provides comprehensive information about the backend setup, archit
 
 5. **Database Setup**
    ```bash
-   # For PostgreSQL
+   # The system will automatically use SQLite if DATABASE_URL is set to sqlite:///data.db
+   # Initialize the database (creates tables)
    python -c "from business_intel_scraper.database.config import init_database; import asyncio; asyncio.run(init_database())"
    
-   # For development (SQLite)
-   python test_simplified_real_world.py
+   # For PostgreSQL (if you prefer), first start PostgreSQL server:
+   # sudo systemctl start postgresql  # or brew services start postgresql on macOS
+   # createdb visual_analytics
+   # Then update .env with: DATABASE_URL=postgresql://username:password@localhost:5432/visual_analytics
    ```
 
 6. **Start Backend Services**
@@ -432,7 +434,7 @@ cp .env.example .env.development
 source .venv/bin/activate
 
 # Install development dependencies
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 
 # Run with hot reload
 uvicorn business_intel_scraper.backend.api.main:app --reload --port 8000
