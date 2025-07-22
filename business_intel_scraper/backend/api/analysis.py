@@ -138,7 +138,7 @@ class EntityResolutionRequest(BaseModel):
     """Entity resolution specific request"""
     entities: List[EntityInput]
     similarity_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
-    clustering_method: str = Field(default='dbscan', regex='^(dbscan|hierarchical|kmeans)$')
+    clustering_method: str = Field(default='dbscan', pattern='^(dbscan|hierarchical|kmeans)$')
     include_similarity_matrix: bool = False
 
 
@@ -162,7 +162,7 @@ class EventDetectionRequest(BaseModel):
     """Event detection specific request"""
     data_sources: List[Dict[str, Any]]
     entity_names: Optional[List[str]] = None
-    severity_filter: Optional[str] = Field(None, regex='^(low|medium|high|critical)$')
+    severity_filter: Optional[str] = Field(None, pattern='^(low|medium|high|critical)$')
     time_range_hours: int = Field(default=24, ge=1, le=8760)  # 1 hour to 1 year
 
 
@@ -456,7 +456,7 @@ async def get_analysis_status(
 @analysis_router.get("/export/{request_id}")
 async def export_analysis_results(
     request_id: str,
-    format: str = Query(default='json', regex='^(json|summary)$'),
+    format: str = Query(default='json', pattern='^(json|summary)$'),
     current_user: Dict = Depends(get_current_user),
     orchestrator: AnalysisOrchestrator = Depends(get_analysis_orchestrator)
 ):

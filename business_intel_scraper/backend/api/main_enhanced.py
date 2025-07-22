@@ -405,7 +405,7 @@ async def get_system_metrics():
 @app.get("/export/{data_type}")
 async def export_data(
     data_type: str,
-    format: str = Query("json", regex="^(json|csv|xlsx)$")
+    format: str = Query("json", pattern="^(json|csv|xlsx)$")
 ):
     """Export data in various formats"""
     try:

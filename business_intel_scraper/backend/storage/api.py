@@ -102,7 +102,7 @@ class EntitySearchRequest(BaseModel):
 
 class DataExportRequest(BaseModel):
     """Request model for data export"""
-    format: str = Field("parquet", regex="^(parquet|csv|json)$")
+    format: str = Field("parquet", pattern="^(parquet|csv|json)$")
     entity_types: Optional[List[str]] = None
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
