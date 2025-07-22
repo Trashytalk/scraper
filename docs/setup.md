@@ -82,6 +82,13 @@ nano .env
 code .env
 ```
 
+**Generate a new secret key**
+
+'''bash
+# Generate a new, unique secret key
+python -c "import secrets; print(secrets.token_hex(32))"
+'''
+
 **Configure the following critical variables in `.env`:**
 
 ```bash
