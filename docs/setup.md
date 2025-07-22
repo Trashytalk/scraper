@@ -117,13 +117,6 @@ LOG_LEVEL=INFO
 ### Step 5: Database Initialization
 
 ```bash
-# Test database configuration
-python3 -c "
-from business_intel_scraper.database.config import check_database_health
-import asyncio
-result = asyncio.run(check_database_health())
-print('Database Status:', result)
-"
 
 # Initialize database tables
 python3 -c "
@@ -132,6 +125,15 @@ import asyncio
 asyncio.run(init_database())
 print('✅ Database initialized successfully!')
 "
+
+# Test database configuration
+python3 -c "
+from business_intel_scraper.database.config import check_database_health
+import asyncio
+result = asyncio.run(check_database_health())
+print('Database Status:', result)
+"
+
 ```
 
 ### Step 6: Verify Core Installation
