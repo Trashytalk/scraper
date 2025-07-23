@@ -1,36 +1,61 @@
-# 🔍 Enterprise Visual Analytics Platform
+# 🔍 Business Intelligence Scraper Platform
 
-> **Production-ready business intelligence platform with advanced data visualization, real-time collaboration, and comprehensive enterprise features.**
+> **Production-ready enterprise platform with advanced web scraping, performance monitoring, security hardening, and Docker containerization.**
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![PostgreSQL](https://img.shields.io/badge/database-postgresql-blue.svg)](https://www.postgresql.org/)
+[![FastAPI](https://img.shields.io/badge/api-fastapi-009688.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/frontend-react-61dafb.svg)](https://reactjs.org/)
+[![Docker](https://img.shields.io/badge/deployment-docker-2496ed.svg)](https://www.docker.com/)
 [![Redis](https://img.shields.io/badge/cache-redis-red.svg)](https://redis.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Production Ready](https://img.shields.io/badge/status-production%20ready-green.svg)](https://github.com/Trashytalk/scraper)
+[![v1.0.0](https://img.shields.io/badge/version-v1.0.0-green.svg)](https://github.com/Trashytalk/scraper/releases/tag/v1.0.0)
 
-## 🎉 **ENTERPRISE PLATFORM - FULLY IMPLEMENTED**
+## 🎉 **PRODUCTION READY - v1.0.0 RELEASED**
 
-**All 12 priority infrastructure items successfully completed!** This platform is now production-ready with enterprise-grade features including advanced security, real-time collaboration, GDPR compliance, and comprehensive monitoring.
+**Complete enterprise-grade platform with security, performance monitoring, and containerization!** This system includes real-time performance metrics, comprehensive security middleware, Docker orchestration, and a production-ready scraping engine.
 
-### 🚀 **One-Command Production Setup**
+### ✅ **Latest Implementation Status (v1.0.0)**
+- 🔐 **Security Hardening**: JWT authentication, rate limiting, input validation, security headers
+- ⚡ **Performance Monitoring**: Real-time metrics, multi-tier caching, database optimization
+- 🐳 **Docker Containerization**: Production-ready with full orchestration stack
+- 🔧 **Backend API**: FastAPI with 15+ endpoints, WebSocket support, comprehensive middleware
+- 🎨 **Frontend Dashboard**: React with MUI components, performance optimization, lazy loading
+- 📊 **Monitoring Stack**: Prometheus, Grafana, Redis, PostgreSQL integration
+
+### 🚀 **Quick Start - Production Deployment**
 ```bash
-# Clone and deploy complete enterprise platform
+# Clone the repository
 git clone https://github.com/Trashytalk/scraper.git
 cd scraper
-docker-compose -f business_intel_scraper/docker-compose.yml up --build
 
-# Access the platform
-open http://localhost:8000  # API & Backend
-open http://localhost:3000  # React Frontend Dashboard
+# Production deployment with Docker
+docker-compose up --build -d
+
+# Development setup
+cd business_intel_scraper/frontend
+npm install
+npm run dev
+
+# In another terminal
+cd /path/to/scraper
+python backend_server.py
 ```
 
-## 🏗️ **Architecture Overview**
+### 📱 **Access Points**
+- **Frontend Dashboard**: http://localhost:5173
+- **API Documentation**: http://localhost:8000/docs  
+- **API Endpoints**: http://localhost:8000/api/*
+- **WebSocket**: ws://localhost:8000/ws
+- **Grafana Monitoring**: http://localhost:3000
+- **Prometheus Metrics**: http://localhost:9090
 
-### **System Architecture**
+## 🏗️ **System Architecture**
+
+### **Production Stack**
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  React Frontend │◄──►│   FastAPI Backend │◄──►│  PostgreSQL DB  │
-│  (Port 3000)    │    │   (Port 8000)     │    │  (Port 5432)    │
+│  React Frontend │◄──►│  FastAPI Backend │◄──►│  PostgreSQL DB  │
+│  (Port 5173)    │    │   (Port 8000)    │    │  (Port 5432)    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                        │                        │
          │              ┌─────────▼─────────┐              │
@@ -39,15 +64,21 @@ open http://localhost:3000  # React Frontend Dashboard
          │              └───────────────────┘              │
          │                                                 │
     ┌────▼────────────────────────────────────────────────▼────┐
-    │              Monitoring & Logging Stack                  │
-    │  Prometheus (Port 9090) + Grafana (Port 3001)          │
+    │         Performance & Monitoring Stack                   │
+    │  Prometheus (9090) + Grafana (3000) + Nginx (80)       │
     └─────────────────────────────────────────────────────────┘
 ```
 
-### **Data Flow Architecture**
+### **Security & Performance Flow**
 ```
-Web Sources ──► Scrapers ──► NLP Pipeline ──► Entity Extraction ──► PostgreSQL
-     │              │              │                │                  │
+Internet ──► Nginx Proxy ──► Rate Limiter ──► JWT Auth ──► FastAPI
+                │                 │              │           │
+                │                 │              │           ▼
+                │                 │              │     Performance Monitor
+                │                 │              │           │
+                ▼                 ▼              ▼           ▼
+         Security Headers  Request Logging  Input Validation  Metrics Collection
+```
      │              │              │                │                  │
      ▼              ▼              ▼                ▼                  ▼
 OSINT Tools ──► Data Processing ──► Geo Processing ──► Relationships ──► Analytics Dashboard
@@ -57,35 +88,47 @@ OSINT Tools ──► Data Processing ──► Geo Processing ──► Relatio
 API Sources ──► Async Tasks ──► Security Layer ──► Real-time Events ──► Visualizations
 ```
 
-## ✨ **Enterprise Features**
+## ✨ **Key Features - v1.0.0**
 
-### 🔒 **Security & Compliance**
-- **End-to-End Encryption**: AES-256 encryption with RSA key management
-- **Two-Factor Authentication**: TOTP-based 2FA with QR code generation
-- **OWASP Compliance**: Complete security framework with threat detection
-- **GDPR Compliance**: Full data governance with consent management
-- **Audit Logging**: Comprehensive security audit trails
+### � **Security & Authentication**
+- **JWT Authentication**: Secure token-based authentication with configurable expiration
+- **Password Security**: bcrypt hashing with secure password policies
+- **Rate Limiting**: API rate limiting with customizable limits (60 requests/min default)
+- **Input Validation**: Comprehensive input sanitization and validation middleware
+- **Security Headers**: HSTS, CSP, X-Frame-Options, and additional security headers
+- **CORS Configuration**: Secure cross-origin resource sharing setup
 
-### 🚀 **Performance & Scalability**
-- **Redis Caching**: Multi-layer caching with automatic invalidation
-- **Query Optimization**: Database indexes and performance monitoring
-- **Bundle Splitting**: Frontend code splitting and lazy loading
-- **CDN Integration**: Static asset optimization and delivery
-- **Performance Monitoring**: Real-time metrics and alerting
+### ⚡ **Performance & Monitoring**
+- **Real-time Metrics**: System resource tracking (CPU, Memory, Disk I/O)
+- **Multi-tier Caching**: Redis integration with local fallback caching
+- **Database Optimization**: Connection pooling, query optimization, batch processing
+- **Performance API**: REST endpoints for metrics and optimization control
+- **Background Monitoring**: Automatic performance tracking and alerting
+- **Request/Response Tracking**: Detailed endpoint performance analysis
 
-### 🤝 **Real-Time Collaboration**
-- **WebSocket Events**: Live data updates and notifications
-- **Shared Workspaces**: Multi-user collaboration features
-- **Advanced Filtering**: Complex data filtering and search
-- **Custom Dashboards**: Drag-and-drop dashboard builder
-- **Export Capabilities**: Multiple format exports with scheduling
+### 🐳 **Docker & Deployment**
+- **Production Dockerfile**: Multi-stage build with security best practices
+- **Service Orchestration**: Complete docker-compose stack with networking
+- **Monitoring Stack**: Integrated Prometheus and Grafana monitoring
+- **Reverse Proxy**: Nginx configuration with load balancing
+- **Database Services**: PostgreSQL and Redis containerization
+- **Auto-scaling**: Container scaling and health check configurations
 
-### 📱 **User Experience**
-- **Mobile Responsive**: Touch-optimized interface for all devices
-- **Advanced Search**: Fuzzy search with Fuse.js integration
-- **Drag & Drop**: Intuitive interface components
-- **Dark/Light Mode**: Customizable themes and accessibility
-- **Progressive Web App**: Offline capability and native feel
+### 🎨 **Frontend & UI**
+- **React Dashboard**: Modern React frontend with Material-UI components
+- **Performance Optimization**: Code splitting, lazy loading, virtual scrolling
+- **Date Pickers**: Advanced MUI X date picker components integration
+- **Real-time Updates**: WebSocket integration for live data updates
+- **Responsive Design**: Mobile-first responsive interface
+- **Bundle Optimization**: Vite build system with asset optimization
+
+### 🔧 **API & Backend**
+- **FastAPI Framework**: High-performance async API with automatic documentation
+- **WebSocket Support**: Real-time bidirectional communication
+- **Job Management**: Asynchronous scraping job processing and monitoring
+- **Analytics Endpoints**: Comprehensive analytics and dashboard data APIs
+- **Health Checks**: System health monitoring and status endpoints
+- **Error Handling**: Comprehensive error handling and logging
 
 ## 🗃️ **Database Architecture**
 
@@ -425,68 +468,283 @@ GROUP BY l.country, l.state
 ORDER BY company_count DESC;
 ```
 
-### **API Endpoints Reference**
+### **API Endpoints Reference - v1.0.0**
 
-#### **Core Entities**
-- `GET /entities` - List all entities with filtering
-- `POST /entities` - Create new entity
-- `GET /entities/{id}` - Get entity details with relationships
-- `PUT /entities/{id}` - Update entity
-- `DELETE /entities/{id}` - Delete entity
+#### **Authentication & Security**
+- `POST /api/auth/login` - User authentication (returns JWT token)
+- `GET /api/auth/me` - Get current user information
+- `GET /api/health` - Health check with performance metrics
 
-#### **Relationships**  
-- `GET /connections` - List all connections
-- `POST /connections` - Create relationship
-- `GET /connections/network/{entity_id}` - Get entity network
+#### **Job Management**
+- `GET /api/jobs` - List all jobs for authenticated user
+- `POST /api/jobs` - Create new scraping job with validation
+- `GET /api/jobs/{job_id}` - Get specific job details
+- `POST /api/jobs/{job_id}/start` - Start job execution
+- `GET /api/jobs/{job_id}/results` - Get job results
 
-#### **Events & Timeline**
-- `GET /events` - List events with temporal filtering
-- `POST /events` - Create new event
-- `GET /events/timeline/{entity_id}` - Get entity timeline
+#### **Performance Monitoring**
+- `GET /api/performance/summary` - Comprehensive performance summary
+- `GET /api/performance/metrics` - Real-time performance metrics
+- `GET /api/performance/cache/stats` - Cache performance statistics
+- `POST /api/performance/cache/clear` - Clear performance cache (admin only)
 
-#### **Geographic Data**
-- `GET /locations` - List locations with spatial queries
-- `POST /locations` - Create location
-- `GET /locations/nearby` - Find nearby entities
+#### **Analytics & Dashboard**
+- `GET /api/analytics/dashboard` - Dashboard analytics data
+- `GET /api/analytics/metrics` - Detailed analytics metrics with charts
+- `POST /api/analytics/data` - Submit analytics data
 
-#### **Analytics**
-- `GET /analytics/network` - Network analysis metrics
-- `GET /analytics/funding` - Funding analysis
-- `GET /analytics/geographic` - Geographic distribution
+#### **Real-time Communication**
+- `WebSocket /ws` - Real-time updates and notifications
 
-#### **Data Management**
-- `GET /export` - Export data (CSV, JSON, Excel)
-- `POST /import` - Bulk data import
-- `GET /search` - Advanced search across all entities
+### **API Usage Examples - v1.0.0**
 
-## 🔍 **OSINT Integration**
+#### **1. Authentication**
+```bash
+# Login and get JWT token
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "admin123"
+  }'
 
-### **Integrated Tools**
-```python
-# Domain reconnaissance
-from business_intel_scraper.backend.integrations import OSINTSuite
-
-osint = OSINTSuite()
-
-# Subdomain enumeration
-subdomains = await osint.subfinder("target.com")
-
-# Port scanning
-ports = await osint.nmap_scan("192.168.1.1")
-
-# Certificate transparency
-certificates = await osint.cert_transparency("target.com")
-
-# Social media intelligence
-social_data = await osint.social_analyzer("company_name")
+# Use token for authenticated requests
+TOKEN="your-jwt-token-here"
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/auth/me
 ```
 
-### **SpiderFoot Integration**
-```python
-# Comprehensive OSINT scanning
-spiderfoot_results = await osint.spiderfoot_scan(
-    target="target-domain.com",
-    modules=["sfp_dnsresolve", "sfp_whois", "sfp_shodan"]
+#### **2. Create and Start Scraping Job**
+```bash
+# Create a new scraping job
+curl -X POST http://localhost:8000/api/jobs \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "name": "E-commerce Product Scraper",
+    "type": "e_commerce",
+    "url": "https://example-shop.com/products",
+    "scraper_type": "e_commerce",
+    "config": {
+      "max_pages": 10,
+      "delay": 2
+    },
+    "custom_selectors": {
+      "title": ".product-title",
+      "price": ".price",
+      "description": ".product-description"
+    }
+  }'
+
+# Start the job
+curl -X POST http://localhost:8000/api/jobs/1/start \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+#### **3. Monitor Performance**
+```bash
+# Get system performance metrics
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/performance/metrics
+
+# Check cache performance
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/performance/cache/stats
+
+# Apply performance optimization
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/performance/optimize/performance_focused
+```
+
+#### **4. Analytics Dashboard Data**
+```bash
+# Get dashboard analytics
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/analytics/dashboard
+
+# Get detailed metrics for charts
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/analytics/metrics
+```
+
+---
+
+## 🚀 **Production Deployment**
+
+### **Docker Production Stack**
+
+The platform includes a complete production-ready Docker stack:
+
+```bash
+# Clone and deploy
+git clone https://github.com/Trashytalk/scraper.git
+cd scraper
+
+# Production deployment
+docker-compose up -d --build
+
+# Verify all services
+docker-compose ps
+```
+
+**Services included:**
+- **API Server**: FastAPI application with performance monitoring
+- **Frontend**: React dashboard with Nginx serving
+- **Redis**: Caching and session storage
+- **PostgreSQL**: Production database
+- **Prometheus**: Metrics collection
+- **Grafana**: Monitoring dashboard
+- **Nginx**: Reverse proxy and load balancer
+
+### **Environment Configuration**
+
+Create production environment file:
+
+```bash
+# Copy production template
+cp .env.production .env
+
+# Configure for production
+nano .env
+```
+
+**Key production settings:**
+
+```bash
+# Security
+JWT_SECRET=your-secure-32-char-secret
+API_RATE_LIMIT_PER_MINUTE=100
+ENABLE_SECURITY_HEADERS=true
+
+# Database
+DATABASE_PATH=/data/production.db
+POSTGRES_URL=postgresql://user:pass@postgres:5432/scraper
+
+# Performance
+PERFORMANCE_MONITORING_ENABLED=true
+REDIS_URL=redis://redis:6379/0
+
+# Deployment
+HOST=0.0.0.0
+PORT=8000
+DEBUG=false
+LOG_LEVEL=INFO
+```
+
+### **Monitoring & Metrics**
+
+Access monitoring dashboards:
+
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+- **API Metrics**: http://localhost:8000/api/performance/metrics
+
+### **Health Checks**
+
+Verify system health:
+
+```bash
+# API health
+curl http://localhost:8000/api/health
+
+# Performance status
+curl http://localhost:8000/api/performance/summary
+
+# Service status
+docker-compose ps
+```
+
+### **Scaling Configuration**
+
+Scale services for production load:
+
+```bash
+# Scale API instances
+docker-compose up -d --scale api=3
+
+# Scale with resource limits
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+---
+
+## 📊 **Performance & Monitoring**
+
+### **Real-time Metrics**
+
+The platform provides comprehensive performance monitoring:
+
+**System Metrics:**
+- CPU Usage and Load Average
+- Memory Usage and Available RAM
+- Disk I/O and Storage Usage
+- Network Bandwidth Utilization
+
+**Application Metrics:**
+- Request/Response Times
+- API Endpoint Performance
+- Cache Hit Rates
+- Database Query Performance
+- Job Processing Rates
+
+**Security Metrics:**
+- Authentication Success/Failure Rates
+- Rate Limiting Events
+- Security Header Compliance
+- Input Validation Rejections
+
+### **Performance Optimization**
+
+Built-in optimization profiles:
+
+```bash
+# Balanced profile (default)
+curl -X POST http://localhost:8000/api/performance/optimize/balanced
+
+# Memory-focused profile
+curl -X POST http://localhost:8000/api/performance/optimize/memory_focused
+
+# Performance-focused profile
+curl -X POST http://localhost:8000/api/performance/optimize/performance_focused
+```
+
+### **Caching Strategy**
+
+Multi-tier caching system:
+
+- **Redis**: Primary cache for session data and frequently accessed data
+- **Local Cache**: In-memory LRU cache for hot data
+- **Database Cache**: Query result caching with intelligent invalidation
+- **Static Cache**: Frontend asset caching with CDN support
+
+---
+
+## 🔒 **Security Features**
+
+### **Authentication & Authorization**
+
+- **JWT Tokens**: Secure stateless authentication
+- **Password Security**: bcrypt hashing with configurable rounds
+- **Session Management**: Secure session handling with Redis
+- **Role-based Access**: User roles and permissions system
+
+### **API Security**
+
+- **Rate Limiting**: Configurable rate limits per endpoint and user
+- **Input Validation**: Comprehensive request validation and sanitization
+- **SQL Injection Prevention**: Parameterized queries and ORM protection
+- **XSS Protection**: Output encoding and CSP headers
+
+### **Infrastructure Security**
+
+- **Security Headers**: HSTS, CSP, X-Frame-Options, X-Content-Type-Options
+- **CORS Configuration**: Strict cross-origin resource sharing policies
+- **Docker Security**: Non-root containers, minimal base images
+- **Network Security**: Internal container networking and service isolation
+
+---
+
+## 🔍 **Scraping Engine Integration**
 )
 ```
 
@@ -539,57 +797,170 @@ security = SecurityManager()
 # Generate 2FA setup
 qr_code, secret = security.generate_2fa_setup(user)
 
-# Verify 2FA token
-is_valid = security.verify_2fa_token(user, token)
+### **Scraping Engine Features**
 
-# Encrypt sensitive data
-encrypted_data = security.encrypt_data(sensitive_info)
-```
+The platform includes a comprehensive scraping engine:
 
-### **GDPR Compliance**
 ```python
-# Data subject rights automation
-from business_intel_scraper.backend.utils.compliance import GDPRManager
+# Configure scraping job
+job_config = {
+    "url": "https://example.com",
+    "scraper_type": "e_commerce",
+    "config": {
+        "max_pages": 10,
+        "delay": 2,
+        "respect_robots": True
+    },
+    "custom_selectors": {
+        "title": ".product-title",
+        "price": ".price",
+        "description": ".description"
+    }
+}
 
-gdpr = GDPRManager()
-
-# Export user data
-user_data = await gdpr.export_user_data(user_id)
-
-# Delete user data
-await gdpr.delete_user_data(user_id)
-
-# Track consent
-await gdpr.record_consent(user_id, "analytics", granted=True)
+# Execute scraping job
+from scraping_engine import execute_scraping_job
+result = await execute_scraping_job(job_id, job_config)
 ```
 
-## 🚀 **Performance Optimization**
+**Supported Scraper Types:**
+- **Basic Scraper**: General web content extraction
+- **E-commerce**: Product listings, prices, reviews
+- **News Sites**: Articles, headlines, publication dates
+- **Social Media**: Public posts, profiles, engagement metrics
+- **API Integration**: REST API data collection with authentication
 
-### **Caching Strategy**
+### **Data Processing Pipeline**
+
 ```python
-# Multi-level caching
-from business_intel_scraper.backend.utils.performance import CacheManager
+# NLP Processing
+from business_intel_scraper.backend.nlp import pipeline
 
-cache = CacheManager()
+# Clean and process text
+cleaned_text = pipeline.clean_text(raw_content)
 
-# Entity caching with invalidation
-@cache.cached(ttl=3600, key_prefix="entity")
-async def get_entity(entity_id: str):
-    return await db.get_entity(entity_id)
+# Extract entities
+entities = pipeline.extract_entities(cleaned_text)
 
-# Query result caching
-@cache.cached(ttl=1800, key_prefix="search")
-async def search_entities(query: str):
-    return await db.search_entities(query)
+# Sentiment analysis
+sentiment = pipeline.analyze_sentiment(cleaned_text)
 ```
 
-### **Database Optimization**
-```sql
--- Performance indexes for common queries
-CREATE INDEX CONCURRENTLY idx_entities_search 
-ON entities USING GIN(to_tsvector('english', label || ' ' || COALESCE(properties->>'description', '')));
+---
 
--- Partial indexes for active entities
+## 📁 **Project Structure - v1.0.0**
+
+```
+scraper/
+├── 📄 backend_server.py              # Main FastAPI server with performance monitoring
+├── 📄 performance_monitor.py         # Performance optimization system
+├── 📄 scraping_engine.py            # Core scraping engine
+├── 📄 secure_config.py              # Security configuration
+├── 📄 security_middleware.py        # Security middleware stack
+├── 📄 docker-compose.yml            # Production Docker stack
+├── 📄 Dockerfile                    # Multi-stage production container
+├── 📄 requirements.txt              # Python dependencies
+├── 📄 IMPLEMENTATION_COMPLETE.md    # v1.0.0 implementation status
+├── 📄 verify_system.py              # System verification script
+│
+├── 📁 business_intel_scraper/
+│   ├── 📁 backend/
+│   │   ├── 📁 api/                   # API endpoints and schemas
+│   │   ├── 📁 security/              # Authentication and authorization
+│   │   ├── 📁 performance/           # Performance optimization modules
+│   │   ├── 📁 db/                    # Database models and migrations
+│   │   ├── 📁 integrations/          # External service integrations
+│   │   ├── 📁 workers/               # Background task processing
+│   │   └── 📁 utils/                 # Utility functions and helpers
+│   │
+│   ├── 📁 frontend/
+│   │   ├── 📁 src/
+│   │   │   ├── 📁 components/        # React components with MUI
+│   │   │   ├── 📁 utils/             # Frontend utilities and performance
+│   │   │   └── 📁 pages/             # Application pages
+│   │   ├── 📄 package.json           # Frontend dependencies (with MUI X)
+│   │   ├── 📄 vite.config.js         # Vite build configuration
+│   │   └── 📄 docker-compose.yml     # Frontend development stack
+│   │
+│   └── 📁 infra/
+│       ├── 📁 docker/                # Docker configurations
+│       ├── 📁 k8s/                   # Kubernetes manifests
+│       └── 📁 monitoring/            # Prometheus/Grafana configs
+│
+├── 📁 docs/
+│   ├── 📄 setup.md                   # Updated setup guide v1.0.0
+│   ├── 📄 deployment.md              # Production deployment guide
+│   ├── 📄 security.md                # Security implementation details
+│   └── 📄 architecture.md            # System architecture documentation
+│
+├── 📁 config/
+│   ├── 📄 config.yaml                # Application configuration
+│   └── 📄 .env.example               # Environment template
+│
+└── 📁 data/
+    ├── 📁 logs/                      # Application logs
+    ├── 📁 output/                    # Scraping results
+    └── 📁 jobs/                      # Job data and status
+```
+
+---
+
+## 🎯 **Getting Started - Quick Guide**
+
+### **1. Clone and Setup**
+```bash
+git clone https://github.com/Trashytalk/scraper.git
+cd scraper
+```
+
+### **2. Production Deployment**
+```bash
+# Start complete stack
+docker-compose up -d --build
+
+# Verify services
+docker-compose ps
+```
+
+### **3. Development Setup**
+```bash
+# Backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python backend_server.py
+
+# Frontend (new terminal)
+cd business_intel_scraper/frontend
+npm install
+npm run dev
+```
+
+### **4. Access Applications**
+- **Frontend Dashboard**: <http://localhost:5173>
+- **API Documentation**: <http://localhost:8000/docs>
+- **Grafana Monitoring**: <http://localhost:3000>
+- **WebSocket**: `ws://localhost:8000/ws`
+
+---
+
+## 🔗 **Links & Resources**
+
+- **Repository**: <https://github.com/Trashytalk/scraper>
+- **Release Notes**: <https://github.com/Trashytalk/scraper/releases/tag/v1.0.0>
+- **Documentation**: [docs/](docs/)
+- **Docker Hub**: [Coming Soon]
+- **API Documentation**: Available at `/docs` endpoint
+
+---
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**🎉 Business Intelligence Scraper v1.0.0 - Production Ready!**
 CREATE INDEX idx_active_entities ON entities(entity_type) WHERE status = 'active';
 
 -- Composite indexes for relationship queries

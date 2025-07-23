@@ -1,134 +1,173 @@
-# Business Intelligence Scraper - Complete Setup Guide
+# Business Intelligence Scraper - Setup Guide v1.0.0
 
-This comprehensive guide will walk you through setting up the Business Intelligence Scraper platform step-by-step, from initial installation to production deployment.
+This guide covers the complete setup for the Business Intelligence Scraper platform, including the new performance monitoring, security hardening, and Docker containerization features.
 
-## 📋 Prerequisites
+## 📋 **Prerequisites**
 
-Before starting, ensure you have the following installed:
-
-### Required Software
+### **Required Software**
 - **Python 3.11+** (3.11 or 3.12 recommended)
 - **Git** (for cloning the repository)
-- **A text editor or IDE** (VS Code, PyCharm, etc.)
+- **Node.js 18+** (for React frontend)
+- **Docker & Docker Compose** (recommended for production)
 
-### Optional but Recommended
-- **Node.js 18+** (for frontend development)
-- **Docker & Docker Compose** (for containerized deployment)
-- **Redis** (for task queuing - can be run via Docker)
+### **Optional Components**
+- **Redis** (for caching - included in Docker stack)
+- **PostgreSQL** (for production database - included in Docker stack)
+- **VS Code** (with recommended extensions for development)
 
-### System Requirements
+### **System Requirements**
 - **OS**: Linux, macOS, or Windows (WSL2 recommended for Windows)
-- **RAM**: Minimum 4GB, recommended 8GB+
-- **Storage**: At least 2GB free space
+- **RAM**: Minimum 8GB, recommended 16GB+ (for Docker stack)
+- **Storage**: At least 5GB free space
 - **Network**: Internet connection for package downloads
 
 ---
 
-## 🚀 Step-by-Step Installation
+## 🚀 **Quick Start - Production Setup**
 
-### Step 1: Clone the Repository
+### **Option 1: Docker Deployment (Recommended)**
 
 ```bash
 # Clone the repository
 git clone https://github.com/Trashytalk/scraper.git
 cd scraper
 
-# Verify you're in the correct directory
-ls -la
-# You should see: business_intel_scraper/, docs/, requirements.txt, etc.
+# Start the complete production stack
+docker-compose up --build -d
+
+# Verify services are running
+docker-compose ps
+
+# Access the platform
+# Frontend: http://localhost:5173
+# API: http://localhost:8000/docs
+# Grafana: http://localhost:3000
 ```
 
-### Step 2: Create Python Virtual Environment
+### **Option 2: Development Setup**
 
 ```bash
-# Create virtual environment
+# Clone the repository
+git clone https://github.com/Trashytalk/scraper.git
+cd scraper
+
+# Backend setup
 python3 -m venv .venv
-
-# Activate virtual environment
-# On Linux/macOS:
-source .venv/bin/activate
-# On Windows:
-# .venv\Scripts\activate
-
-# Verify activation (you should see (.venv) in your prompt)
-which python
-# Should show: /path/to/scraper/.venv/bin/python
-```
-
-### Step 3: Install Python Dependencies
-
-```bash
-# Upgrade pip to latest version
-pip install --upgrade pip
-
-# Install all required packages
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Verify installation
-pip list | grep fastapi
-pip list | grep sqlalchemy
-# You should see the installed packages
-```
+# Frontend setup
+cd business_intel_scraper/frontend
+npm install
 
-### Step 4: Environment Configuration
+# Start development servers
+# Terminal 1 - Backend
+python backend_server.py
+
+# Terminal 2 - Frontend
+npm run dev
+```
+---
+
+## 🔧 **Configuration**
+
+### **Environment Variables**
+
+The platform uses environment variables for configuration. Create a `.env` file:
 
 ```bash
-# Copy the example environment file
+# Copy the example configuration
 cp .env.example .env
 
-# Edit the .env file with your preferred editor
+# Edit configuration
 nano .env
-# OR
-code .env
 ```
 
-### Generate a new secret key
-
-'''bash
-# Generate a new, unique secret key
-python -c "import secrets; print(secrets.token_hex(32))"
-'''
-
-**Configure the following critical variables in `.env`:**
+### **Key Configuration Options**
 
 ```bash
-# Database Configuration (SQLite is pre-configured and ready to use)
-DATABASE_URL=sqlite:///data.db
+# Security Configuration
+JWT_SECRET=your-jwt-secret-key-here
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_HOURS=24
+API_RATE_LIMIT_PER_MINUTE=60
 
-# Security (IMPORTANT: This is already set with a secure key)
-SECRET_KEY=671e782ab9d1b6fbd7dee1d0eb71225a457cf61e2f8b2a04c68190898720d703
+# Database Configuration
+DATABASE_PATH=data/scraper.db
 
-# Redis for task queuing (optional for basic usage)
+# Performance Settings
+PERFORMANCE_CACHE_TTL=3600
+PERFORMANCE_MONITORING_ENABLED=true
+
+# Redis Configuration (optional)
 REDIS_URL=redis://localhost:6379/0
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
+REDIS_ENABLED=true
 
-# API Configuration
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+# Security Headers
+ENABLE_SECURITY_HEADERS=true
+HSTS_MAX_AGE=31536000
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
-# Logging
+# Server Configuration
+HOST=0.0.0.0
+PORT=8000
+DEBUG=false
 LOG_LEVEL=INFO
-
-# Optional: External APIs (add your keys if needed)
-# GOOGLE_API_KEY=your_google_api_key_here
-# API_KEY=your_other_api_keys_here
 ```
 
-### Step 5: Database Initialization
+### **Generate Secure Keys**
 
 ```bash
+# Generate JWT secret
+python -c "import secrets; print('JWT_SECRET=' + secrets.token_hex(32))"
 
-# Initialize database tables
-python3 -c "
-from business_intel_scraper.database.config import init_database
-import asyncio
-asyncio.run(init_database())
-print('✅ Database initialized successfully!')
-"
+# Generate database encryption key
+python -c "import secrets; print('DB_ENCRYPTION_KEY=' + secrets.token_hex(32))"
+```
 
-# Test database configuration
-python3 -c "
-from business_intel_scraper.database.config import check_database_health
+---
+
+## 🎯 **Feature Configuration**
+
+### **Performance Monitoring Setup**
+
+The platform includes comprehensive performance monitoring:
+
+```bash
+# Check performance system status
+curl http://localhost:8000/api/performance/metrics
+
+# View cache statistics
+curl http://localhost:8000/api/performance/cache/stats
+
+# Apply optimization profile
+curl -X POST http://localhost:8000/api/performance/optimize/balanced
+```
+
+### **Security Configuration**
+
+Security features are enabled by default:
+
+- **JWT Authentication**: Token-based authentication with configurable expiration
+- **Rate Limiting**: 60 requests per minute per IP (configurable)
+- **Input Validation**: Automatic input sanitization and validation
+- **Security Headers**: HSTS, CSP, X-Frame-Options enabled
+- **Password Hashing**: bcrypt with secure salt rounds
+
+### **Docker Services Configuration**
+
+The docker-compose stack includes:
+
+```yaml
+services:
+  api:           # Main FastAPI application
+  frontend:      # React development server
+  redis:         # Caching and session storage
+  postgres:      # Production database
+  nginx:         # Reverse proxy
+  prometheus:    # Metrics collection
+  grafana:       # Monitoring dashboard
+```
 import asyncio
 result = asyncio.run(check_database_health())
 print('Database Status:', result)
