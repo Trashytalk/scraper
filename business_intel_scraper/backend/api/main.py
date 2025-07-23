@@ -19,6 +19,8 @@ from business_intel_scraper.settings import settings
 from ..utils import setup_request_cache
 from .auth import router as auth_router
 from .analytics import router as analytics_router
+from .jobs import router as jobs_router
+from .osint import router as osint_router
 from ..analytics.middleware import AnalyticsMiddleware
 from fastapi import Depends
 from ..security import require_token, require_role
@@ -61,6 +63,12 @@ app.include_router(auth_router)
 
 # Include analytics router
 app.include_router(analytics_router)
+
+# Include jobs router
+app.include_router(jobs_router)
+
+# Include OSINT router
+app.include_router(osint_router)
 
 # Include performance router
 try:
@@ -217,10 +225,10 @@ async def get_data() -> list[dict[str, str]]:
     return scraped_data
 
 
-@app.get("/export", dependencies=[Depends(require_token)])
+@app.get("/export", dependencies=[Depends(require_token)], response_model=None)
 async def export_data(
     format: str = "jsonl", bucket: str | None = None, key: str | None = None
-) -> Union[Response, dict[str, str]]:
+):
     """Export scraped data in the requested format."""
 
     if format == "csv":

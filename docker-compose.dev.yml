@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Development API server
+  scraper-api:
+    build: .
+    container_name: scraper-api-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_PATH=/app/data/scraper.db
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    depends_on:
+      - redis
+    networks:
+      - scraper-dev
+    command: python backend_server.py
+    restart: unless-stopped
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: scraper-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - scraper-dev
+    restart: unless-stopped
+
+  # Frontend (if available)
+  scraper-frontend:
+    build: ./frontend
+    container_name: scraper-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8000
+      - NODE_ENV=development
+    depends_on:
+      - scraper-api
+    networks:
+      - scraper-dev
+    restart: unless-stopped
+
+networks:
+  scraper-dev:
+    driver: bridge

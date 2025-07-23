@@ -167,6 +167,53 @@ async def get_complete_dashboard_data() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Failed to get dashboard data: {str(e)}")
 
 
+@router.get("/dashboard/public")
+async def get_dashboard_data_public() -> Dict[str, Any]:
+    """Get dashboard data without authentication for testing."""
+    try:
+        # Return mock data for now since the analytics modules might not be fully implemented
+        return {
+            "timestamp": "2025-07-22T12:00:00Z",
+            "status": "healthy",
+            "alerts": {
+                "recent_alerts": [
+                    {"level": "info", "message": "System running normally", "timestamp": "2025-07-22T11:55:00Z"},
+                    {"level": "warning", "message": "High memory usage detected", "timestamp": "2025-07-22T11:50:00Z"}
+                ],
+                "total_alerts": 5
+            },
+            "metrics": {
+                "jobs_completed": 127,
+                "jobs_running": 3,
+                "jobs_failed": 2,
+                "data_quality_score": 94.5,
+                "system_health": 98.2
+            },
+            "performance": {
+                "cpu_usage": 45.2,
+                "memory_usage": 78.1,
+                "disk_usage": 34.8,
+                "network_io": 1024
+            },
+            "charts": {
+                "job_completion_rate": [
+                    {"timestamp": "2025-07-22T09:00:00Z", "value": 85, "label": "09:00"},
+                    {"timestamp": "2025-07-22T10:00:00Z", "value": 92, "label": "10:00"},
+                    {"timestamp": "2025-07-22T11:00:00Z", "value": 88, "label": "11:00"},
+                    {"timestamp": "2025-07-22T12:00:00Z", "value": 95, "label": "12:00"}
+                ],
+                "data_processing": [
+                    {"timestamp": "2025-07-22T09:00:00Z", "value": 156, "label": "09:00"},
+                    {"timestamp": "2025-07-22T10:00:00Z", "value": 189, "label": "10:00"},
+                    {"timestamp": "2025-07-22T11:00:00Z", "value": 203, "label": "11:00"},
+                    {"timestamp": "2025-07-22T12:00:00Z", "value": 221, "label": "12:00"}
+                ]
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get dashboard data: {str(e)}")
+
+
 @router.get("/historical/{metric_name}", dependencies=[Depends(require_token)])
 async def get_historical_metric(
     metric_name: str,

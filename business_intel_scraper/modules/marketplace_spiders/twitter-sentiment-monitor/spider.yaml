@@ -1,0 +1,22 @@
+author: SentimentLab
+category: social-media
+description: Monitor Twitter for brand mentions and sentiment analysis
+downloads: 890
+entry_point: twitter_monitor.SentimentSpider
+installed: false
+license: GPL-3.0
+name: twitter-sentiment-monitor
+package_url: https://github.com/sentimentlab/twitter-monitor/archive/v1.5.3.zip
+rating: 4.3
+rating_count: 67
+requirements:
+- tweepy
+- textblob
+- pandas
+tags:
+- twitter
+- sentiment
+- monitoring
+- brand
+verified: false
+version: 1.5.3

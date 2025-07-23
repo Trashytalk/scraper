@@ -16,9 +16,25 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { analyticsService } from '../services/api';
+import { useAuth } from './AuthSystem';
+import { 
+  Alert, 
+  CircularProgress, 
+  Box, 
+  Typography,
+  Card,
+  CardContent,
+  Grid,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
+} from '@mui/material';
 
 // Analytics Dashboard Component
 const AnalyticsDashboard = () => {
+  const { isAuthenticated } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [performanceCharts, setPerformanceCharts] = useState({});
   const [alerts, setAlerts] = useState([]);
@@ -32,30 +48,51 @@ const AnalyticsDashboard = () => {
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/analytics/dashboard');
-      if (response.ok) {
-        const data = await response.json();
+      if (isAuthenticated) {
+        const data = await analyticsService.getDashboardAnalytics();
         setDashboardData(data);
         setAlerts(data.alerts?.recent_alerts || []);
+      } else {
+        // Show demo data for non-authenticated users
+        setDashboardData({
+          jobs: { total: 0, running: 0, completed: 0, failed: 0, pending: 0 },
+          results: { total: 0, today: 0, this_week: 0 },
+          performance: { avg_processing_time: "0s", success_rate: "0%", data_quality_score: "0%" }
+        });
       }
     } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
       setError('Failed to fetch dashboard data');
     }
   };
 
   const fetchPerformanceCharts = async (hours = 6) => {
     try {
-      const response = await fetch(`/analytics/performance/charts?hours=${hours}`);
-      if (response.ok) {
-        const charts = await response.json();
-        setPerformanceCharts(charts);
+      if (isAuthenticated) {
+        const data = await analyticsService.getMetrics();
+        setPerformanceCharts(data);
+      } else {
+        // Use mock data for demo
+        const mockCharts = {
+          job_completion_rate: [
+            { timestamp: "09:00", value: 85, label: "09:00" },
+            { timestamp: "10:00", value: 92, label: "10:00" },
+            { timestamp: "11:00", value: 88, label: "11:00" },
+            { timestamp: "12:00", value: 95, label: "12:00" }
+          ],
+          data_processing: [
+            { timestamp: "09:00", value: 156, label: "09:00" },
+            { timestamp: "10:00", value: 189, label: "10:00" },
+            { timestamp: "11:00", value: 203, label: "11:00" },
+            { timestamp: "12:00", value: 221, label: "12:00" }
+          ]
+        };
+        setPerformanceCharts(mockCharts);
       }
     } catch (err) {
       console.error('Failed to fetch performance charts:', err);
     }
-  };
-
-  const fetchInsights = async () => {
+  };  const fetchInsights = async () => {
     try {
       const response = await fetch('/analytics/insights');
       if (response.ok) {

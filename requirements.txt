@@ -41,6 +41,9 @@ bcrypt>=4.1.2
 pandas>=2.1.4
 numpy>=1.24.3
 
+# ===== SYSTEM MONITORING =====
+psutil>=5.9.0
+
 # ===== NATURAL LANGUAGE PROCESSING =====
 spacy>=3.7.2
 nltk>=3.8.1
