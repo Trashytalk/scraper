@@ -21,6 +21,7 @@ from .auth import router as auth_router
 from .analytics import router as analytics_router
 from .jobs import router as jobs_router
 from .osint import router as osint_router
+from .centralized_data import router as centralized_data_router
 from ..analytics.middleware import AnalyticsMiddleware
 from fastapi import Depends
 from ..security import require_token, require_role
@@ -69,6 +70,9 @@ app.include_router(jobs_router)
 
 # Include OSINT router
 app.include_router(osint_router)
+
+# Include centralized data router
+app.include_router(centralized_data_router)
 
 # Include performance router
 try:

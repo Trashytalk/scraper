@@ -58,8 +58,12 @@ except ImportError:
         def delete(self, key, cache_type="ttl"): pass
     
     class PerformanceMiddleware:
-        def __init__(self, metrics): pass
-        async def __call__(self, request, call_next): return await call_next(request)
+        def __init__(self, app, metrics):
+            self.app = app
+            self.metrics = metrics
+        
+        async def __call__(self, request, call_next):
+            return await call_next(request)
     
     def cached(cache_type="ttl", ttl=300, key_prefix=""):
         def decorator(func): return func
@@ -180,7 +184,27 @@ app.add_middleware(RequestLoggingMiddleware)
 
 # Add performance monitoring middleware
 if PERFORMANCE_ENABLED:
-    app.add_middleware(PerformanceMiddleware, metrics=performance_metrics)
+    from starlette.middleware.base import BaseHTTPMiddleware
+    
+    class PerformanceMiddlewareWrapper(BaseHTTPMiddleware):
+        def __init__(self, app, metrics):
+            super().__init__(app)
+            self.metrics = metrics
+        
+        async def dispatch(self, request, call_next):
+            start_time = time.time()
+            response = await call_next(request)
+            duration = time.time() - start_time
+            
+            # Record metrics if available
+            if hasattr(self.metrics, 'record_request'):
+                endpoint = f"{request.method} {request.url.path}"
+                self.metrics.record_request(endpoint, duration, response.status_code)
+            
+            response.headers["X-Response-Time"] = f"{duration:.3f}s"
+            return response
+    
+    app.add_middleware(PerformanceMiddlewareWrapper, metrics=performance_metrics)
 
 # CORS middleware with secure configuration
 app.add_middleware(

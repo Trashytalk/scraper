@@ -10,6 +10,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![v1.0.0](https://img.shields.io/badge/version-v1.0.0-green.svg)](https://github.com/Trashytalk/scraper/releases/tag/v1.0.0)
 
+## 🎉 **NEW: Crawler-to-Scraper Pipeline** 
+**🔄 Two-stage data collection workflow**: First crawl to discover URLs, then automatically scrape all discovered URLs with batch job creation! Perfect for large-scale data extraction with intelligent URL discovery.
+
 ## 🎉 **PRODUCTION READY - v1.0.0 RELEASED**
 
 **Complete enterprise-grade platform with security, performance monitoring, and containerization!** This system includes real-time performance metrics, comprehensive security middleware, Docker orchestration, and a production-ready scraping engine.
@@ -21,6 +24,7 @@
 - 🔧 **Backend API**: FastAPI with 15+ endpoints, WebSocket support, comprehensive middleware
 - 🎨 **Frontend Dashboard**: React with MUI components, performance optimization, lazy loading
 - 📊 **Monitoring Stack**: Prometheus, Grafana, Redis, PostgreSQL integration
+- **🕷️ NEW: Crawler-to-Scraper Pipeline**: Automated two-stage data collection workflow
 
 ### 🚀 **Quick Start - Production Deployment**
 ```bash

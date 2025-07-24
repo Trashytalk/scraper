@@ -14,7 +14,6 @@ sqlalchemy>=2.0.23
 alembic>=1.12.1
 psycopg2-binary>=2.9.9
 aiosqlite>=0.19.0
-redis>=5.0.1
 
 # ===== TASK QUEUE & BACKGROUND JOBS =====
 celery>=5.3.4
@@ -36,6 +35,12 @@ pyjwt[crypto]>=2.8.0
 passlib[bcrypt]>=1.7.4
 cryptography>=41.0.7
 bcrypt>=4.1.2
+slowapi>=0.1.9
+
+# ===== PERFORMANCE & CACHING =====
+redis>=5.0.1
+# aioredis>=2.0.1  # Commented out due to Python 3.12 compatibility issues
+cachetools>=5.3.2
 
 # ===== DATA PROCESSING =====
 pandas>=2.1.4

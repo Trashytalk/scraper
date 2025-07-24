@@ -16,14 +16,24 @@ from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 import threading
 from functools import wraps
-import redis
-import aioredis
-from cachetools import TTLCache, LRUCache
-import weakref
 
-# Setup logging
+# Setup logging first
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+import weakref
+from cachetools import TTLCache, LRUCache
+
+# Optional Redis imports - gracefully handle import errors
+try:
+    import redis
+    import aioredis
+    REDIS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Redis not available: {e}. Redis caching will be disabled.")
+    redis = None
+    aioredis = None
+    REDIS_AVAILABLE = False
 
 class PerformanceMetrics:
     """Collects and manages performance metrics"""
@@ -143,7 +153,7 @@ class CacheManager:
         self.redis_client = None
         self.redis_available = False
         
-        if redis_url:
+        if redis_url and REDIS_AVAILABLE:
             try:
                 self.redis_client = redis.from_url(redis_url)
                 self.redis_client.ping()
@@ -151,9 +161,15 @@ class CacheManager:
                 logger.info("Redis cache connected successfully")
             except Exception as e:
                 logger.warning(f"Redis not available, using in-memory cache only: {e}")
+        elif redis_url and not REDIS_AVAILABLE:
+            logger.warning("Redis URL provided but Redis packages not available. Using in-memory cache only.")
     
     async def get_async_redis(self, redis_url: str):
         """Get async Redis connection"""
+        if not REDIS_AVAILABLE:
+            logger.warning("aioredis not available, async Redis disabled")
+            return None
+            
         try:
             return await aioredis.from_url(redis_url)
         except Exception as e:
