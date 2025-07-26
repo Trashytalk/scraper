@@ -6,7 +6,46 @@
 
 ---
 
-## 📋 Documentation Structure
+## � **Quick Start - Get Running in 2 Minutes**
+
+**Before diving into detailed documentation, get your platform running instantly:**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Trashytalk/scraper.git
+cd scraper
+
+# 2. Make script executable (first time only)
+chmod +x quick_start.sh
+
+# 3. Start everything automatically
+./quick_start.sh
+```
+
+**✨ The quick start script automatically:**
+- ✅ Checks system requirements (Python 3.8+)
+- ✅ Sets up isolated virtual environment
+- ✅ Installs all dependencies (2-3 minutes)
+- ✅ Initializes database and configurations
+- ✅ Starts Redis and web services
+- ✅ Provides access URLs and credentials
+
+**🎉 Access your platform at:**
+- **📊 Dashboard**: http://localhost:8000
+- **📖 API Docs**: http://localhost:8000/docs
+- **📈 Admin Panel**: http://localhost:8000/admin
+
+**🔧 Quick start options:**
+```bash
+./quick_start.sh --dev        # Development mode
+./quick_start.sh --production # Production optimized
+./quick_start.sh --status     # Check system status
+./quick_start.sh --help       # Show all options
+```
+
+---
+
+## �📋 Documentation Structure
 
 This documentation provides complete coverage of the Business Intelligence Scraper Platform, from basic setup to advanced enterprise deployment. Each document is designed to serve specific user roles and use cases.
 

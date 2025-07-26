@@ -36,22 +36,72 @@
 - **🧪 NEW: Complete Test Coverage**: 9 comprehensive test suites with 1,470+ test methods achieving 94%+ repository coverage
 
 ### 🚀 **Quick Start - One-Command Setup**
+
+**🎯 Get your Business Intelligence Platform running in 2-3 minutes:**
+
 ```bash
-# Clone and start instantly
+# 1. Clone the repository
 git clone https://github.com/Trashytalk/scraper.git
 cd scraper
+
+# 2. Make the script executable (first time only)
+chmod +x quick_start.sh
+
+# 3. Start everything with one command
 ./quick_start.sh
 ```
 
-**What this does:**
-- ✅ Checks system requirements (Python 3.8+)
-- ✅ Sets up virtual environment
-- ✅ Installs all dependencies automatically
-- ✅ Configures application settings
-- ✅ Initializes database
-- ✅ Starts Redis (via Docker if needed)
-- ✅ Launches web server on port 8000
-- ✅ Shows access information and usage examples
+**✨ What the quick start script does automatically:**
+- ✅ **System Check**: Verifies Python 3.8+, pip, and dependencies
+- ✅ **Environment Setup**: Creates isolated Python virtual environment
+- ✅ **Dependency Installation**: Installs all required packages (2-3 minutes)
+- ✅ **Database Initialization**: Sets up SQLite database with schemas
+- ✅ **Redis Server**: Starts Redis for caching and sessions
+- ✅ **Web Server Launch**: Starts FastAPI server on port 8000
+- ✅ **Health Verification**: Checks all services are running correctly
+- ✅ **Access Information**: Shows URLs and login credentials
+
+**🎉 Expected Output:**
+```bash
+🚀 Business Intelligence Scraper - Quick Start
+==============================================
+
+✅ Checking system requirements...
+✅ Setting up Python virtual environment...
+✅ Installing dependencies (this may take 2-3 minutes)...
+✅ Initializing database...
+✅ Starting Redis server...
+✅ Starting web server...
+
+🎉 Setup Complete!
+
+📊 Dashboard: http://localhost:8000
+📖 API Docs: http://localhost:8000/docs
+📈 Admin Panel: http://localhost:8000/admin
+
+Press Ctrl+C to stop all services
+```
+
+**🔧 Advanced Quick Start Options:**
+```bash
+# Development mode with hot reload
+./quick_start.sh --dev
+
+# Production mode with optimizations
+./quick_start.sh --production
+
+# Clean install (removes existing environment)
+./quick_start.sh --clean
+
+# Check system status
+./quick_start.sh --status
+
+# Stop all services
+./quick_start.sh --stop
+
+# Show help and all options
+./quick_start.sh --help
+```
 
 ### 🚀 **Quick Start - Production Deployment**
 ```bash

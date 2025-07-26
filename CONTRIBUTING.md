@@ -2,27 +2,62 @@
 
 Thank you for your interest in contributing to the Business Intelligence Scraper! This document provides guidelines for contributing to the project.
 
-## 🚀 Quick Start
+## 🚀 **Quick Start for Contributors**
 
-1. **Setup Development Environment**
-   ```bash
-   ./setup.sh --dev
-   source .venv/bin/activate
-   ```
+### **Step 1: Get the Platform Running (2 minutes)**
 
-2. **Run Tests**
-   ```bash
-   # Run comprehensive test coverage
-   python3 tests/run_full_coverage.py --parallel --coverage
-   
-   # Or run legacy test commands
-   pytest
-   ```
+Before contributing, get the platform running instantly with our automated setup:
 
-3. **Run Demo**
-   ```bash
-   ./demo.sh
-   ```
+```bash
+# Clone and navigate
+git clone https://github.com/Trashytalk/scraper.git
+cd scraper
+
+# Make script executable (first time only)
+chmod +x quick_start.sh
+
+# Start everything automatically
+./quick_start.sh --dev
+```
+
+**✨ The `--dev` flag enables:**
+- 🔄 Hot reload for code changes
+- 🐛 Enhanced debugging output
+- 📝 Development configuration
+- 🧪 Test database setup
+- 📊 Development monitoring
+
+### **Step 2: Verify Your Setup**
+
+After the quick start completes, verify everything is working:
+
+```bash
+# Check system status
+./quick_start.sh --status
+
+# Run a quick test
+curl http://localhost:8000/health
+
+# Access development interfaces
+open http://localhost:8000        # Main dashboard
+open http://localhost:8000/docs   # API documentation
+```
+
+### **Step 3: Development Workflow**
+
+```bash
+# Stop services when needed
+./quick_start.sh --stop
+
+# Clean install for troubleshooting
+./quick_start.sh --clean
+
+# Restart in development mode
+./quick_start.sh --dev
+
+# Get help and options
+./quick_start.sh --help
+```
 
 ## 📋 Development Guidelines
 
