@@ -104,16 +104,14 @@ def geocode_addresses(
     Base.metadata.create_all(engine)
 
     results: list[Tuple[str, float | None, float | None]] = []
-    
+
     # Ensure we have a valid Google API key if not using Nominatim
     effective_google_key = google_api_key or os.getenv("GOOGLE_API_KEY", "")
-    
+
     lookup = (
         _nominatim_lookup
         if use_nominatim or not effective_google_key
-        else (
-            lambda addr: _google_lookup(addr, effective_google_key)
-        )
+        else (lambda addr: _google_lookup(addr, effective_google_key))
     )
 
     with Session(engine) as session:

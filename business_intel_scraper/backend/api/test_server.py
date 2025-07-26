@@ -3,6 +3,7 @@
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from fastapi import FastAPI
@@ -16,7 +17,7 @@ from business_intel_scraper.backend.api.jobs import router as jobs_router
 app = FastAPI(
     title="Business Intelligence Scraper API",
     description="API for job management and scraping operations",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Add CORS middleware
@@ -31,24 +32,23 @@ app.add_middleware(
 # Include jobs router
 app.include_router(jobs_router)
 
+
 @app.get("/")
 async def root():
     return {"message": "Business Intelligence Scraper API is running"}
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "bi-scraper-api"}
+
 
 if __name__ == "__main__":
     print("🚀 Starting Business Intelligence Scraper API...")
     print("📡 API will be available at: http://localhost:8000")
     print("📊 Jobs endpoint: http://localhost:8000/jobs/")
     print("📚 API docs: http://localhost:8000/docs")
-    
+
     uvicorn.run(
-        "test_server:app", 
-        host="0.0.0.0", 
-        port=8000,
-        reload=True,
-        log_level="info"
+        "test_server:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
     )

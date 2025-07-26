@@ -5,7 +5,7 @@ Consolidated setup with optional dependency groups
 """
 
 from setuptools import setup, find_packages
-import os
+
 
 # Read the README file for long description
 def read_readme():
@@ -14,6 +14,7 @@ def read_readme():
             return f.read()
     except FileNotFoundError:
         return "Business Intelligence Scraper Platform"
+
 
 # Define version
 VERSION = "1.0.0"
@@ -159,15 +160,15 @@ UTILS_REQUIREMENTS = [
 
 # Combine all requirements for 'all' extra
 ALL_REQUIREMENTS = (
-    WEB_REQUIREMENTS +
-    DATABASE_REQUIREMENTS +
-    SCRAPING_REQUIREMENTS +
-    SECURITY_REQUIREMENTS +
-    DATA_REQUIREMENTS +
-    NLP_REQUIREMENTS +
-    VISION_REQUIREMENTS +
-    MONITORING_REQUIREMENTS +
-    UTILS_REQUIREMENTS
+    WEB_REQUIREMENTS
+    + DATABASE_REQUIREMENTS
+    + SCRAPING_REQUIREMENTS
+    + SECURITY_REQUIREMENTS
+    + DATA_REQUIREMENTS
+    + NLP_REQUIREMENTS
+    + VISION_REQUIREMENTS
+    + MONITORING_REQUIREMENTS
+    + UTILS_REQUIREMENTS
 )
 
 if __name__ == "__main__":
@@ -196,28 +197,29 @@ if __name__ == "__main__":
             "vision": VISION_REQUIREMENTS,
             "monitoring": MONITORING_REQUIREMENTS,
             "utils": UTILS_REQUIREMENTS,
-            
             # Development groups
             "dev": DEV_REQUIREMENTS,
             "notebook": NOTEBOOK_REQUIREMENTS,
             "profiling": PROFILING_REQUIREMENTS,
-            
             # Combined groups
             "production": (
-                WEB_REQUIREMENTS +
-                DATABASE_REQUIREMENTS +
-                SCRAPING_REQUIREMENTS +
-                SECURITY_REQUIREMENTS +
-                MONITORING_REQUIREMENTS
+                WEB_REQUIREMENTS
+                + DATABASE_REQUIREMENTS
+                + SCRAPING_REQUIREMENTS
+                + SECURITY_REQUIREMENTS
+                + MONITORING_REQUIREMENTS
             ),
             "analytics": (
-                DATA_REQUIREMENTS +
-                NLP_REQUIREMENTS +
-                VISION_REQUIREMENTS +
-                NOTEBOOK_REQUIREMENTS
+                DATA_REQUIREMENTS
+                + NLP_REQUIREMENTS
+                + VISION_REQUIREMENTS
+                + NOTEBOOK_REQUIREMENTS
             ),
             "all": ALL_REQUIREMENTS,
-            "full": ALL_REQUIREMENTS + DEV_REQUIREMENTS + NOTEBOOK_REQUIREMENTS + PROFILING_REQUIREMENTS,
+            "full": ALL_REQUIREMENTS
+            + DEV_REQUIREMENTS
+            + NOTEBOOK_REQUIREMENTS
+            + PROFILING_REQUIREMENTS,
         },
         entry_points={
             "console_scripts": [

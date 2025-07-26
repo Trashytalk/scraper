@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import strawberry
 from strawberry.fastapi import GraphQLRouter
@@ -15,7 +15,7 @@ from ..workers.tasks import get_task_status
 @strawberry.type
 class ScrapedItem:
     """A scraped data item."""
-    
+
     id: str
     data: str  # Simplified to string for now
 
@@ -38,7 +38,7 @@ class Query:
     ) -> List[ScrapedItem]:
         """Return scraped items, optionally filtered by a search term."""
 
-        data = getattr(api, 'scraped_data', [])
+        data = getattr(api, "scraped_data", [])
         if search:
             lowered = search.lower()
             data = [
@@ -48,18 +48,15 @@ class Query:
             ]
         if limit is not None:
             data = data[:limit]
-        
+
         # Convert to ScrapedItem objects
-        return [
-            ScrapedItem(id=str(i), data=item) 
-            for i, item in enumerate(data)
-        ]
+        return [ScrapedItem(id=str(i), data=item) for i, item in enumerate(data)]
 
     @strawberry.field
     def job(self, id: ID) -> Optional[Job]:
         """Return a single job by ID."""
 
-        status = getattr(api, 'jobs', {}).get(str(id))
+        status = getattr(api, "jobs", {}).get(str(id))
         if status is None:
             return None
         # Handle both dict and string status types

@@ -26,6 +26,7 @@ from sqlalchemy.ext.declarative import declarative_base
 @dataclass
 class SpiderInfo:
     """Spider metadata information"""
+
     name: str
     version: str
     author: str
@@ -38,15 +39,16 @@ class SpiderInfo:
     homepage: Optional[str] = None
     repository: Optional[str] = None
     documentation: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 
 class MarketplaceSpider(Base):
     """Database model for marketplace spiders"""
+
     __tablename__ = "marketplace_spiders"
-    
+
     id = Column(Integer, primary_key=True)
     name = Column(String(255), unique=True, index=True)
     version = Column(String(50))
@@ -72,20 +74,20 @@ class MarketplaceSpider(Base):
 
 class SpiderMarketplace:
     """Main spider marketplace manager"""
-    
+
     def __init__(self, config_path: Optional[str] = None):
         self.config_path = config_path or "config/marketplace.yaml"
         self.spiders_dir = Path("business_intel_scraper/modules/marketplace_spiders")
         self.cache_dir = Path("data/marketplace_cache")
         self.temp_dir = Path("data/temp")
-        
+
         # Create directories
         self.spiders_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.temp_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.config = self._load_config()
-        
+
     def _load_config(self) -> Dict[str, Any]:
         """Load marketplace configuration"""
         default_config = {
@@ -96,73 +98,83 @@ class SpiderMarketplace:
                 "verify_signatures": True,
                 "allowed_categories": [
                     "business-intelligence",
-                    "news-scraping", 
+                    "news-scraping",
                     "social-media",
                     "e-commerce",
                     "job-boards",
                     "research",
                     "monitoring",
-                    "osint"
+                    "osint",
                 ],
                 "validation": {
                     "max_package_size": "10MB",
                     "scan_timeout": 30,
-                    "test_timeout": 60
-                }
+                    "test_timeout": 60,
+                },
             }
         }
-        
+
         try:
             if os.path.exists(self.config_path):
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, "r") as f:
                     user_config = yaml.safe_load(f)
                     # Merge with defaults
                     default_config.update(user_config)
         except Exception as e:
             print(f"Warning: Could not load config from {self.config_path}: {e}")
-            
+
         return default_config
 
-    def search_spiders(self, query: str = "", category: str = "", 
-                      tags: Optional[List[str]] = None, limit: int = 20) -> List[Dict[str, Any]]:
+    def search_spiders(
+        self,
+        query: str = "",
+        category: str = "",
+        tags: Optional[List[str]] = None,
+        limit: int = 20,
+    ) -> List[Dict[str, Any]]:
         """Search for spiders in the marketplace"""
         # For now, return local spiders and sample marketplace data
         local_spiders = self._get_local_spiders()
         sample_spiders = self._get_sample_marketplace_spiders()
-        
+
         all_spiders = local_spiders + sample_spiders
-        
+
         # Apply filters
         if query:
-            all_spiders = [s for s in all_spiders 
-                          if query.lower() in s['name'].lower() 
-                          or query.lower() in s['description'].lower()]
-        
+            all_spiders = [
+                s
+                for s in all_spiders
+                if query.lower() in s["name"].lower()
+                or query.lower() in s["description"].lower()
+            ]
+
         if category:
-            all_spiders = [s for s in all_spiders 
-                          if s['category'].lower() == category.lower()]
-        
+            all_spiders = [
+                s for s in all_spiders if s["category"].lower() == category.lower()
+            ]
+
         if tags:
-            all_spiders = [s for s in all_spiders 
-                          if any(tag in s.get('tags', []) for tag in tags)]
-        
+            all_spiders = [
+                s for s in all_spiders if any(tag in s.get("tags", []) for tag in tags)
+            ]
+
         return all_spiders[:limit]
 
     def _get_local_spiders(self) -> List[Dict[str, Any]]:
         """Get locally installed spiders"""
         local_spiders = []
-        
+
         for spider_dir in self.spiders_dir.iterdir():
             if spider_dir.is_dir() and (spider_dir / "spider.yaml").exists():
                 try:
-                    with open(spider_dir / "spider.yaml", 'r') as f:
+                    with open(spider_dir / "spider.yaml", "r") as f:
                         spider_info = yaml.safe_load(f)
-                        spider_info['installed'] = True
-                        spider_info['local_path'] = str(spider_dir)
+                        spider_info["installed"] = True
+                        spider_info["local_path"] = str(spider_dir)
                         local_spiders.append(spider_info)
                 except Exception as e:
                     print(f"Error loading spider {spider_dir.name}: {e}")
-        
+
         return local_spiders
 
     def _get_sample_marketplace_spiders(self) -> List[Dict[str, Any]]:
@@ -183,11 +195,11 @@ class SpiderMarketplace:
                 "rating_count": 89,
                 "verified": True,
                 "installed": False,
-                "package_url": "https://github.com/datahunters/linkedin-scraper/archive/v1.2.0.zip"
+                "package_url": "https://github.com/datahunters/linkedin-scraper/archive/v1.2.0.zip",
             },
             {
                 "name": "indeed-job-scraper",
-                "version": "2.1.1", 
+                "version": "2.1.1",
                 "author": "JobScrapers",
                 "description": "Comprehensive job posting scraper for Indeed with salary and company details",
                 "category": "job-boards",
@@ -200,7 +212,7 @@ class SpiderMarketplace:
                 "rating_count": 156,
                 "verified": True,
                 "installed": False,
-                "package_url": "https://github.com/jobscrapers/indeed-scraper/archive/v2.1.1.zip"
+                "package_url": "https://github.com/jobscrapers/indeed-scraper/archive/v2.1.1.zip",
             },
             {
                 "name": "twitter-sentiment-monitor",
@@ -217,7 +229,7 @@ class SpiderMarketplace:
                 "rating_count": 67,
                 "verified": False,
                 "installed": False,
-                "package_url": "https://github.com/sentimentlab/twitter-monitor/archive/v1.5.3.zip"
+                "package_url": "https://github.com/sentimentlab/twitter-monitor/archive/v1.5.3.zip",
             },
             {
                 "name": "ecommerce-price-tracker",
@@ -234,7 +246,7 @@ class SpiderMarketplace:
                 "rating_count": 234,
                 "verified": True,
                 "installed": False,
-                "package_url": "https://github.com/pricewatch/ecommerce-tracker/archive/v3.0.2.zip"
+                "package_url": "https://github.com/pricewatch/ecommerce-tracker/archive/v3.0.2.zip",
             },
             {
                 "name": "news-aggregator-pro",
@@ -251,76 +263,85 @@ class SpiderMarketplace:
                 "rating_count": 45,
                 "verified": True,
                 "installed": False,
-                "package_url": "https://marketplace.spider-registry.com/packages/news-aggregator-pro-1.8.0.zip"
-            }
+                "package_url": "https://marketplace.spider-registry.com/packages/news-aggregator-pro-1.8.0.zip",
+            },
         ]
 
-    def install_spider(self, spider_name: str, version: str = "latest") -> Dict[str, Any]:
+    def install_spider(
+        self, spider_name: str, version: str = "latest"
+    ) -> Dict[str, Any]:
         """Install a spider from the marketplace"""
         try:
             # Find spider in marketplace
             spiders = self.search_spiders(query=spider_name)
             spider_info = None
-            
+
             for spider in spiders:
-                if spider['name'] == spider_name:
-                    if version == "latest" or spider['version'] == version:
+                if spider["name"] == spider_name:
+                    if version == "latest" or spider["version"] == version:
                         spider_info = spider
                         break
-            
+
             if not spider_info:
                 return {"success": False, "error": f"Spider {spider_name} not found"}
-            
-            if spider_info.get('installed'):
-                return {"success": False, "error": f"Spider {spider_name} already installed"}
-            
+
+            if spider_info.get("installed"):
+                return {
+                    "success": False,
+                    "error": f"Spider {spider_name} already installed",
+                }
+
             # Download and install
             result = self._download_and_install_spider(spider_info)
-            
+
             if result["success"]:
                 # Update download count (in real implementation)
                 pass
-                
+
             return result
-            
+
         except Exception as e:
             return {"success": False, "error": f"Installation failed: {str(e)}"}
 
-    def _download_and_install_spider(self, spider_info: Dict[str, Any]) -> Dict[str, Any]:
+    def _download_and_install_spider(
+        self, spider_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Download and install a spider package"""
-        spider_name = spider_info['name']
-        package_url = spider_info.get('package_url')
-        
+        spider_name = spider_info["name"]
+        package_url = spider_info.get("package_url")
+
         if not package_url:
             return {"success": False, "error": "No package URL provided"}
-        
+
         try:
             # Create spider directory
             spider_dir = self.spiders_dir / spider_name
             if spider_dir.exists():
                 shutil.rmtree(spider_dir)
             spider_dir.mkdir(parents=True)
-            
+
             # For demonstration, create a sample spider structure
             self._create_sample_spider_structure(spider_dir, spider_info)
-            
+
             return {
                 "success": True,
                 "message": f"Spider {spider_name} installed successfully",
-                "path": str(spider_dir)
+                "path": str(spider_dir),
             }
-            
+
         except Exception as e:
             return {"success": False, "error": f"Download failed: {str(e)}"}
 
-    def _create_sample_spider_structure(self, spider_dir: Path, spider_info: Dict[str, Any]) -> None:
+    def _create_sample_spider_structure(
+        self, spider_dir: Path, spider_info: Dict[str, Any]
+    ) -> None:
         """Create a sample spider structure for demonstration"""
-        spider_name = spider_info['name']
-        
+        spider_name = spider_info["name"]
+
         # Create spider.yaml metadata
-        with open(spider_dir / "spider.yaml", 'w') as f:
+        with open(spider_dir / "spider.yaml", "w") as f:
             yaml.dump(spider_info, f, default_flow_style=False)
-        
+
         # Create main spider file
         spider_code = f'''"""
 {spider_info['description']}
@@ -380,15 +401,15 @@ class {spider_name.replace('-', '_').title()}Spider(scrapy.Spider):
             'version': '{spider_info["version"]}'
         }}
 '''
-        
-        with open(spider_dir / f"{spider_name.replace('-', '_')}.py", 'w') as f:
+
+        with open(spider_dir / f"{spider_name.replace('-', '_')}.py", "w") as f:
             f.write(spider_code)
-        
+
         # Create requirements file
-        with open(spider_dir / "requirements.txt", 'w') as f:
-            for req in spider_info.get('requirements', []):
+        with open(spider_dir / "requirements.txt", "w") as f:
+            for req in spider_info.get("requirements", []):
                 f.write(f"{req}\\n")
-        
+
         # Create README
         readme_content = f"""# {spider_info['name']}
 
@@ -417,25 +438,28 @@ spider = {spider_name.replace('-', '_').title()}Spider()
 ## Requirements
 {chr(10).join(f"- {req}" for req in spider_info.get('requirements', []))}
 """
-        
-        with open(spider_dir / "README.md", 'w') as f:
+
+        with open(spider_dir / "README.md", "w") as f:
             f.write(readme_content)
 
     def uninstall_spider(self, spider_name: str) -> Dict[str, Any]:
         """Uninstall a spider"""
         try:
             spider_dir = self.spiders_dir / spider_name
-            
+
             if not spider_dir.exists():
-                return {"success": False, "error": f"Spider {spider_name} not installed"}
-            
+                return {
+                    "success": False,
+                    "error": f"Spider {spider_name} not installed",
+                }
+
             shutil.rmtree(spider_dir)
-            
+
             return {
                 "success": True,
-                "message": f"Spider {spider_name} uninstalled successfully"
+                "message": f"Spider {spider_name} uninstalled successfully",
             }
-            
+
         except Exception as e:
             return {"success": False, "error": f"Uninstallation failed: {str(e)}"}
 
@@ -446,11 +470,11 @@ spider = {spider_name.replace('-', '_').title()}Spider()
     def get_spider_info(self, spider_name: str) -> Optional[Dict[str, Any]]:
         """Get detailed information about a spider"""
         spiders = self.search_spiders(query=spider_name)
-        
+
         for spider in spiders:
-            if spider['name'] == spider_name:
+            if spider["name"] == spider_name:
                 return spider
-        
+
         return None
 
     def validate_spider(self, spider_path: str) -> Dict[str, Any]:
@@ -462,51 +486,48 @@ spider = {spider_name.replace('-', '_').title()}Spider()
                 "has_spider_class": False,
                 "requirements_valid": False,
                 "syntax_valid": False,
-                "security_scan": False
+                "security_scan": False,
             }
-            
+
             spider_dir = Path(spider_path)
-            
+
             # Check for metadata file
             if (spider_dir / "spider.yaml").exists():
                 checks["has_metadata"] = True
-            
+
             # Check for Python files with spider classes
             for py_file in spider_dir.glob("*.py"):
-                with open(py_file, 'r') as f:
+                with open(py_file, "r") as f:
                     content = f.read()
                     if "scrapy.Spider" in content and "class " in content:
                         checks["has_spider_class"] = True
-                        
+
                         # Basic syntax check
                         try:
-                            compile(content, py_file.name, 'exec')
+                            compile(content, py_file.name, "exec")
                             checks["syntax_valid"] = True
                         except SyntaxError:
                             pass
-            
+
             # Check requirements
             if (spider_dir / "requirements.txt").exists():
                 checks["requirements_valid"] = True
-            
+
             # Security scan (basic)
             checks["security_scan"] = self._basic_security_scan(spider_dir)
-            
+
             passed = sum(checks.values())
             total = len(checks)
-            
+
             return {
                 "valid": passed == total,
                 "score": passed / total,
                 "checks": checks,
-                "issues": [check for check, passed in checks.items() if not passed]
+                "issues": [check for check, passed in checks.items() if not passed],
             }
-            
+
         except Exception as e:
-            return {
-                "valid": False,
-                "error": f"Validation failed: {str(e)}"
-            }
+            return {"valid": False, "error": f"Validation failed: {str(e)}"}
 
     def _basic_security_scan(self, spider_dir: Path) -> bool:
         """Perform basic security scanning"""
@@ -518,60 +539,64 @@ spider = {spider_name.replace('-', '_').title()}Spider()
             "open(",
             "file(",
             "os.system",
-            "os.popen"
+            "os.popen",
         ]
-        
+
         for py_file in spider_dir.glob("*.py"):
             try:
-                with open(py_file, 'r') as f:
+                with open(py_file, "r") as f:
                     content = f.read()
                     for pattern in dangerous_patterns:
                         if pattern in content:
                             return False
             except Exception:
                 return False
-        
+
         return True
 
-    def publish_spider(self, spider_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def publish_spider(
+        self, spider_path: str, metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Publish a spider to the marketplace (local registry)"""
         try:
             # Validate spider first
             validation = self.validate_spider(spider_path)
-            
+
             if not validation["valid"]:
                 return {
                     "success": False,
                     "error": "Spider validation failed",
-                    "validation": validation
+                    "validation": validation,
                 }
-            
+
             # Create package
             spider_name = metadata["name"]
             version = metadata["version"]
-            
+
             # For demonstration, just copy to marketplace directory
             marketplace_dir = self.cache_dir / "published" / f"{spider_name}-{version}"
             marketplace_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Copy spider files
             spider_source = Path(spider_path)
             for item in spider_source.iterdir():
                 if item.is_file():
                     shutil.copy2(item, marketplace_dir)
                 elif item.is_dir():
-                    shutil.copytree(item, marketplace_dir / item.name, dirs_exist_ok=True)
-            
+                    shutil.copytree(
+                        item, marketplace_dir / item.name, dirs_exist_ok=True
+                    )
+
             # Save metadata
-            with open(marketplace_dir / "spider.yaml", 'w') as f:
+            with open(marketplace_dir / "spider.yaml", "w") as f:
                 yaml.dump(metadata, f, default_flow_style=False)
-            
+
             return {
                 "success": True,
                 "message": f"Spider {spider_name} v{version} published successfully",
-                "package_path": str(marketplace_dir)
+                "package_path": str(marketplace_dir),
             }
-            
+
         except Exception as e:
             return {"success": False, "error": f"Publishing failed: {str(e)}"}
 
@@ -584,11 +609,11 @@ spider = {spider_name.replace('-', '_').title()}Spider()
         """Get marketplace statistics"""
         local_spiders = self._get_local_spiders()
         sample_spiders = self._get_sample_marketplace_spiders()
-        
+
         return {
             "total_spiders": len(sample_spiders),
             "installed_spiders": len(local_spiders),
             "categories": len(self.get_categories()),
-            "verified_spiders": len([s for s in sample_spiders if s.get('verified')]),
-            "total_downloads": sum(s.get('downloads', 0) for s in sample_spiders)
+            "verified_spiders": len([s for s in sample_spiders if s.get("verified")]),
+            "total_downloads": sum(s.get("downloads", 0) for s in sample_spiders),
         }

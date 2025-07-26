@@ -9,8 +9,4 @@ from .adaptive_scraper import AdaptiveBusinessScraper
 from .schema_detector import SchemaDetector
 from .template_manager import TemplateManager
 
-__all__ = [
-    'AdaptiveBusinessScraper',
-    'SchemaDetector', 
-    'TemplateManager'
-]
+__all__ = ["AdaptiveBusinessScraper", "SchemaDetector", "TemplateManager"]

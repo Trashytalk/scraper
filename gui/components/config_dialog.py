@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import yaml
 from pathlib import Path
 
 # PyQt6 is preferred. Fallback to PyQt5 if needed.

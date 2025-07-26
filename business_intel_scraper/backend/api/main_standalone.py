@@ -8,7 +8,7 @@ from .visualization_standalone import router as visualization_router
 app = FastAPI(
     title="Business Intelligence Scraper API",
     description="API for visual analytics and data visualization",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Add CORS middleware
@@ -22,19 +22,21 @@ app.add_middleware(
 
 # Include visualization router
 app.include_router(
-    visualization_router,
-    prefix="/api/visualization",
-    tags=["visualization"]
+    visualization_router, prefix="/api/visualization", tags=["visualization"]
 )
+
 
 @app.get("/")
 async def root():
     return {"message": "Visual Analytics API is running"}
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "visual-analytics-api"}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

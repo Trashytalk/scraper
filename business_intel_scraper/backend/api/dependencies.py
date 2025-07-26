@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Callable, Any
+from typing import Any
 
 from fastapi import Depends, Header, HTTPException, status
 import jwt
@@ -18,24 +18,24 @@ def require_token(authorization: str = Header(...)) -> str:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authorization header format",
             )
-        
+
         token = authorization.split(" ")[1]
-        
+
         # Verify token
         secret_key = os.getenv("SECRET_KEY", "secret")
         algorithm = os.getenv("JWT_ALGORITHM", "HS256")
-        
+
         payload = jwt.decode(token, secret_key, algorithms=[algorithm])
         user_id = payload.get("sub")
-        
+
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
             )
-            
-        return user_id
-        
+
+        return str(user_id)
+
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

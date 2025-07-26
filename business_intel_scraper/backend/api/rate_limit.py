@@ -15,13 +15,17 @@ from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Limit number of requests per client within a time window."""
 
-    def __init__(self, app: Callable[..., Any], limit: int = 60, window: int = 60) -> None:
+    def __init__(
+        self, app: Callable[..., Any], limit: int = 60, window: int = 60
+    ) -> None:
         super().__init__(app)
         self.limit = limit
         self.window = window
         self._requests: dict[str, deque[float]] = defaultdict(deque)
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         client_ip = request.client.host if request.client else "unknown"
         now = time()
         history = self._requests[client_ip]

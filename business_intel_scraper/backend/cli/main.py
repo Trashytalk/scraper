@@ -1,6 +1,6 @@
 import argparse
 import json
-from typing import Optional, Any
+from typing import Optional
 import click
 
 from business_intel_scraper.backend.workers.tasks import run_spider_task
@@ -11,7 +11,7 @@ from business_intel_scraper.backend.modules.scrapers.integrations import (
     run_nmap,
 )
 
-# Import marketplace CLI  
+# Import marketplace CLI
 try:
     from ..marketplace.cli import marketplace
 except ImportError:
@@ -20,6 +20,7 @@ except ImportError:
 # Import analytics CLI
 try:
     from ..analytics.cli import analytics
+
     analytics_cli: Optional[click.Group] = analytics
 except ImportError:
     analytics_cli: Optional[click.Group] = None
@@ -63,13 +64,21 @@ def main() -> None:
 
     # Add marketplace command if available
     if marketplace:
-        marketplace_parser = subparsers.add_parser("marketplace", help="Spider marketplace commands")
-        marketplace_parser.set_defaults(func=lambda args: marketplace.main(standalone_mode=False))
+        marketplace_parser = subparsers.add_parser(
+            "marketplace", help="Spider marketplace commands"
+        )
+        marketplace_parser.set_defaults(
+            func=lambda args: marketplace.main(standalone_mode=False)
+        )
 
     # Add analytics command if available
     if analytics_cli:
-        analytics_parser = subparsers.add_parser("analytics", help="Analytics dashboard commands")
-        analytics_parser.set_defaults(func=lambda args: analytics_cli.main(standalone_mode=False))
+        analytics_parser = subparsers.add_parser(
+            "analytics", help="Analytics dashboard commands"
+        )
+        analytics_parser.set_defaults(
+            func=lambda args: analytics_cli.main(standalone_mode=False)
+        )
 
     # Add discovery command if available
     if setup_discovery_parser:
@@ -86,19 +95,24 @@ def main() -> None:
     elif args.command == "marketplace" and marketplace:
         # Handle marketplace commands through Click
         import sys
+
         marketplace.main(sys.argv[2:], standalone_mode=False)
     elif args.command == "analytics" and analytics_cli:
         # Handle analytics commands through Click
         import sys
+
         analytics_cli.main(sys.argv[2:], standalone_mode=False)
     elif args.command == "discovery" and setup_discovery_parser:
         # Handle discovery commands
         from .discovery import main as discovery_main
         import sys
+
         original_argv = sys.argv
         try:
             # Set up argv for discovery command
-            sys.argv = ['discovery'] + sys.argv[2:]  # Remove main script name and 'discovery'
+            sys.argv = ["discovery"] + sys.argv[
+                2:
+            ]  # Remove main script name and 'discovery'
             discovery_main()
         finally:
             sys.argv = original_argv

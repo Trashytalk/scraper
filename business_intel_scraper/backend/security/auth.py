@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timedelta
-from typing import Any, Dict, Callable, Optional
+from typing import Any, Dict, Optional
 
 import jwt
 from fastapi import Depends, Header, HTTPException, status
@@ -14,21 +14,23 @@ from ..db.models import UserRole
 
 class AuthManager:
     """Authentication manager for handling user authentication"""
-    
+
     def __init__(self, secret_key: Optional[str] = None):
         self.secret_key = secret_key or os.getenv("JWT_SECRET", "secret")
         self.algorithm = os.getenv("JWT_ALGORITHM", "HS256")
-        
-    def create_token(self, user_id: str, expires_delta: Optional[timedelta] = None) -> str:
+
+    def create_token(
+        self, user_id: str, expires_delta: Optional[timedelta] = None
+    ) -> str:
         """Create a JWT token for a user"""
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
         else:
             expire = datetime.utcnow() + timedelta(hours=24)
-            
+
         to_encode = {"sub": user_id, "exp": expire}
         return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        
+
     def verify_token(self, token: str) -> bool:
         """Verify a JWT token"""
         return verify_token(token)

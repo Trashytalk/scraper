@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/osint", tags=["osint"])
 
 class OSINTSearch(BaseModel):
     """OSINT search request model."""
+
     query: str
     search_type: str
     options: Dict[str, Any] = {}
@@ -21,6 +22,7 @@ class OSINTSearch(BaseModel):
 
 class OSINTResult(BaseModel):
     """OSINT search result model."""
+
     source: str
     data: Dict[str, Any]
     confidence: int
@@ -29,6 +31,7 @@ class OSINTResult(BaseModel):
 
 class Investigation(BaseModel):
     """Investigation model."""
+
     id: int
     name: str
     target: str
@@ -49,7 +52,7 @@ MOCK_INVESTIGATIONS = [
         "status": "completed",
         "created": "2025-07-22T09:00:00Z",
         "findings": 15,
-        "risk_level": "medium"
+        "risk_level": "medium",
     },
     {
         "id": 2,
@@ -59,7 +62,7 @@ MOCK_INVESTIGATIONS = [
         "status": "running",
         "created": "2025-07-22T10:30:00Z",
         "findings": 8,
-        "risk_level": "low"
+        "risk_level": "low",
     },
     {
         "id": 3,
@@ -69,8 +72,8 @@ MOCK_INVESTIGATIONS = [
         "status": "pending",
         "created": "2025-07-22T11:15:00Z",
         "findings": 0,
-        "risk_level": "unknown"
-    }
+        "risk_level": "unknown",
+    },
 ]
 
 
@@ -79,7 +82,7 @@ async def search_osint(search_request: OSINTSearch) -> List[OSINTResult]:
     """Perform OSINT search."""
     # Mock search results based on search type
     results = []
-    
+
     if search_request.search_type == "domain":
         results = [
             {
@@ -89,21 +92,21 @@ async def search_osint(search_request: OSINTSearch) -> List[OSINTResult]:
                     "registrar": "Example Registrar Inc.",
                     "created": "2020-01-15",
                     "expires": "2026-01-15",
-                    "status": "Active"
+                    "status": "Active",
                 },
                 "confidence": 95,
-                "timestamp": datetime.now().isoformat() + "Z"
+                "timestamp": datetime.now().isoformat() + "Z",
             },
             {
                 "source": "DNS Records",
                 "data": {
                     "a_records": ["192.168.1.1", "192.168.1.2"],
                     "mx_records": ["mail.example.com"],
-                    "ns_records": ["ns1.example.com", "ns2.example.com"]
+                    "ns_records": ["ns1.example.com", "ns2.example.com"],
                 },
                 "confidence": 100,
-                "timestamp": datetime.now().isoformat() + "Z"
-            }
+                "timestamp": datetime.now().isoformat() + "Z",
+            },
         ]
     elif search_request.search_type == "email":
         results = [
@@ -111,12 +114,16 @@ async def search_osint(search_request: OSINTSearch) -> List[OSINTResult]:
                 "source": "Email Intelligence",
                 "data": {
                     "email": search_request.query,
-                    "domain": search_request.query.split('@')[1] if '@' in search_request.query else "unknown",
+                    "domain": (
+                        search_request.query.split("@")[1]
+                        if "@" in search_request.query
+                        else "unknown"
+                    ),
                     "verified": True,
-                    "breach_count": 2
+                    "breach_count": 2,
                 },
                 "confidence": 85,
-                "timestamp": datetime.now().isoformat() + "Z"
+                "timestamp": datetime.now().isoformat() + "Z",
             }
         ]
     elif search_request.search_type == "ip":
@@ -127,13 +134,13 @@ async def search_osint(search_request: OSINTSearch) -> List[OSINTResult]:
                     "ip": search_request.query,
                     "country": "United States",
                     "city": "New York",
-                    "isp": "Example ISP"
+                    "isp": "Example ISP",
                 },
                 "confidence": 90,
-                "timestamp": datetime.now().isoformat() + "Z"
+                "timestamp": datetime.now().isoformat() + "Z",
             }
         ]
-    
+
     return [OSINTResult(**result) for result in results]
 
 
@@ -145,10 +152,7 @@ async def get_investigations() -> List[Investigation]:
 
 @router.post("/investigations", response_model=Investigation)
 async def create_investigation(
-    name: str,
-    target: str,
-    investigation_type: str,
-    priority: str = "medium"
+    name: str, target: str, investigation_type: str, priority: str = "medium"
 ) -> Investigation:
     """Create a new investigation."""
     new_investigation = {
@@ -159,7 +163,7 @@ async def create_investigation(
         "status": "pending",
         "created": datetime.now().isoformat() + "Z",
         "findings": 0,
-        "risk_level": "unknown"
+        "risk_level": "unknown",
     }
     MOCK_INVESTIGATIONS.append(new_investigation)
     return Investigation(**new_investigation)
@@ -187,22 +191,22 @@ async def get_threat_intelligence() -> Dict[str, Any]:
                 "value": "suspicious-domain.com",
                 "risk": "high",
                 "description": "Newly registered domain with suspicious patterns",
-                "timestamp": "2025-07-22T11:45:00Z"
+                "timestamp": "2025-07-22T11:45:00Z",
             },
             {
                 "type": "ip",
                 "value": "192.168.100.50",
-                "risk": "medium", 
+                "risk": "medium",
                 "description": "Unusual traffic patterns detected",
-                "timestamp": "2025-07-22T11:30:00Z"
-            }
+                "timestamp": "2025-07-22T11:30:00Z",
+            },
         ],
         "threat_categories": {
             "malware": 12,
             "phishing": 8,
             "reconnaissance": 15,
-            "data_breach": 3
-        }
+            "data_breach": 3,
+        },
     }
 
 
@@ -216,37 +220,37 @@ async def get_osint_sources() -> Dict[str, Any]:
                 "type": "domain",
                 "status": "active",
                 "rate_limit": "100/hour",
-                "description": "Domain registration information"
+                "description": "Domain registration information",
             },
             {
                 "name": "DNS Records",
                 "type": "domain",
-                "status": "active", 
+                "status": "active",
                 "rate_limit": "unlimited",
-                "description": "DNS record lookup"
+                "description": "DNS record lookup",
             },
             {
                 "name": "Social Media Scanner",
                 "type": "general",
                 "status": "active",
                 "rate_limit": "50/hour",
-                "description": "Social media platform search"
+                "description": "Social media platform search",
             },
             {
                 "name": "Breach Database",
                 "type": "email",
                 "status": "active",
-                "rate_limit": "20/hour", 
-                "description": "Data breach information"
+                "rate_limit": "20/hour",
+                "description": "Data breach information",
             },
             {
                 "name": "IP Geolocation",
                 "type": "ip",
                 "status": "active",
                 "rate_limit": "1000/day",
-                "description": "IP address geolocation data"
-            }
+                "description": "IP address geolocation data",
+            },
         ],
         "total_sources": 5,
-        "active_sources": 5
+        "active_sources": 5,
     }

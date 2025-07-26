@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import os
 import time
+from datetime import datetime
 from typing import Any, Dict, Union
 
 import requests
@@ -28,7 +29,23 @@ class CaptchaSolver:
         str
             The solved CAPTCHA text.
         """
-        raise NotImplementedError("Captcha solving not implemented")
+        # Default implementation for simple text-based captchas
+        # Override this method in subclasses for specific services
+        import base64
+        import os
+        
+        # Log the CAPTCHA attempt
+        captcha_dir = os.path.join(os.getcwd(), "captcha_logs")
+        os.makedirs(captcha_dir, exist_ok=True)
+        
+        # Save image for manual review if needed
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        image_path = os.path.join(captcha_dir, f"captcha_{timestamp}.png")
+        with open(image_path, "wb") as f:
+            f.write(image)
+        
+        # For now, return a placeholder that indicates manual intervention needed
+        return f"MANUAL_SOLVE_REQUIRED:{image_path}"
 
 
 class TwoCaptchaSolver(CaptchaSolver):
@@ -54,7 +71,12 @@ class TwoCaptchaSolver(CaptchaSolver):
         return str(result["request"])
 
     def _retrieve(self, captcha_id: str) -> str:
-        params: Dict[str, Union[str, int]] = {"key": self.api_key, "action": "get", "id": captcha_id, "json": 1}
+        params: Dict[str, Union[str, int]] = {
+            "key": self.api_key,
+            "action": "get",
+            "id": captcha_id,
+            "json": 1,
+        }
         url = f"{self.api_url}/res.php"
         while True:
             response = requests.get(url, params=params, timeout=15)
@@ -79,8 +101,22 @@ class EnvTwoCaptchaSolver(TwoCaptchaSolver):
         api_key = os.getenv("CAPTCHA_API_KEY")
         api_url = os.getenv("CAPTCHA_API_URL", "https://2captcha.com")
         if not api_key:
-            raise NotImplementedError("CAPTCHA_API_KEY not configured")
+            import warnings
+            warnings.warn(
+                "CAPTCHA_API_KEY not configured. Set environment variable CAPTCHA_API_KEY "
+                "to enable automated CAPTCHA solving, or captchas will require manual intervention.",
+                UserWarning
+            )
+            # Fall back to base solver which saves images for manual review
+            self._base_solver = CaptchaSolver()
+            return
         super().__init__(api_key, api_url, poll_interval=poll_interval)
+    
+    def solve(self, image: bytes, **kwargs: Any) -> str:
+        """Solve CAPTCHA, falling back to manual review if API not configured."""
+        if hasattr(self, '_base_solver'):
+            return self._base_solver.solve(image, **kwargs)
+        return super().solve(image, **kwargs)
 
 
 class HTTPCaptchaSolver(CaptchaSolver):
@@ -116,6 +152,8 @@ def solve_captcha(
         api_key = os.getenv("CAPTCHA_API_KEY")
         api_url = os.getenv("CAPTCHA_API_URL", "https://2captcha.com")
         if not api_key:
-            raise NotImplementedError("CAPTCHA_API_KEY not configured")
-        solver = TwoCaptchaSolver(api_key, api_url)
+            # Fall back to environment-based solver with manual fallback
+            solver = EnvTwoCaptchaSolver()
+        else:
+            solver = TwoCaptchaSolver(api_key, api_url)
     return solver.solve(image, **kwargs)

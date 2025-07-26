@@ -15,7 +15,7 @@ from .dashboard import DashboardAnalytics
 
 __all__ = [
     "AnalyticsEngine",
-    "MetricsCollector", 
+    "MetricsCollector",
     "InsightsGenerator",
     "DashboardAnalytics",
 ]

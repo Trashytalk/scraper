@@ -11,7 +11,7 @@ This module implements ML-powered crawling intelligence and automated source dis
 
 Phase 1 Implementation (COMPLETED):
 - Core Automated Discovery with multi-bot strategies
-- Source registry with persistence and confidence scoring  
+- Source registry with persistence and confidence scoring
 - Celery task integration for scheduled discovery
 - CLI tools and marketplace integration
 
@@ -20,7 +20,7 @@ Usage:
     from .automated_discovery import AutomatedDiscoveryManager
     manager = AutomatedDiscoveryManager()
     sources = await manager.discover_sources(['https://example.com'])
-    
+
     # Intelligent Crawling
     from .scheduler import IntelligentCrawlScheduler
     scheduler = IntelligentCrawlScheduler()
@@ -37,29 +37,25 @@ try:
         DomainScannerBot,
         SearchEngineBot,
         HeuristicAnalyzerBot,
-        SourceRegistry
+        SourceRegistry,
     )
     from .marketplace_integration import MarketplaceIntegration
-    
+
     __all__ = [
-        'IntelligentCrawlScheduler',
-        'AutomatedDiscoveryManager',
-        'DiscoveredSource', 
-        'SourceDiscoveryBot',
-        'DomainScannerBot',
-        'SearchEngineBot',
-        'HeuristicAnalyzerBot',
-        'SourceRegistry',
-        'MarketplaceIntegration'
+        "IntelligentCrawlScheduler",
+        "AutomatedDiscoveryManager",
+        "DiscoveredSource",
+        "SourceDiscoveryBot",
+        "DomainScannerBot",
+        "SearchEngineBot",
+        "HeuristicAnalyzerBot",
+        "SourceRegistry",
+        "MarketplaceIntegration",
     ]
-except ImportError as e:
+except ImportError:
     # Automated discovery not available
-    __all__ = ['IntelligentCrawlScheduler']
+    __all__ = ["IntelligentCrawlScheduler"]
 from .classifier import AdaptiveLinkClassifier
 from .graph_analyzer import CrawlGraphAnalyzer
 
-__all__ = [
-    'IntelligentCrawlScheduler',
-    'AdaptiveLinkClassifier', 
-    'CrawlGraphAnalyzer'
-]
+__all__ = ["IntelligentCrawlScheduler", "AdaptiveLinkClassifier", "CrawlGraphAnalyzer"]

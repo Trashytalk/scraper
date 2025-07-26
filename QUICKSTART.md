@@ -2,6 +2,34 @@
 
 Get the Business Intelligence Scraper running in under 5 minutes!
 
+## ⚡ **NEW: One-Command Setup**
+
+```bash
+# Clone and start instantly with our comprehensive quick start script
+git clone https://github.com/Trashytalk/scraper.git
+cd scraper
+./quick_start.sh
+```
+
+**This single command will:**
+- ✅ Check system requirements (Python 3.8+)
+- ✅ Set up virtual environment automatically
+- ✅ Install all dependencies
+- ✅ Configure the application
+- ✅ Initialize database
+- ✅ Start Redis (via Docker if needed)
+- ✅ Launch web server on port 8000
+- ✅ Show access information and examples
+
+**Additional Quick Start Options:**
+```bash
+./quick_start.sh --help       # Show all options
+./quick_start.sh --dev        # Start in development mode
+./quick_start.sh --status     # Check service status
+./quick_start.sh --stop       # Stop all services
+./quick_start.sh --clean      # Clean and reset
+```
+
 ## ⚡ One-Command Setup
 
 ```bash
@@ -104,6 +132,19 @@ npm start
 - ✅ **Rate limiting & security**
 - ✅ **Prometheus metrics**
 - ✅ **Docker containerization**
+
+## 🧪 Run Tests
+
+```bash
+# Run comprehensive test coverage
+python3 tests/run_full_coverage.py --parallel --coverage --save-reports
+
+# Run specific test suites
+python3 tests/run_full_coverage.py --suites root_modules gui_components
+
+# Run legacy test commands
+python -m pytest tests/ -v --cov=.
+```
 
 ## 🔧 Troubleshooting
 

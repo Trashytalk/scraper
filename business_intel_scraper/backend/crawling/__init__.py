@@ -5,7 +5,7 @@ This package implements the detailed best-practice pipeline for business intelli
 crawling with the following components:
 
 - AdvancedCrawlManager: Comprehensive crawling system with intelligence and efficiency
-- CrawlOrchestrator: High-level orchestrator for crawling operations  
+- CrawlOrchestrator: High-level orchestrator for crawling operations
 - EnhancedAdaptiveLinkClassifier: Enhanced link classification with business patterns
 - DiscoveredPage: Data structure for discovered page metadata
 - SeedSource: Configuration for seed sources
@@ -25,11 +25,11 @@ from .advanced_crawler import AdvancedCrawlManager, DiscoveredPage, SeedSource
 from .orchestrator import CrawlOrchestrator, EnhancedAdaptiveLinkClassifier
 
 __all__ = [
-    'AdvancedCrawlManager',
-    'CrawlOrchestrator', 
-    'EnhancedAdaptiveLinkClassifier',
-    'DiscoveredPage',
-    'SeedSource'
+    "AdvancedCrawlManager",
+    "CrawlOrchestrator",
+    "EnhancedAdaptiveLinkClassifier",
+    "DiscoveredPage",
+    "SeedSource",
 ]
 
-__version__ = '1.0.0'
+__version__ = "1.0.0"

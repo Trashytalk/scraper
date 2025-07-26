@@ -661,7 +661,7 @@ const App = () => {
     setIsSubmitting(true);
     try {
       // Use the new batch job creation endpoint
-      const response = await fetch('http://localhost:8000/api/jobs/batch', {
+      const response = await fetch('http://localhost:8002/api/jobs/batch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

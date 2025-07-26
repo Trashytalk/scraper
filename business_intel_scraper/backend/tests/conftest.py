@@ -3,11 +3,12 @@ Test configuration and fixtures for Phase 1 and Phase 2 testing.
 
 Provides shared fixtures and configuration for all test suites.
 """
+
 from __future__ import annotations
 
 import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock
 from pathlib import Path
 import tempfile
 import shutil
@@ -57,21 +58,25 @@ def mock_html_response():
 def mock_osint_response():
     """Mock OSINT tool response."""
     return {
-        'target': 'example.com',
-        'results': [
-            {'type': 'domain', 'value': 'example.com', 'source': 'DNS'},
-            {'type': 'email', 'value': 'contact@example.com', 'source': 'Website'},
-            {'type': 'social', 'value': 'twitter.com/example', 'source': 'Social Media'}
+        "target": "example.com",
+        "results": [
+            {"type": "domain", "value": "example.com", "source": "DNS"},
+            {"type": "email", "value": "contact@example.com", "source": "Website"},
+            {
+                "type": "social",
+                "value": "twitter.com/example",
+                "source": "Social Media",
+            },
         ],
-        'status': 'completed',
-        'scan_time': '2024-01-01T12:00:00Z'
+        "status": "completed",
+        "scan_time": "2024-01-01T12:00:00Z",
     }
 
 
-@pytest.fixture  
+@pytest.fixture
 def sample_spider_code():
     """Sample spider code for testing."""
-    return '''
+    return """
 import scrapy
 
 class TestBusinessSpider(scrapy.Spider):
@@ -86,7 +91,7 @@ class TestBusinessSpider(scrapy.Spider):
                 'registration': company.css('.reg-num::text').get(),
                 'address': company.css('.address::text').get()
             }
-    '''
+    """
 
 
 @pytest.fixture
@@ -102,7 +107,7 @@ def mock_aiohttp_session():
 
 # Test markers for organizing test execution
 pytest.mark.unit = pytest.mark.mark("unit")
-pytest.mark.integration = pytest.mark.mark("integration")  
+pytest.mark.integration = pytest.mark.mark("integration")
 pytest.mark.performance = pytest.mark.mark("performance")
 pytest.mark.load_test = pytest.mark.mark("load_test")
 
@@ -110,7 +115,7 @@ pytest.mark.load_test = pytest.mark.mark("load_test")
 def pytest_configure(config):
     """Configure pytest with custom markers."""
     config.addinivalue_line("markers", "unit: marks tests as unit tests")
-    config.addinivalue_line("markers", "integration: marks tests as integration tests") 
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "performance: marks tests as performance tests")
     config.addinivalue_line("markers", "load_test: marks tests as load tests")
     config.addinivalue_line("markers", "slow: marks tests as slow running")

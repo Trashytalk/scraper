@@ -12,6 +12,10 @@ Thank you for your interest in contributing to the Business Intelligence Scraper
 
 2. **Run Tests**
    ```bash
+   # Run comprehensive test coverage
+   python3 tests/run_full_coverage.py --parallel --coverage
+   
+   # Or run legacy test commands
    pytest
    ```
 
@@ -44,9 +48,13 @@ def extract_companies(html: str, country: str = "US") -> List[Dict[str, Any]]:
 ```
 
 ### Testing
-- **Unit Tests**: All new features must have unit tests
-- **Integration Tests**: Complex features should include integration tests  
-- **Test Coverage**: Aim for >90% test coverage on new code
+- **Comprehensive Testing**: All new features must include comprehensive tests using our 9-category testing framework
+- **Unit Tests**: Core functionality tests with business logic validation
+- **Integration Tests**: End-to-end workflow testing with cross-component validation
+- **Performance Tests**: Load testing and optimization validation for performance-critical features
+- **Security Tests**: Authentication, authorization, and vulnerability assessment
+- **GUI Tests**: Component testing and user interface validation for frontend features
+- **Test Coverage**: Aim for >90% test coverage on new code (use `python3 tests/run_full_coverage.py --coverage`)
 - **Test Naming**: Use descriptive test names that explain the scenario
 
 ```python

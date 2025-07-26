@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import AsyncGenerator, Callable, Awaitable, Union
+from typing import AsyncGenerator, Callable, Awaitable
 
 import aiofiles
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, HTTPException
@@ -36,7 +36,7 @@ from .schemas import (
 from ..db.models import UserRole
 from ..nlp import pipeline
 from ..utils.helpers import LOG_FILE
-from ..utils import export, setup_logging
+from ..utils import export
 from ..workers.tasks import get_task_status, launch_scraping_task
 
 setup_request_cache()
@@ -77,6 +77,7 @@ app.include_router(centralized_data_router)
 # Include performance router
 try:
     from .performance import router as performance_router
+
     app.include_router(performance_router)
 except ImportError as e:
     print(f"Warning: Could not import performance router: {e}")
@@ -84,6 +85,7 @@ except ImportError as e:
 # Include marketplace router
 try:
     from ..marketplace.api import router as marketplace_router
+
     app.include_router(marketplace_router)
 except ImportError as e:
     print(f"Warning: Could not import marketplace router: {e}")
@@ -91,6 +93,7 @@ except ImportError as e:
 # Include AI router
 try:
     from ..ai.api import router as ai_router
+
     app.include_router(ai_router)
 except ImportError as e:
     print(f"Warning: Could not import AI router: {e}")
@@ -98,6 +101,7 @@ except ImportError as e:
 # Include storage router
 try:
     from ..storage.api import router as storage_router
+
     app.include_router(storage_router, prefix="/api/v1")
 except ImportError as e:
     print(f"Warning: Could not import storage router: {e}")
@@ -105,6 +109,7 @@ except ImportError as e:
 # Include visualization router
 try:
     from .visualization import router as visualization_router
+
     app.include_router(visualization_router, prefix="/api/v1")
 except ImportError as e:
     print(f"Warning: Could not import visualization router: {e}")
@@ -122,7 +127,9 @@ app.mount("/metrics", metrics_app)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")

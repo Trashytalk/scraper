@@ -8,29 +8,31 @@ class NationalCompanyRegistrySpider(scrapy.Spider):
     """Spider for National company registries with multi-country support."""
 
     name = "national_company_registry"
-    
+
     # Default start URLs for various country registries
     start_urls = [
         # US - SEC EDGAR (public companies)
-        'https://www.sec.gov/edgar/searchedgar/companysearch.html',
+        "https://www.sec.gov/edgar/searchedgar/companysearch.html",
         # UK - Companies House (sample search)
-        'https://find-and-update.company-information.service.gov.uk/',
+        "https://find-and-update.company-information.service.gov.uk/",
         # Canada - Corporations Canada
-        'https://www.ic.gc.ca/app/scr/cc/CorporationsCanada/hm.html',
+        "https://www.ic.gc.ca/app/scr/cc/CorporationsCanada/hm.html",
     ]
-    
+
     custom_settings = {
-        'DOWNLOAD_DELAY': 2,
-        'RANDOMIZE_DOWNLOAD_DELAY': 0.5,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
-        'ROBOTSTXT_OBEY': True,
+        "DOWNLOAD_DELAY": 2,
+        "RANDOMIZE_DOWNLOAD_DELAY": 0.5,
+        "CONCURRENT_REQUESTS_PER_DOMAIN": 1,
+        "ROBOTSTXT_OBEY": True,
     }
 
     def __init__(self, country=None, company_name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.country = country
         self.company_name = company_name
-        self.logger.info(f"Initialized spider for country: {country}, company: {company_name}")
+        self.logger.info(
+            f"Initialized spider for country: {country}, company: {company_name}"
+        )
 
     def start_requests(self):
         """Generate start requests based on country parameter."""
@@ -39,7 +41,9 @@ class NationalCompanyRegistrySpider(scrapy.Spider):
             if url:
                 yield scrapy.Request(url, callback=self.parse_registry_page)
             else:
-                self.logger.warning(f"No registry URL found for country: {self.country}")
+                self.logger.warning(
+                    f"No registry URL found for country: {self.country}"
+                )
                 return
         else:
             # Default behavior - scrape sample data
@@ -49,137 +53,153 @@ class NationalCompanyRegistrySpider(scrapy.Spider):
     def _get_country_registry_url(self, country: str) -> str:
         """Map country codes to registry URLs."""
         registry_urls = {
-            'us': 'https://www.sec.gov/edgar/searchedgar/companysearch.html',
-            'uk': 'https://find-and-update.company-information.service.gov.uk/',
-            'ca': 'https://www.ic.gc.ca/app/scr/cc/CorporationsCanada/hm.html',
-            'de': 'https://www.unternehmensregister.de/',
-            'fr': 'https://www.infogreffe.fr/',
-            'au': 'https://asic.gov.au/online-services/search-asics-registers/',
+            "us": "https://www.sec.gov/edgar/searchedgar/companysearch.html",
+            "uk": "https://find-and-update.company-information.service.gov.uk/",
+            "ca": "https://www.ic.gc.ca/app/scr/cc/CorporationsCanada/hm.html",
+            "de": "https://www.unternehmensregister.de/",
+            "fr": "https://www.infogreffe.fr/",
+            "au": "https://asic.gov.au/online-services/search-asics-registers/",
         }
-        return registry_urls.get(country.lower(), '')
+        return registry_urls.get(country.lower(), "")
 
-    def parse_registry_page(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def parse_registry_page(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse the main registry page and extract company information."""
         domain = urlparse(response.url).netloc
-        
-        if 'sec.gov' in domain:
+
+        if "sec.gov" in domain:
             yield from self._parse_sec_edgar(response)
-        elif 'company-information.service.gov.uk' in domain:
+        elif "company-information.service.gov.uk" in domain:
             yield from self._parse_uk_companies_house(response)
-        elif 'ic.gc.ca' in domain:
+        elif "ic.gc.ca" in domain:
             yield from self._parse_canada_registry(response)
         else:
             # Generic parsing for unknown registries
             yield from self._parse_generic_registry(response)
 
-    def _parse_sec_edgar(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_sec_edgar(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse SEC EDGAR database (US companies)."""
         # For demo purposes, extract basic company info from search results
         # In production, this would handle the complex EDGAR API
-        
+
         # Look for company links or data
         company_links = response.css('a[href*="CIK"]::attr(href)').getall()
-        
+
         for link in company_links[:10]:  # Limit for demo
             company_url = urljoin(response.url, link)
             yield scrapy.Request(
                 company_url,
                 callback=self._parse_company_detail,
-                meta={'registry': 'SEC_EDGAR', 'country': 'US'}
+                meta={"registry": "SEC_EDGAR", "country": "US"},
             )
-        
+
         # Extract any visible company data
-        companies = response.css('.company-result, .search-result')
+        companies = response.css(".company-result, .search-result")
         for company in companies[:5]:  # Limit for demo
             yield {
-                'name': company.css('.company-name::text, .entity-name::text').get('').strip(),
-                'registry': 'SEC_EDGAR',
-                'country': 'US',
-                'url': response.url,
-                'cik': self._extract_cik(company.get()),
-                'scraped_at': response.meta.get('scraped_at'),
+                "name": company.css(".company-name::text, .entity-name::text")
+                .get("")
+                .strip(),
+                "registry": "SEC_EDGAR",
+                "country": "US",
+                "url": response.url,
+                "cik": self._extract_cik(company.get()),
+                "scraped_at": response.meta.get("scraped_at"),
             }
 
-    def _parse_uk_companies_house(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_uk_companies_house(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse UK Companies House registry."""
         # For demo - in production would use Companies House API
-        companies = response.css('.results-list li, .company-result')
-        
+        companies = response.css(".results-list li, .company-result")
+
         for company in companies[:5]:
-            name = company.css('.company-name::text, h3::text').get('').strip()
-            number = company.css('.company-number::text').get('').strip()
-            
+            name = company.css(".company-name::text, h3::text").get("").strip()
+            number = company.css(".company-number::text").get("").strip()
+
             if name:
                 yield {
-                    'name': name,
-                    'company_number': number,
-                    'registry': 'UK_COMPANIES_HOUSE',
-                    'country': 'UK',
-                    'url': response.url,
-                    'scraped_at': response.meta.get('scraped_at'),
+                    "name": name,
+                    "company_number": number,
+                    "registry": "UK_COMPANIES_HOUSE",
+                    "country": "UK",
+                    "url": response.url,
+                    "scraped_at": response.meta.get("scraped_at"),
                 }
 
-    def _parse_canada_registry(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_canada_registry(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse Corporations Canada registry."""
         # Demo implementation
-        companies = response.css('.search-result, .corporation-result')
-        
+        companies = response.css(".search-result, .corporation-result")
+
         for company in companies[:5]:
-            name = company.css('.corp-name::text, .company-name::text').get('').strip()
-            corp_number = company.css('.corp-number::text').get('').strip()
-            
+            name = company.css(".corp-name::text, .company-name::text").get("").strip()
+            corp_number = company.css(".corp-number::text").get("").strip()
+
             if name:
                 yield {
-                    'name': name,
-                    'corporation_number': corp_number,
-                    'registry': 'CORPORATIONS_CANADA',
-                    'country': 'CA',
-                    'url': response.url,
-                    'scraped_at': response.meta.get('scraped_at'),
+                    "name": name,
+                    "corporation_number": corp_number,
+                    "registry": "CORPORATIONS_CANADA",
+                    "country": "CA",
+                    "url": response.url,
+                    "scraped_at": response.meta.get("scraped_at"),
                 }
 
-    def _parse_generic_registry(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_generic_registry(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Generic parser for unknown registry formats."""
         # Extract any text that looks like company names
-        text_content = response.css('::text').getall()
+        text_content = response.css("::text").getall()
         company_patterns = [
-            r'\b[A-Z][a-zA-Z\s&]+(?:Inc|Corp|Ltd|LLC|GmbH|SA|SL)\b',
-            r'\b[A-Z][a-zA-Z\s&]+Company\b',
-            r'\b[A-Z][a-zA-Z\s&]+Group\b',
+            r"\b[A-Z][a-zA-Z\s&]+(?:Inc|Corp|Ltd|LLC|GmbH|SA|SL)\b",
+            r"\b[A-Z][a-zA-Z\s&]+Company\b",
+            r"\b[A-Z][a-zA-Z\s&]+Group\b",
         ]
-        
+
         found_companies = set()
         for text in text_content:
             for pattern in company_patterns:
                 matches = re.findall(pattern, text.strip())
                 found_companies.update(matches)
-        
+
         for company_name in list(found_companies)[:5]:  # Limit results
             yield {
-                'name': company_name.strip(),
-                'registry': 'GENERIC',
-                'country': 'UNKNOWN',
-                'url': response.url,
-                'extraction_method': 'pattern_matching',
-                'scraped_at': response.meta.get('scraped_at'),
+                "name": company_name.strip(),
+                "registry": "GENERIC",
+                "country": "UNKNOWN",
+                "url": response.url,
+                "extraction_method": "pattern_matching",
+                "scraped_at": response.meta.get("scraped_at"),
             }
 
     def _parse_company_detail(self, response: scrapy.http.Response) -> Dict[str, Any]:
         """Parse detailed company information page."""
         return {
-            'name': response.css('h1::text, .company-name::text').get('').strip(),
-            'registry': response.meta.get('registry', 'UNKNOWN'),
-            'country': response.meta.get('country', 'UNKNOWN'),
-            'detail_url': response.url,
-            'address': response.css('.address::text, .company-address::text').get('').strip(),
-            'status': response.css('.status::text, .company-status::text').get('').strip(),
-            'scraped_at': response.meta.get('scraped_at'),
+            "name": response.css("h1::text, .company-name::text").get("").strip(),
+            "registry": response.meta.get("registry", "UNKNOWN"),
+            "country": response.meta.get("country", "UNKNOWN"),
+            "detail_url": response.url,
+            "address": response.css(".address::text, .company-address::text")
+            .get("")
+            .strip(),
+            "status": response.css(".status::text, .company-status::text")
+            .get("")
+            .strip(),
+            "scraped_at": response.meta.get("scraped_at"),
         }
 
     def _extract_cik(self, html_content: str) -> str:
         """Extract CIK number from HTML content."""
-        cik_match = re.search(r'CIK[:\s]*(\d+)', html_content)
-        return cik_match.group(1) if cik_match else ''
+        cik_match = re.search(r"CIK[:\s]*(\d+)", html_content)
+        return cik_match.group(1) if cik_match else ""
 
     def parse(self, response: scrapy.http.Response) -> None:
         """Default parse method - delegates to parse_registry_page."""
@@ -190,202 +210,209 @@ class ChamberOfCommerceMembershipRollsSpider(scrapy.Spider):
     """Spider for Chamber of Commerce membership rolls across different regions."""
 
     name = "chamber_of_commerce_membership_rolls"
-    
+
     # Sample chamber websites - in production, these would be comprehensive
     chamber_urls = {
-        'us': [
-            'https://www.uschamber.com/co/directory',
-            'https://www.chamberofcommerce.com/directory',
+        "us": [
+            "https://www.uschamber.com/co/directory",
+            "https://www.chamberofcommerce.com/directory",
         ],
-        'uk': [
-            'https://www.britishchambers.org.uk/directory',
+        "uk": [
+            "https://www.britishchambers.org.uk/directory",
         ],
-        'ca': [
-            'https://www.chamber.ca/member-directory/',
+        "ca": [
+            "https://www.chamber.ca/member-directory/",
         ],
-        'au': [
-            'https://www.australianchamber.com.au/directory',
+        "au": [
+            "https://www.australianchamber.com.au/directory",
         ],
     }
-    
+
     custom_settings = {
-        'DOWNLOAD_DELAY': 3,
-        'RANDOMIZE_DOWNLOAD_DELAY': 0.8,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
-        'ROBOTSTXT_OBEY': True,
-        'USER_AGENT': 'Business Intelligence Research Bot (+https://github.com/Trashytalk/scraper)',
+        "DOWNLOAD_DELAY": 3,
+        "RANDOMIZE_DOWNLOAD_DELAY": 0.8,
+        "CONCURRENT_REQUESTS_PER_DOMAIN": 1,
+        "ROBOTSTXT_OBEY": True,
+        "USER_AGENT": "Business Intelligence Research Bot (+https://github.com/Trashytalk/scraper)",
     }
 
     def __init__(self, country=None, chamber_type=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.country = country or 'us'
-        self.chamber_type = chamber_type or 'general'
-        self.logger.info(f"Initialized chamber spider for {self.country}, type: {self.chamber_type}")
+        self.country = country or "us"
+        self.chamber_type = chamber_type or "general"
+        self.logger.info(
+            f"Initialized chamber spider for {self.country}, type: {self.chamber_type}"
+        )
 
     def start_requests(self):
         """Generate requests for chamber websites."""
-        urls = self.chamber_urls.get(self.country.lower(), self.chamber_urls['us'])
-        
+        urls = self.chamber_urls.get(self.country.lower(), self.chamber_urls["us"])
+
         for url in urls:
             yield scrapy.Request(
                 url,
                 callback=self.parse_chamber_directory,
                 meta={
-                    'country': self.country,
-                    'chamber_type': self.chamber_type,
-                    'source_url': url,
-                }
+                    "country": self.country,
+                    "chamber_type": self.chamber_type,
+                    "source_url": url,
+                },
             )
 
-    def parse_chamber_directory(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def parse_chamber_directory(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse chamber directory pages."""
         domain = urlparse(response.url).netloc
-        
-        if 'uschamber.com' in domain or 'chamberofcommerce.com' in domain:
+
+        if "uschamber.com" in domain or "chamberofcommerce.com" in domain:
             yield from self._parse_us_chamber(response)
-        elif 'britishchambers.org.uk' in domain:
+        elif "britishchambers.org.uk" in domain:
             yield from self._parse_uk_chamber(response)
-        elif 'chamber.ca' in domain:
+        elif "chamber.ca" in domain:
             yield from self._parse_canada_chamber(response)
         else:
             yield from self._parse_generic_chamber(response)
 
-    def _parse_us_chamber(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_us_chamber(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse US Chamber of Commerce directories."""
         # Look for member listings
         member_selectors = [
-            '.member-listing',
-            '.directory-item',
-            '.company-listing',
-            '.member-card',
-            '.business-listing'
+            ".member-listing",
+            ".directory-item",
+            ".company-listing",
+            ".member-card",
+            ".business-listing",
         ]
-        
+
         members = []
         for selector in member_selectors:
             members.extend(response.css(selector))
-        
+
         for member in members[:20]:  # Limit for demo
-            name = self._extract_text(member, [
-                '.company-name::text',
-                '.business-name::text', 
-                '.member-name::text',
-                'h3::text',
-                'h4::text'
-            ])
-            
-            website = self._extract_text(member, [
-                '.website::attr(href)',
-                '.url::attr(href)',
-                'a[href*="http"]::attr(href)'
-            ])
-            
-            category = self._extract_text(member, [
-                '.category::text',
-                '.industry::text',
-                '.sector::text'
-            ])
-            
+            name = self._extract_text(
+                member,
+                [
+                    ".company-name::text",
+                    ".business-name::text",
+                    ".member-name::text",
+                    "h3::text",
+                    "h4::text",
+                ],
+            )
+
+            website = self._extract_text(
+                member,
+                [
+                    ".website::attr(href)",
+                    ".url::attr(href)",
+                    'a[href*="http"]::attr(href)',
+                ],
+            )
+
+            category = self._extract_text(
+                member, [".category::text", ".industry::text", ".sector::text"]
+            )
+
             if name:
                 yield {
-                    'name': name.strip(),
-                    'website': website,
-                    'category': category,
-                    'chamber': 'US Chamber of Commerce',
-                    'country': response.meta.get('country', 'US'),
-                    'source_url': response.url,
-                    'scraped_at': response.meta.get('scraped_at'),
-                    'member_type': 'chamber_member',
+                    "name": name.strip(),
+                    "website": website,
+                    "category": category,
+                    "chamber": "US Chamber of Commerce",
+                    "country": response.meta.get("country", "US"),
+                    "source_url": response.url,
+                    "scraped_at": response.meta.get("scraped_at"),
+                    "member_type": "chamber_member",
                 }
 
-    def _parse_uk_chamber(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_uk_chamber(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse UK Chamber directory."""
-        members = response.css('.member, .directory-entry, .business-profile')
-        
+        members = response.css(".member, .directory-entry, .business-profile")
+
         for member in members[:20]:
-            name = self._extract_text(member, [
-                '.company-title::text',
-                '.business-name::text',
-                'h3::text'
-            ])
-            
-            location = self._extract_text(member, [
-                '.location::text',
-                '.address::text',
-                '.city::text'
-            ])
-            
+            name = self._extract_text(
+                member, [".company-title::text", ".business-name::text", "h3::text"]
+            )
+
+            location = self._extract_text(
+                member, [".location::text", ".address::text", ".city::text"]
+            )
+
             if name:
                 yield {
-                    'name': name.strip(),
-                    'location': location,
-                    'chamber': 'British Chambers of Commerce',
-                    'country': 'UK',
-                    'source_url': response.url,
-                    'scraped_at': response.meta.get('scraped_at'),
-                    'member_type': 'chamber_member',
+                    "name": name.strip(),
+                    "location": location,
+                    "chamber": "British Chambers of Commerce",
+                    "country": "UK",
+                    "source_url": response.url,
+                    "scraped_at": response.meta.get("scraped_at"),
+                    "member_type": "chamber_member",
                 }
 
-    def _parse_canada_chamber(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_canada_chamber(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Parse Canadian Chamber directory."""
-        members = response.css('.member-entry, .company-profile, .business-member')
-        
+        members = response.css(".member-entry, .company-profile, .business-member")
+
         for member in members[:20]:
-            name = self._extract_text(member, [
-                '.company::text',
-                '.organization::text',
-                'h2::text'
-            ])
-            
-            province = self._extract_text(member, [
-                '.province::text',
-                '.region::text'
-            ])
-            
+            name = self._extract_text(
+                member, [".company::text", ".organization::text", "h2::text"]
+            )
+
+            province = self._extract_text(member, [".province::text", ".region::text"])
+
             if name:
                 yield {
-                    'name': name.strip(),
-                    'province': province,
-                    'chamber': 'Canadian Chamber of Commerce',
-                    'country': 'CA',
-                    'source_url': response.url,
-                    'scraped_at': response.meta.get('scraped_at'),
-                    'member_type': 'chamber_member',
+                    "name": name.strip(),
+                    "province": province,
+                    "chamber": "Canadian Chamber of Commerce",
+                    "country": "CA",
+                    "source_url": response.url,
+                    "scraped_at": response.meta.get("scraped_at"),
+                    "member_type": "chamber_member",
                 }
 
-    def _parse_generic_chamber(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def _parse_generic_chamber(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Generic parser for unknown chamber formats."""
         # Use pattern matching to find business names
-        text_blocks = response.css('*::text').getall()
-        
+        text_blocks = response.css("*::text").getall()
+
         # Patterns that might indicate business names
         business_patterns = [
-            r'\b[A-Z][a-zA-Z\s&,.-]+(?:LLC|Inc|Corp|Ltd|LLP|LP)\b',
-            r'\b[A-Z][a-zA-Z\s&,.-]+(?:Company|Group|Enterprises|Solutions)\b',
-            r'\b[A-Z][a-zA-Z\s&,.-]+(?:Services|Consulting|Technologies)\b',
+            r"\b[A-Z][a-zA-Z\s&,.-]+(?:LLC|Inc|Corp|Ltd|LLP|LP)\b",
+            r"\b[A-Z][a-zA-Z\s&,.-]+(?:Company|Group|Enterprises|Solutions)\b",
+            r"\b[A-Z][a-zA-Z\s&,.-]+(?:Services|Consulting|Technologies)\b",
         ]
-        
+
         found_businesses = set()
         for text in text_blocks:
             text = text.strip()
             if len(text) > 100:  # Skip very long text blocks
                 continue
-                
+
             for pattern in business_patterns:
                 matches = re.findall(pattern, text)
                 for match in matches:
                     if 3 <= len(match) <= 80:  # Reasonable business name length
                         found_businesses.add(match.strip())
-        
+
         for business_name in list(found_businesses)[:10]:  # Limit results
             yield {
-                'name': business_name,
-                'chamber': 'Generic Chamber',
-                'country': response.meta.get('country', 'UNKNOWN'),
-                'source_url': response.url,
-                'extraction_method': 'pattern_matching',
-                'scraped_at': response.meta.get('scraped_at'),
-                'member_type': 'chamber_member',
+                "name": business_name,
+                "chamber": "Generic Chamber",
+                "country": response.meta.get("country", "UNKNOWN"),
+                "source_url": response.url,
+                "extraction_method": "pattern_matching",
+                "scraped_at": response.meta.get("scraped_at"),
+                "member_type": "chamber_member",
             }
 
     def _extract_text(self, selector, css_selectors: List[str]) -> str:
@@ -394,9 +421,11 @@ class ChamberOfCommerceMembershipRollsSpider(scrapy.Spider):
             result = selector.css(css_selector).get()
             if result and result.strip():
                 return result.strip()
-        return ''
+        return ""
 
-    def parse(self, response: scrapy.http.Response) -> Generator[Dict[str, Any], None, None]:
+    def parse(
+        self, response: scrapy.http.Response
+    ) -> Generator[Dict[str, Any], None, None]:
         """Default parse method - delegates to parse_chamber_directory."""
         yield from self.parse_chamber_directory(response)
 

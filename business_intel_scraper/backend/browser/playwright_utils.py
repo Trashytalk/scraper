@@ -10,10 +10,10 @@ from ..proxy.manager import ProxyManager
 
 class PlaywrightManager:
     """Manager for Playwright browser operations"""
-    
+
     def __init__(self, proxy_manager: Optional[ProxyManager] = None):
         self.proxy_manager = proxy_manager
-        
+
     async def launch_browser(self, headless: bool = True) -> Browser:
         """Launch a browser using proxy if available"""
         if self.proxy_manager:

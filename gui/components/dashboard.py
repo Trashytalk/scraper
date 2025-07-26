@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 # PyQt6 is preferred. Fallback to PyQt5 if needed.
 try:
-    from PyQt6.QtWidgets import (QMainWindow, QWidget, QApplication, QTabWidget, 
-                                QToolBar, QVBoxLayout, QDockWidget)
+    from PyQt6.QtWidgets import (
+        QMainWindow,
+        QWidget,
+        QApplication,
+        QTabWidget,
+        QToolBar,
+        QVBoxLayout,
+        QDockWidget,
+    )
     from PyQt6.QtCore import Qt
     import PyQt6.QtWidgets as QtWidgets
 except ImportError:  # pragma: no cover - optional dependency
@@ -24,11 +30,19 @@ try:
     from gui.components.tor_integration import TORWidget
     from gui.components.network_config import NetworkConfigWidget
     from gui.components.advanced_parsing import ParsingWidget
-    from gui.components.embedded_browser import EmbeddedBrowser, BrowserTabWidget, BrowserDockWidget
+    from gui.components.embedded_browser import (
+        EmbeddedBrowser,
+        BrowserTabWidget,
+        BrowserDockWidget,
+    )
     from gui.components.data_visualization import SiteVisualizationWidget
     from gui.components.osint_integration import OSINTIntegrationWidget
     from gui.components.data_enrichment import DataEnrichmentWidget
-    from gui.components.tooltip_system import tooltip_manager, ExperienceLevelSelector, TooltipWidget
+    from gui.components.tooltip_system import (
+        tooltip_manager,
+        ExperienceLevelSelector,
+        TooltipWidget,
+    )
     from gui.components.advanced_entity_graph_widget import AdvancedEntityGraphWidget
     from gui.components.data_quality_dashboard import DataQualityDashboard
 except ImportError:
@@ -37,15 +51,14 @@ except ImportError:
     from .log_viewer import LogViewerWidget
     from .config_dialog import ConfigDialog
     from .data_viewer import DataViewerWidget
-    from .tooltip_system import TooltipManager
     from .tor_integration import TORWidget
     from .network_config import NetworkConfigWidget
     from .advanced_parsing import ParsingWidget
-    from .embedded_browser import EmbeddedBrowser, BrowserTabWidget, BrowserDockWidget
+    from .embedded_browser import BrowserTabWidget, BrowserDockWidget
     from .data_visualization import SiteVisualizationWidget
     from .osint_integration import OSINTIntegrationWidget
     from .data_enrichment import DataEnrichmentWidget
-    from .tooltip_system import tooltip_manager, ExperienceLevelSelector, TooltipWidget
+    from .tooltip_system import ExperienceLevelSelector, TooltipWidget
     from .advanced_entity_graph_widget import AdvancedEntityGraphWidget
     from .data_quality_dashboard import DataQualityDashboard
 
@@ -60,7 +73,7 @@ class DashboardWindow(QMainWindow):
 
         # Initialize tooltip system
         self.experience_selector = ExperienceLevelSelector()
-        
+
         # Create toolbar with experience level selector
         self.toolbar = QtWidgets.QToolBar("Main Toolbar")
         self.addToolBar(self.toolbar)
@@ -97,7 +110,7 @@ class DashboardWindow(QMainWindow):
 
         self.setCentralWidget(self.tabs)
         self._create_menu()
-        
+
         # Add dockable browser option
         self.browser_dock = BrowserDockWidget("Browser Panel", self)  # type: ignore
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.browser_dock)
@@ -120,7 +133,7 @@ class DashboardWindow(QMainWindow):
                 quit_action = file_menu.addAction("Quit")
                 if quit_action is not None:
                     quit_action.triggered.connect(self.close)
-            
+
             # Add browser menu
             browser_menu = menubar.addMenu("Browser")
             if browser_menu is not None:
@@ -130,14 +143,14 @@ class DashboardWindow(QMainWindow):
                 new_tab_action = browser_menu.addAction("New Browser Tab")
                 if new_tab_action is not None:
                     new_tab_action.triggered.connect(self.add_browser_tab)
-        
+
     def toggle_browser_dock(self) -> None:
         """Toggle browser dock panel visibility"""
         if self.browser_dock.isVisible():
             self.browser_dock.hide()
         else:
             self.browser_dock.show()
-            
+
     def add_browser_tab(self) -> None:
         """Add new browser tab"""
         self.browser_tabs.add_new_tab()  # type: ignore
@@ -157,11 +170,11 @@ class DashboardWindow(QMainWindow):
 
 class TooltipJobManagerWidget(TooltipWidget):
     """Job manager widget with tooltip support"""
-    
+
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(tooltip_id="job_management", parent=parent)
         self.job_manager = JobManagerWidget(parent=self)
-        
+
         # Layout to contain the original job manager
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.job_manager)
@@ -170,7 +183,7 @@ class TooltipJobManagerWidget(TooltipWidget):
         # Initialize browser dock and tabs references (will be set by parent)
         self.browser_dock: QtWidgets.QDockWidget | None = None
         self.browser_tabs: BrowserTabWidget | None = None
-        
+
     def toggle_browser_dock(self) -> None:
         """Toggle browser dock panel visibility"""
         if self.browser_dock is not None:
@@ -178,7 +191,7 @@ class TooltipJobManagerWidget(TooltipWidget):
                 self.browser_dock.hide()
             else:
                 self.browser_dock.show()
-            
+
     def add_browser_tab(self) -> None:
         """Add new browser tab"""
         if self.browser_tabs is not None:

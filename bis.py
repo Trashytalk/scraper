@@ -25,56 +25,59 @@ except ImportError:
 @click.version_option()
 def cli():
     """Business Intelligence Scraper CLI
-    
+
     A comprehensive tool for web scraping, data analysis, and intelligence gathering.
     """
     pass
 
 
 @cli.command()
-@click.option('--host', default='localhost', help='Host to run the server on')
-@click.option('--port', default=8000, help='Port to run the server on')
-@click.option('--reload', is_flag=True, help='Enable auto-reload for development')
+@click.option("--host", default="localhost", help="Host to run the server on")
+@click.option("--port", default=8000, help="Port to run the server on")
+@click.option("--reload", is_flag=True, help="Enable auto-reload for development")
 def serve(host: str, port: int, reload: bool):
     """Start the API server"""
     import uvicorn
-    
+
     click.echo(f"Starting Business Intelligence Scraper API on {host}:{port}")
     if reload:
         click.echo("Auto-reload enabled for development")
-    
+
     uvicorn.run(
         "business_intel_scraper.backend.api.main:app",
         host=host,
         port=port,
-        reload=reload
+        reload=reload,
     )
 
 
 @cli.command()
-@click.option('--frontend', is_flag=True, help='Also start the frontend development server')
+@click.option(
+    "--frontend", is_flag=True, help="Also start the frontend development server"
+)
 def dev(frontend: bool):
     """Start development servers"""
     import subprocess
     import threading
-    
+
     click.echo("Starting development environment...")
-    
+
     # Start API server in background
     def start_api():
         import uvicorn
+
         uvicorn.run(
             "business_intel_scraper.backend.api.main:app",
             host="localhost",
             port=8000,
-            reload=True
+            reload=True,
         )
-    
+
     api_thread = threading.Thread(target=start_api, daemon=True)
     api_thread.start()
-    
+
     click.echo("✓ API server starting on http://localhost:8000")
-    
+
     if frontend:
         frontend_dir = Path(__file__).parent / "frontend"
         if frontend_dir.exists():
@@ -99,7 +102,7 @@ def setup():
     """Run initial setup and configuration"""
     import subprocess
     import sys
-    
+
     setup_script = Path(__file__).parent / "setup.sh"
     if setup_script.exists():
         click.echo("Running setup script...")
@@ -113,22 +116,25 @@ def setup():
 
 
 @cli.command()
-@click.argument('project_name')
-@click.option('--template', '-t', 
-              type=click.Choice(['basic', 'advanced', 'enterprise', 'research']),
-              default='basic',
-              help='Project template to use')
-@click.option('--target-dir', help='Target directory (default: current directory)')
+@click.argument("project_name")
+@click.option(
+    "--template",
+    "-t",
+    type=click.Choice(["basic", "advanced", "enterprise", "research"]),
+    default="basic",
+    help="Project template to use",
+)
+@click.option("--target-dir", help="Target directory (default: current directory)")
 def create(project_name: str, template: str, target_dir: str):
     """Create a new scraping project from template"""
     import subprocess
-    
+
     create_script = Path(__file__).parent / "create-project.sh"
     if create_script.exists():
         cmd = [str(create_script), project_name, template]
         if target_dir:
             cmd.append(target_dir)
-        
+
         click.echo(f"Creating {template} project: {project_name}")
         try:
             subprocess.run(cmd, check=True)
@@ -143,7 +149,7 @@ def create(project_name: str, template: str, target_dir: str):
 def status():
     """Show system status and health"""
     import httpx
-    
+
     try:
         # Check API health
         response = httpx.get("http://localhost:8000/health", timeout=5.0)
@@ -156,7 +162,7 @@ def status():
             click.echo("✗ API Server: Error")
     except Exception:
         click.echo("✗ API Server: Not running")
-    
+
     # Check AI system
     try:
         response = httpx.get("http://localhost:8000/ai/health", timeout=5.0)
@@ -167,10 +173,11 @@ def status():
             click.echo("✗ AI System: Error")
     except Exception:
         click.echo("✗ AI System: Not available")
-    
+
     # Check database
     try:
         import sqlite3
+
         db_path = Path(__file__).parent / "data" / "scraper.db"
         if db_path.exists():
             conn = sqlite3.connect(str(db_path))
@@ -184,44 +191,54 @@ def status():
 
 
 @cli.command()
-@click.option('--include-ai', is_flag=True, help='Include AI dependencies')
-@click.option('--include-dev', is_flag=True, help='Include development dependencies')
+@click.option("--include-ai", is_flag=True, help="Include AI dependencies")
+@click.option("--include-dev", is_flag=True, help="Include development dependencies")
 def install(include_ai: bool, include_dev: bool):
     """Install dependencies"""
     import subprocess
     import sys
-    
+
     click.echo("Installing dependencies...")
-    
+
     # Base requirements
     try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
+            check=True,
+        )
         click.echo("✓ Base dependencies installed")
     except subprocess.CalledProcessError:
         click.echo("✗ Failed to install base dependencies", err=True)
         return
-    
+
     # AI requirements (now included in main requirements.txt)
     if include_ai:
         click.echo("✓ AI dependencies included in main requirements")
-    
+
     # Dev requirements (now included in main requirements.txt)
     if include_dev:
         click.echo("✓ Development dependencies included in main requirements")
 
 
 @cli.command()
-@click.option('--coverage', is_flag=True, help='Run with coverage report')
+@click.option("--coverage", is_flag=True, help="Run with coverage report")
 def test(coverage: bool):
     """Run the test suite"""
     import subprocess
     import sys
-    
+
     if coverage:
-        cmd = [sys.executable, "-m", "pytest", "--cov=business_intel_scraper", "--cov-report=html", "--cov-report=term"]
+        cmd = [
+            sys.executable,
+            "-m",
+            "pytest",
+            "--cov=business_intel_scraper",
+            "--cov-report=html",
+            "--cov-report=term",
+        ]
     else:
         cmd = [sys.executable, "-m", "pytest"]
-    
+
     try:
         subprocess.run(cmd, check=True)
         if coverage:
@@ -233,34 +250,33 @@ def test(coverage: bool):
 @cli.command()
 def docs():
     """Generate and serve documentation"""
-    import subprocess
     import webbrowser
     from http.server import HTTPServer, SimpleHTTPRequestHandler
     import threading
-    
+
     docs_dir = Path(__file__).parent / "docs"
     if not docs_dir.exists():
         click.echo("Documentation directory not found")
         return
-    
+
     # Start simple HTTP server for docs
     os.chdir(docs_dir)
-    
+
     def serve_docs():
-        server = HTTPServer(('localhost', 8080), SimpleHTTPRequestHandler)
+        server = HTTPServer(("localhost", 8080), SimpleHTTPRequestHandler)
         server.serve_forever()
-    
+
     server_thread = threading.Thread(target=serve_docs, daemon=True)
     server_thread.start()
-    
+
     click.echo("Documentation server started at http://localhost:8080")
-    
+
     # Open browser
     try:
         webbrowser.open("http://localhost:8080")
     except Exception:
         pass
-    
+
     try:
         click.echo("Press Ctrl+C to stop the documentation server")
         while True:
