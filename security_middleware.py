@@ -305,7 +305,7 @@ def validate_job_config(config: Dict[str, Any]) -> Dict[str, Any]:
     # Validate scraper type
     if "scraper_type" in config:
         scraper_type = config["scraper_type"]
-        allowed_types = ["basic", "e_commerce", "news", "social_media", "api"]
+        allowed_types = ["basic", "e_commerce", "news", "social_media", "api", "intelligent"]
         if scraper_type not in allowed_types:
             raise ValueError(f"Invalid scraper type. Allowed: {allowed_types}")
         validated_config["scraper_type"] = scraper_type

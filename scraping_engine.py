@@ -8,7 +8,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from urllib.parse import urljoin
 import sqlite3
 
@@ -51,6 +51,8 @@ class ScrapingEngine:
                 return await self._social_media_scraper(url, config)
             elif scraper_type == "api":
                 return await self._api_scraper(url, config)
+            elif scraper_type == "intelligent":
+                return await self._intelligent_scraper(url, config)
             else:
                 return await self._basic_scraper(url, config)
 
@@ -63,8 +65,444 @@ class ScrapingEngine:
                 "timestamp": datetime.now().isoformat(),
             }
 
+    async def intelligent_crawl(
+        self, seed_url: str, scraper_type: str = "basic", config: Optional[Dict] = None
+    ) -> Dict[str, Any]:
+        """
+        Intelligent crawling that discovers and follows links from seed URL
+        Enhanced with full HTML extraction, domain crawling, and comprehensive status tracking
+        """
+        config = config or {}
+        
+        # Enhanced crawling configuration
+        max_pages = config.get("max_pages", 50)
+        max_depth = config.get("max_depth", 3)
+        follow_internal_links = config.get("follow_internal_links", True)
+        follow_external_links = config.get("follow_external_links", False)
+        include_patterns = config.get("include_patterns", "")
+        exclude_patterns = config.get("exclude_patterns", "")
+        
+        # NEW: Enhanced extraction options
+        extract_full_html = config.get("extract_full_html", False)
+        crawl_entire_domain = config.get("crawl_entire_domain", False)
+        include_images = config.get("include_images", False)
+        save_to_database = config.get("save_to_database", True)
+        
+        # Rate limiting configuration
+        rate_limit = config.get("rate_limit", {})
+        requests_per_second = rate_limit.get("requests_per_second", 1.0)
+        max_concurrent_workers = config.get("max_concurrent_workers", 5)
+        
+        # Enhanced crawl results with comprehensive tracking
+        start_time = time.time()
+        crawl_results = {
+            "seed_url": seed_url,
+            "job_type": "intelligent_crawling",
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+            "start_time": start_time,
+            "config": {
+                "max_pages": max_pages,
+                "max_depth": max_depth,
+                "extract_full_html": extract_full_html,
+                "crawl_entire_domain": crawl_entire_domain,
+                "include_images": include_images,
+                "follow_internal_links": follow_internal_links,
+                "follow_external_links": follow_external_links
+            },
+            "summary": {
+                "pages_processed": 0,
+                "urls_discovered": 0,
+                "urls_queued": 0,
+                "data_extracted": 0,
+                "total_crawl_time": 0,
+                "average_page_time": 0,
+                "duplicate_pages_skipped": 0,
+                "errors_encountered": 0,
+                "images_extracted": 0,
+                "domains_crawled": set()
+            },
+            "crawled_data": [],
+            "discovered_urls": [],
+            "errors": [],
+            "duplicate_urls": [],
+            "crawl_status": "in_progress"
+        }
+        
+        try:
+            # Initialize crawling state with enhanced tracking
+            url_queue = [{"url": seed_url, "depth": 0}]
+            visited_urls = set()
+            discovered_urls = set()
+            page_times = []
+            
+            from urllib.parse import urljoin, urlparse
+            import re as regex
+            
+            seed_domain = urlparse(seed_url).netloc
+            crawl_results["summary"]["domains_crawled"].add(seed_domain)
+            
+            # Enhanced domain crawling logic
+            if crawl_entire_domain:
+                max_pages = max_pages if max_pages > 0 else 1000  # Increase limit for domain crawls
+                max_depth = max(max_depth, 5)  # Ensure sufficient depth for domain exploration
+            
+            # Database connection for persistence
+            db_conn = None
+            if save_to_database:
+                try:
+                    db_conn = sqlite3.connect('data.db')
+                    cursor = db_conn.cursor()
+                    # Create tables if they don't exist
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS crawl_cache (
+                            url TEXT PRIMARY KEY,
+                            content TEXT,
+                            metadata TEXT,
+                            crawled_at TIMESTAMP,
+                            domain TEXT
+                        )
+                    ''')
+                    db_conn.commit()
+                except Exception as e:
+                    logger.warning(f"Database connection failed, proceeding without persistence: {e}")
+                    db_conn = None
+            
+            while url_queue and len(visited_urls) < max_pages:
+                current_item = url_queue.pop(0)
+                current_url = current_item["url"]
+                current_depth = current_item["depth"]
+                
+                # Skip if already visited or max depth reached
+                if current_url in visited_urls or current_depth > max_depth:
+                    if current_url in visited_urls:
+                        crawl_results["duplicate_urls"].append(current_url)
+                        crawl_results["summary"]["duplicate_pages_skipped"] += 1
+                    continue
+                
+                visited_urls.add(current_url)
+                page_start_time = time.time()
+                
+                # Check if page was previously crawled (if database is available)
+                cached_data = None
+                if db_conn:
+                    try:
+                        cursor = db_conn.cursor()
+                        cursor.execute(
+                            "SELECT content, metadata, crawled_at FROM crawl_cache WHERE url = ?",
+                            (current_url,)
+                        )
+                        cached_result = cursor.fetchone()
+                        if cached_result:
+                            cached_data = {
+                                "url": current_url,
+                                "cached": True,
+                                "cached_at": cached_result[2],
+                                "data": json.loads(cached_result[1]) if cached_result[1] else {}
+                            }
+                            logger.info(f"Using cached data for {current_url}")
+                    except Exception as e:
+                        logger.warning(f"Cache lookup failed for {current_url}: {e}")
+                
+                try:
+                    # Rate limiting
+                    await asyncio.sleep(1.0 / requests_per_second)
+                    
+                    # Scrape current page (or use cached data)
+                    if cached_data:
+                        page_data = cached_data["data"]
+                        page_data["cached"] = True
+                        page_data["cached_at"] = cached_data["cached_at"]
+                    else:
+                        # Enhanced scraping with full HTML option
+                        enhanced_config = {**config}
+                        if extract_full_html:
+                            enhanced_config["extract_full_html"] = True
+                        if include_images:
+                            enhanced_config["include_all_images"] = True
+                            
+                        page_data = await self.scrape_url(current_url, scraper_type, enhanced_config)
+                    
+                    if page_data.get("status") == "success":
+                        # Track page processing time
+                        page_end_time = time.time()
+                        page_time = page_end_time - page_start_time
+                        page_times.append(page_time)
+                        
+                        # Add crawling metadata
+                        page_data["crawl_metadata"] = {
+                            "depth": current_depth,
+                            "processing_time": page_time,
+                            "discovery_order": len(crawl_results["crawled_data"]) + 1,
+                            "domain": urlparse(current_url).netloc
+                        }
+                        
+                        # Save to database if enabled
+                        if db_conn and not cached_data:
+                            try:
+                                cursor = db_conn.cursor()
+                                cursor.execute(
+                                    "INSERT OR REPLACE INTO crawl_cache (url, content, metadata, crawled_at, domain) VALUES (?, ?, ?, ?, ?)",
+                                    (
+                                        current_url,
+                                        page_data.get("raw_html", ""),
+                                        json.dumps(page_data),
+                                        datetime.now().isoformat(),
+                                        urlparse(current_url).netloc
+                                    )
+                                )
+                                db_conn.commit()
+                            except Exception as e:
+                                logger.warning(f"Failed to cache data for {current_url}: {e}")
+                        
+                        crawl_results["crawled_data"].append(page_data)
+                        crawl_results["summary"]["pages_processed"] += 1
+                        crawl_results["summary"]["data_extracted"] += 1
+                        
+                        # Count images if extracted
+                        if include_images and "images" in page_data:
+                            crawl_results["summary"]["images_extracted"] += len(page_data.get("images", []))
+                        
+                        # Track domain coverage
+                        page_domain = urlparse(current_url).netloc
+                        crawl_results["summary"]["domains_crawled"].add(page_domain)
+                        
+                        # Extract links for further crawling
+                        if current_depth < max_depth:
+                            links = page_data.get("links", [])
+                            
+                            for link in links:
+                                if isinstance(link, dict):
+                                    link_url = link.get("url", "")
+                                else:
+                                    link_url = str(link)
+                                
+                                if not link_url or link_url in visited_urls:
+                                    continue
+                                
+                                # Make URL absolute
+                                absolute_url = urljoin(current_url, link_url)
+                                parsed_url = urlparse(absolute_url)
+                                
+                                # Enhanced domain filtering for entire domain crawling
+                                is_internal = parsed_url.netloc == seed_domain
+                                is_subdomain = parsed_url.netloc.endswith('.' + seed_domain)
+                                
+                                # Allow subdomains if crawling entire domain
+                                domain_match = is_internal or (crawl_entire_domain and is_subdomain)
+                                
+                                if not ((domain_match and follow_internal_links) or 
+                                       (not domain_match and follow_external_links)):
+                                    continue
+                                
+                                # Apply include/exclude patterns
+                                if include_patterns and not regex.search(include_patterns, absolute_url):
+                                    continue
+                                if exclude_patterns and regex.search(exclude_patterns, absolute_url):
+                                    continue
+                                
+                                # Add to queue if not already discovered
+                                if absolute_url not in discovered_urls:
+                                    discovered_urls.add(absolute_url)
+                                    url_queue.append({
+                                        "url": absolute_url, 
+                                        "depth": current_depth + 1
+                                    })
+                                    crawl_results["discovered_urls"].append(absolute_url)
+                                    crawl_results["summary"]["urls_discovered"] += 1
+                                    crawl_results["summary"]["urls_queued"] += 1
+                    
+                except Exception as e:
+                    logger.error(f"Error crawling {current_url}: {str(e)}")
+                    crawl_results["errors"].append({
+                        "url": current_url,
+                        "error": str(e),
+                        "timestamp": datetime.now().isoformat(),
+                        "depth": current_depth
+                    })
+                    crawl_results["summary"]["errors_encountered"] += 1
+            
+            # Calculate final statistics
+            end_time = time.time()
+            total_time = end_time - start_time
+            crawl_results["summary"]["total_crawl_time"] = round(total_time, 2)
+            crawl_results["summary"]["average_page_time"] = round(
+                sum(page_times) / len(page_times) if page_times else 0, 2
+            )
+            crawl_results["summary"]["domains_crawled"] = list(crawl_results["summary"]["domains_crawled"])
+            crawl_results["crawl_status"] = "completed"
+            crawl_results["end_time"] = end_time
+            
+            # Close database connection
+            if db_conn:
+                db_conn.close()
+            
+            logger.info(f"Crawling completed: {crawl_results['summary']['pages_processed']} pages processed, "
+                       f"{crawl_results['summary']['urls_discovered']} URLs discovered, "
+                       f"Total time: {total_time:.2f}s, "
+                       f"Domains: {len(crawl_results['summary']['domains_crawled'])}")
+            
+            return crawl_results
+            
+        except Exception as e:
+            logger.error(f"Intelligent crawling failed for {seed_url}: {str(e)}")
+            crawl_results["status"] = "error"
+            crawl_results["error"] = str(e)
+            return crawl_results
+
+    async def _intelligent_scraper(self, url: str, config: Dict) -> Dict[str, Any]:
+        """
+        Intelligent scraper that automatically detects content type and uses appropriate extraction
+        """
+        try:
+            # Start with basic scraping
+            basic_result = await self._basic_scraper(url, config)
+            
+            if basic_result.get("status") != "success":
+                return basic_result
+            
+            # Analyze content to determine best extraction strategy
+            soup = BeautifulSoup(basic_result.get("raw_html", ""), "html.parser")
+            
+            # Check for e-commerce indicators
+            ecommerce_indicators = [
+                ".price", ".add-to-cart", ".product", ".cart", ".buy", ".shop"
+            ]
+            if any(soup.select(indicator) for indicator in ecommerce_indicators):
+                logger.info(f"Detected e-commerce content for {url}, using e-commerce scraper")
+                return await self._ecommerce_scraper(url, config)
+            
+            # Check for news indicators
+            news_indicators = [
+                "article", ".article", ".news", "[class*='headline']", 
+                "[class*='story']", "time[datetime]", ".byline", ".author"
+            ]
+            if any(soup.select(indicator) for indicator in news_indicators):
+                logger.info(f"Detected news content for {url}, using news scraper")
+                return await self._news_scraper(url, config)
+            
+            # Check for social media indicators
+            social_indicators = [
+                ".post", ".tweet", ".feed", ".timeline", ".comment", ".like", ".share"
+            ]
+            if any(soup.select(indicator) for indicator in social_indicators):
+                logger.info(f"Detected social media content for {url}, using social media scraper")
+                return await self._social_media_scraper(url, config)
+            
+            # Default to enhanced basic scraping with auto-detection
+            logger.info(f"Using intelligent basic scraping for {url}")
+            
+            # Enhance basic result with intelligent extraction
+            enhanced_data = {
+                **basic_result,
+                "content_type": "intelligent_detection",
+                "auto_extracted": {
+                    "key_information": self._extract_key_information(soup),
+                    "structured_data": self._extract_structured_data(soup),
+                    "contact_info": self._extract_contact_info(soup),
+                    "social_links": self._extract_social_links(soup)
+                }
+            }
+            
+            return enhanced_data
+            
+        except Exception as e:
+            logger.error(f"Intelligent scraping failed for {url}: {str(e)}")
+            return {
+                "url": url,
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat(),
+            }
+
+    def _extract_key_information(self, soup: BeautifulSoup) -> Dict[str, Any]:
+        """Extract key information using heuristics"""
+        key_info = {}
+        
+        # Extract important headings
+        headings = []
+        for h in soup.find_all(['h1', 'h2', 'h3']):
+            text = h.get_text().strip()
+            if text and len(text) > 5:
+                headings.append(text)
+        key_info["headings"] = headings[:10]
+        
+        # Extract contact information
+        text_content = soup.get_text()
+        import re
+        
+        # Email addresses
+        emails = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text_content)
+        key_info["emails"] = list(set(emails))[:5]
+        
+        # Phone numbers
+        phones = re.findall(r'[\+]?[1-9]?[\d\s\-\(\)]{10,20}', text_content)
+        key_info["phones"] = list(set(phones))[:5]
+        
+        return key_info
+
+    def _extract_structured_data(self, soup: BeautifulSoup) -> Dict[str, Any]:
+        """Extract structured data like JSON-LD, microdata"""
+        structured = {}
+        
+        # JSON-LD
+        scripts = soup.find_all('script', type='application/ld+json')
+        json_ld = []
+        for script in scripts:
+            try:
+                data = json.loads(script.string)
+                json_ld.append(data)
+            except (json.JSONDecodeError, AttributeError):
+                continue
+        structured["json_ld"] = json_ld
+        
+        # Microdata
+        microdata = []
+        for item in soup.find_all(attrs={"itemscope": True}):
+            item_data = {"type": item.get("itemtype", "")}
+            props = {}
+            for prop in item.find_all(attrs={"itemprop": True}):
+                props[prop.get("itemprop")] = prop.get_text().strip()
+            item_data["properties"] = props
+            microdata.append(item_data)
+        structured["microdata"] = microdata
+        
+        return structured
+
+    def _extract_contact_info(self, soup: BeautifulSoup) -> Dict[str, List[str]]:
+        """Extract contact information"""
+        contact = {"addresses": [], "phone_numbers": [], "email_addresses": []}
+        
+        # Look for address patterns
+        address_keywords = ["address", "location", "contact", "office"]
+        for keyword in address_keywords:
+            elements = soup.find_all(text=re.compile(keyword, re.I))
+            for element in elements:
+                parent = element.parent
+                if parent:
+                    text = parent.get_text().strip()
+                    if len(text) > 20 and len(text) < 200:
+                        contact["addresses"].append(text)
+        
+        return contact
+
+    def _extract_social_links(self, soup: BeautifulSoup) -> List[str]:
+        """Extract social media links"""
+        social_domains = [
+            "facebook.com", "twitter.com", "instagram.com", "linkedin.com",
+            "youtube.com", "tiktok.com", "pinterest.com", "snapchat.com"
+        ]
+        
+        social_links = []
+        for link in soup.find_all('a', href=True):
+            href = link['href']
+            if any(domain in href for domain in social_domains):
+                social_links.append(href)
+        
+        return list(set(social_links))
+
     async def _basic_scraper(self, url: str, config: Dict) -> Dict[str, Any]:
-        """Basic web page scraper using BeautifulSoup"""
+        """Enhanced basic web page scraper with full HTML and comprehensive image extraction"""
         try:
             # Run in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
@@ -83,11 +521,28 @@ class ScrapingEngine:
                 "headings": self._extract_headings(soup),
                 "links": self._extract_links(soup, url),
                 "text_content": self._extract_text_content(soup),
-                "images": self._extract_images(soup, url),
+                "images": self._extract_images(soup, url, config.get("include_all_images", False)),
                 "word_count": len(soup.get_text().split()),
                 "status": "success",
                 "timestamp": datetime.now().isoformat(),
                 "response_time": response.elapsed.total_seconds(),
+            }
+
+            # NEW: Add full HTML if requested
+            if config.get("extract_full_html", False):
+                data["raw_html"] = str(soup)
+                data["html_size_bytes"] = len(response.content)
+                data["content_encoding"] = response.encoding
+
+            # NEW: Enhanced metadata extraction
+            data["page_metadata"] = {
+                "content_type": response.headers.get("content-type", ""),
+                "last_modified": response.headers.get("last-modified", ""),
+                "content_length": response.headers.get("content-length", ""),
+                "server": response.headers.get("server", ""),
+                "status_code": response.status_code,
+                "final_url": response.url,  # In case of redirects
+                "redirect_count": len(response.history)
             }
 
             # Add custom selectors if specified
@@ -271,21 +726,75 @@ class ScrapingEngine:
         return text[:2000]  # Truncate to 2000 characters
 
     def _extract_images(
-        self, soup: BeautifulSoup, base_url: str
+        self, soup: BeautifulSoup, base_url: str, include_all_images: bool = False
     ) -> List[Dict[str, str]]:
+        """Enhanced image extraction with optional comprehensive image gathering"""
         images = []
-        for img_tag in soup.find_all("img", src=True):
-            src = img_tag.get("src")
-            if src:
-                absolute_url = urljoin(base_url, src)
-                images.append(
-                    {
+        image_selectors = ["img[src]"]
+        
+        # If including all images, add more comprehensive selectors
+        if include_all_images:
+            image_selectors.extend([
+                "img[data-src]",  # Lazy-loaded images
+                "img[data-lazy]",
+                "img[data-original]",
+                "[style*='background-image']",  # CSS background images
+                "picture source[srcset]",  # Responsive images
+                "video[poster]"  # Video thumbnails
+            ])
+        
+        # Extract regular img tags
+        for selector in image_selectors[:3] if not include_all_images else image_selectors[:6]:
+            for img_tag in soup.select(selector):
+                src_attrs = ["src", "data-src", "data-lazy", "data-original"]
+                src = None
+                
+                for attr in src_attrs:
+                    src = img_tag.get(attr)
+                    if src:
+                        break
+                
+                if src:
+                    absolute_url = urljoin(base_url, src)
+                    image_data = {
                         "src": absolute_url,
                         "alt": img_tag.get("alt", ""),
                         "title": img_tag.get("title", ""),
+                        "type": "img_tag"
                     }
-                )
-        return images[:20]  # Limit to first 20 images
+                    
+                    # Add additional metadata if including all images
+                    if include_all_images:
+                        image_data.update({
+                            "width": img_tag.get("width", ""),
+                            "height": img_tag.get("height", ""),
+                            "class": " ".join(img_tag.get("class", [])),
+                            "loading": img_tag.get("loading", ""),
+                            "srcset": img_tag.get("srcset", "")
+                        })
+                    
+                    images.append(image_data)
+        
+        # Extract background images if including all images
+        if include_all_images:
+            import re
+            for element in soup.select("[style*='background-image']"):
+                style = element.get("style", "")
+                bg_images = re.findall(r'background-image:\s*url\(["\']?([^"\']+)["\']?\)', style)
+                for bg_img in bg_images:
+                    absolute_url = urljoin(base_url, bg_img)
+                    images.append({
+                        "src": absolute_url,
+                        "alt": element.get("alt", ""),
+                        "title": element.get("title", ""),
+                        "type": "background_image",
+                        "element_tag": element.name,
+                        "element_class": " ".join(element.get("class", []))
+                    })
+        
+        # Limit images based on mode
+        limit = 100 if include_all_images else 20
+        return images[:limit]
 
     def _extract_custom_data(
         self, soup: BeautifulSoup, selectors: Dict[str, str]
@@ -573,14 +1082,33 @@ async def execute_scraping_job(
 
     try:
         url = job_config.get("url")
+        job_type = job_config.get("type", "single_page")
         scraper_type = job_config.get("scraper_type", "basic")
-        config = job_config.get("config", {})
+        
+        # Extract nested config if it exists, otherwise use the job_config directly
+        if "config" in job_config and isinstance(job_config["config"], dict):
+            config = job_config["config"]
+        else:
+            config = {}
+        
+        # Merge top-level crawling parameters into config for intelligent crawling
+        if job_type == "intelligent_crawling":
+            crawling_params = ["max_depth", "max_pages", "follow_internal_links", 
+                             "follow_external_links", "include_patterns", "exclude_patterns", 
+                             "rate_limit", "max_concurrent_workers"]
+            
+            for param in crawling_params:
+                if param in job_config:
+                    config[param] = job_config[param]
 
         if not url:
             raise ValueError("No URL provided for scraping")
 
-        # Perform the scraping
-        result = await scraping_engine.scrape_url(url, scraper_type, config)
+        # Handle different job types
+        if job_type == "intelligent_crawling":
+            result = await scraping_engine.intelligent_crawl(url, scraper_type, config)
+        else:  # single_page or legacy types
+            result = await scraping_engine.scrape_url(url, scraper_type, config)
 
         # Store results in database
         conn = sqlite3.connect(DATABASE_PATH)
@@ -595,17 +1123,38 @@ async def execute_scraping_job(
             (job_id, json.dumps(result)),
         )
 
-        # Update job status
-        cursor.execute(
-            """
-            UPDATE jobs 
-            SET status = 'completed', 
-                completed_at = CURRENT_TIMESTAMP,
-                results_count = results_count + 1
-            WHERE id = ?
-        """,
-            (job_id,),
-        )
+        # Calculate results count and summary data
+        if job_type == "intelligent_crawling":
+            summary = result.get("summary", {})
+            results_count = summary.get("data_extracted", 0)
+            
+            # Store additional summary data in job metadata
+            cursor.execute(
+                """
+                UPDATE jobs 
+                SET status = 'completed', 
+                    completed_at = CURRENT_TIMESTAMP,
+                    results_count = ?,
+                    config = json_set(config, '$.summary', ?)
+                WHERE id = ?
+            """,
+                (results_count, json.dumps(summary), job_id),
+            )
+        else:
+            # For single page jobs, count is 1 if successful
+            results_count = 1 if result.get("status") == "success" else 0
+            
+            # Update job status
+            cursor.execute(
+                """
+                UPDATE jobs 
+                SET status = 'completed', 
+                    completed_at = CURRENT_TIMESTAMP,
+                    results_count = ?
+                WHERE id = ?
+            """,
+                (results_count, job_id),
+            )
 
         conn.commit()
         conn.close()

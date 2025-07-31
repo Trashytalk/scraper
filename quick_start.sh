@@ -33,7 +33,7 @@ PYTHON_MIN_VERSION="3.8"
 VENV_DIR=".venv"
 LOG_FILE="quick_start.log"
 BACKEND_PORT=8000
-FRONTEND_PORT=5173
+FRONTEND_PORT=5174
 
 # Function to print colored output
 print_step() {
@@ -74,6 +74,20 @@ check_python_version() {
         fi
     else
         print_error "Python 3 not found"
+        return 1
+    fi
+}
+
+# Function to check Node.js version
+check_node_version() {
+    if command_exists node && command_exists npm; then
+        local node_version=$(node --version)
+        local npm_version=$(npm --version)
+        print_success "Node.js ${node_version} and npm ${npm_version} found"
+        return 0
+    else
+        print_warning "Node.js/npm not found - frontend will be skipped"
+        print_warning "Install Node.js from https://nodejs.org/ to enable frontend"
         return 1
     fi
 }
@@ -317,6 +331,68 @@ start_web_server() {
     return 0
 }
 
+# Function to start frontend server
+start_frontend_server() {
+    print_step "Starting frontend development server..."
+    
+    # Check if Node.js is available
+    if ! check_node_version; then
+        print_warning "Skipping frontend startup - Node.js not available"
+        return 0
+    fi
+    
+    # Check if frontend directory exists
+    if [ ! -d "business_intel_scraper/frontend" ]; then
+        print_warning "Frontend directory not found, skipping frontend startup"
+        return 0
+    fi
+    
+    # Check if package.json exists
+    if [ ! -f "business_intel_scraper/frontend/package.json" ]; then
+        print_warning "Frontend package.json not found, skipping frontend startup"
+        return 0
+    fi
+    
+    # Make sure frontend port is available
+    if ! check_port $FRONTEND_PORT; then
+        kill_port $FRONTEND_PORT
+    fi
+    
+    # Install frontend dependencies if node_modules doesn't exist
+    if [ ! -d "business_intel_scraper/frontend/node_modules" ]; then
+        print_info "Installing frontend dependencies..."
+        cd business_intel_scraper/frontend
+        npm install
+        cd ../..
+    fi
+    
+    # Start the frontend server
+    print_info "Starting frontend server on port $FRONTEND_PORT..."
+    cd business_intel_scraper/frontend
+    
+    # Use polling to avoid file watcher issues
+    CHOKIDAR_USEPOLLING=true nohup npm run dev > ../../logs/frontend.log 2>&1 &
+    FRONTEND_PID=$!
+    cd ../..
+    
+    # Wait for frontend server to start
+    print_info "Waiting for frontend server to start..."
+    for i in {1..20}; do
+        if curl -f http://localhost:$FRONTEND_PORT/ >/dev/null 2>&1; then
+            print_success "Frontend server is running!"
+            break
+        fi
+        if [ $i -eq 20 ]; then
+            print_warning "Frontend server may not be ready yet (this is normal)"
+            break
+        fi
+        sleep 2
+    done
+    
+    echo $FRONTEND_PID > .frontend_pid
+    return 0
+}
+
 # Function to show access information
 show_access_info() {
     echo ""
@@ -325,35 +401,35 @@ show_access_info() {
     echo ""
     echo -e "${GREEN}✅ Server Status:${NC}"
     echo -e "   Backend Server: ${GREEN}RUNNING${NC} on port $BACKEND_PORT"
+    if [ -f ".frontend_pid" ]; then
+        echo -e "   Frontend Server: ${GREEN}RUNNING${NC} on port $FRONTEND_PORT"
+    fi
     echo ""
     echo -e "${CYAN}🌐 Access Points:${NC}"
+    echo -e "   ${BLUE}🎨 Web Interface:${NC}   http://localhost:$FRONTEND_PORT/"
     echo -e "   ${BLUE}🔗 Main API:${NC}        http://localhost:$BACKEND_PORT/"
     echo -e "   ${BLUE}📚 API Docs:${NC}       http://localhost:$BACKEND_PORT/docs"
     echo -e "   ${BLUE}🔍 Health Check:${NC}   http://localhost:$BACKEND_PORT/health"
     echo -e "   ${BLUE}📊 Metrics:${NC}        http://localhost:$BACKEND_PORT/metrics"
     echo ""
     echo -e "${YELLOW}📋 Quick Commands:${NC}"
+    echo -e "   ${CYAN}# Open main interface${NC}"
+    echo -e "   open http://localhost:$FRONTEND_PORT/"
+    echo ""
     echo -e "   ${CYAN}# Test the API${NC}"
     echo -e "   curl http://localhost:$BACKEND_PORT/health"
     echo ""
     echo -e "   ${CYAN}# View API documentation${NC}"
     echo -e "   open http://localhost:$BACKEND_PORT/docs"
     echo ""
-    echo -e "   ${CYAN}# Stop the server${NC}"
+    echo -e "   ${CYAN}# Stop all servers${NC}"
     echo -e "   ./quick_start.sh --stop"
     echo ""
     echo -e "   ${CYAN}# Run tests${NC}"
     echo -e "   python3 tests/run_full_coverage.py --coverage"
     echo ""
-    
-    if [ -f "business_intel_scraper/frontend/package.json" ]; then
-        echo -e "${YELLOW}🎨 Frontend Available:${NC}"
-        echo -e "   ${CYAN}# Start frontend dashboard${NC}"
-        echo -e "   cd business_intel_scraper/frontend && npm install && npm run dev"
-        echo ""
-    fi
-    
     echo -e "${GREEN}✨ Your Business Intelligence Scraper is ready!${NC}"
+    echo -e "${GREEN}✨ Visit http://localhost:$FRONTEND_PORT/ to get started!${NC}"
     echo ""
 }
 
@@ -368,6 +444,15 @@ stop_services() {
             print_success "Stopped backend server"
         fi
         rm -f .backend_pid
+    fi
+    
+    if [ -f ".frontend_pid" ]; then
+        local pid=$(cat .frontend_pid)
+        if kill -0 $pid 2>/dev/null; then
+            kill $pid
+            print_success "Stopped frontend server"
+        fi
+        rm -f .frontend_pid
     fi
     
     # Kill any remaining processes on our ports
@@ -498,6 +583,9 @@ main() {
         exit 1
     fi
     
+    # Check Node.js (optional for frontend)
+    check_node_version
+    
     if ! command_exists curl; then
         print_warning "curl not found, install it for better functionality"
     fi
@@ -521,15 +609,18 @@ main() {
     
     # Start services
     if start_web_server; then
+        # Start frontend server (non-blocking)
+        start_frontend_server
+        
         show_access_info
         
         # Keep the script running and show logs
-        echo -e "${YELLOW}Press Ctrl+C to stop the server${NC}"
+        echo -e "${YELLOW}Press Ctrl+C to stop all servers${NC}"
         echo ""
-        echo -e "${CYAN}Server logs:${NC}"
-        echo "============"
+        echo -e "${CYAN}Server logs (backend):${NC}"
+        echo "======================"
         
-        # Follow the log file
+        # Follow the backend log file
         if [ -f "logs/backend.log" ]; then
             tail -f logs/backend.log
         else

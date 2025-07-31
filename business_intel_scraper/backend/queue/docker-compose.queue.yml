@@ -1,0 +1,264 @@
+# Queue System Services
+# Development and Production configurations for the distributed queue system
+
+version: '3.8'
+
+services:
+  # Redis Queue Backend
+  redis-queue:
+    image: redis:7-alpine
+    container_name: redis-queue
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_queue_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  # Kafka Queue Backend (for high-throughput scenarios)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper-queue
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka-queue
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      KAFKA_CONFLUENT_METRICS_ENABLE: 'true'
+      KAFKA_CONFLUENT_SUPPORT_CUSTOMER_ID: anonymous
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  # Queue Management API
+  queue-api:
+    build:
+      context: ../../../
+      dockerfile: docker/Dockerfile.queue
+    container_name: queue-api
+    depends_on:
+      - redis-queue
+    environment:
+      - QUEUE_BACKEND=redis
+      - REDIS_URL=redis://redis-queue:6379/0
+      - DATABASE_URL=postgresql://user:password@postgres:5432/business_intel
+      - STORAGE_TYPE=s3
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=business-intel-storage
+    ports:
+      - "8001:8000"
+    volumes:
+      - ../../../:/app
+    working_dir: /app
+    command: uvicorn business_intel_scraper.backend.queue.api:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  # Distributed Crawl Workers (Scaling Example)
+  crawl-worker:
+    build:
+      context: ../../../
+      dockerfile: docker/Dockerfile.queue
+    depends_on:
+      - redis-queue
+      - queue-api
+    environment:
+      - QUEUE_BACKEND=redis
+      - REDIS_URL=redis://redis-queue:6379/0
+      - DATABASE_URL=postgresql://user:password@postgres:5432/business_intel
+      - STORAGE_TYPE=s3
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=business-intel-storage
+      - WORKER_TYPE=crawl
+      - WORKER_ID=${WORKER_ID:-crawl-worker-0}
+    volumes:
+      - ../../../:/app
+    working_dir: /app
+    command: python -m business_intel_scraper.backend.queue.worker --type crawl
+    networks:
+      - queue-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+
+  parse-worker:
+    build:
+      context: ../../../
+      dockerfile: docker/Dockerfile.queue
+    depends_on:
+      - redis-queue
+      - queue-api
+    environment:
+      - QUEUE_BACKEND=redis
+      - REDIS_URL=redis://redis-queue:6379/0
+      - DATABASE_URL=postgresql://user:password@postgres:5432/business_intel
+      - STORAGE_TYPE=s3
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=business-intel-storage
+      - WORKER_TYPE=parse
+      - WORKER_ID=${WORKER_ID:-parse-worker-0}
+    volumes:
+      - ../../../:/app
+    working_dir: /app
+    command: python -m business_intel_scraper.backend.queue.worker --type parse
+    networks:
+      - queue-network
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
+  # Monitoring and Management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      - REDIS_HOSTS=queue:redis-queue:6379
+    ports:
+      - "8082:8081"
+    depends_on:
+      - redis-queue
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  # Kafka UI (when using Kafka backend)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8083:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: queue-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  # PostgreSQL for crawl tracking and metadata
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-queue
+    environment:
+      POSTGRES_DB: business_intel
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  # MinIO for object storage
+  minio:
+    image: minio/minio:latest
+    container_name: minio-queue
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+  # Queue System Monitor
+  queue-monitor:
+    build:
+      context: ../../../
+      dockerfile: docker/Dockerfile.queue
+    container_name: queue-monitor
+    depends_on:
+      - redis-queue
+      - queue-api
+    environment:
+      - QUEUE_BACKEND=redis
+      - REDIS_URL=redis://redis-queue:6379/0
+      - DATABASE_URL=postgresql://user:password@postgres:5432/business_intel
+    ports:
+      - "8084:8080"
+    volumes:
+      - ../../../:/app
+    working_dir: /app
+    command: python -m business_intel_scraper.backend.queue.monitor --host 0.0.0.0 --port 8080
+    networks:
+      - queue-network
+    restart: unless-stopped
+
+networks:
+  queue-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_queue_data:
+    driver: local
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+  kafka_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local

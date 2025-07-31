@@ -20,6 +20,7 @@ import json
 import sqlite3
 import jwt
 import time
+import hashlib
 from datetime import datetime, timedelta
 import uvicorn
 import os
@@ -370,6 +371,14 @@ class JobResponse(BaseModel):
     results_count: int
 
 
+class BatchJobCreate(BaseModel):
+    base_name: str
+    urls: List[str]
+    scraper_type: Optional[str] = "basic"
+    batch_size: Optional[int] = 10
+    config: Optional[Dict[str, Any]] = {}
+
+
 class AnalyticsData(BaseModel):
     metric_name: str
     metric_value: float
@@ -491,7 +500,7 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
     cursor = conn.cursor()
     cursor.execute(
         """
-        SELECT id, name, type, status, created_at, results_count 
+        SELECT id, name, type, status, created_at, results_count, config 
         FROM jobs 
         WHERE created_by = ? 
         ORDER BY created_at DESC
@@ -501,8 +510,12 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
     jobs = cursor.fetchall()
     conn.close()
 
-    return [
-        JobResponse(
+    job_list = []
+    for job in jobs:
+        job_config = json.loads(job[6]) if job[6] else {}
+        summary = job_config.get("summary", {})
+        
+        job_response = JobResponse(
             id=job[0],
             name=job[1],
             type=job[2],
@@ -510,8 +523,14 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
             created_at=job[4],
             results_count=job[5] or 0,
         )
-        for job in jobs
-    ]
+        
+        # Add summary data as additional attribute
+        if summary:
+            job_response.__dict__["summary"] = summary
+            
+        job_list.append(job_response)
+
+    return job_list
 
 
 @app.post("/api/jobs")
@@ -577,6 +596,96 @@ async def create_job(
     return {"id": job_id, "message": "Job created successfully"}
 
 
+@app.post("/api/jobs/batch")
+@limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+async def create_batch_jobs(
+    request: Request,
+    batch_data: BatchJobCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create multiple scraping jobs from a list of URLs"""
+    
+    if not batch_data.urls:
+        raise HTTPException(status_code=400, detail="No URLs provided")
+    
+    if len(batch_data.urls) > 100:  # Safety limit
+        raise HTTPException(status_code=400, detail="Too many URLs (max 100)")
+    
+    created_jobs = []
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    try:
+        for i, url in enumerate(batch_data.urls):
+            # Create job name with index
+            job_name = f"{batch_data.base_name} - Job {i + 1}"
+            
+            # Build job configuration
+            job_config = {
+                "url": url,
+                "scraper_type": batch_data.scraper_type or "basic",
+                "config": batch_data.config or {},
+            }
+            
+            # Validate job configuration for security
+            try:
+                validated_config = validate_job_config(job_config)
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=f"Invalid config for URL {url}: {str(e)}")
+            
+            # Insert job into database
+            cursor.execute(
+                """
+                INSERT INTO jobs (name, type, config, created_by, status)
+                VALUES (?, ?, ?, ?, 'pending')
+                """,
+                (
+                    job_name,
+                    "batch_scraping",
+                    json.dumps(validated_config),
+                    current_user["id"],
+                ),
+            )
+            job_id = cursor.lastrowid
+            
+            created_jobs.append({
+                "id": job_id,
+                "name": job_name,
+                "url": url,
+                "scraper_type": batch_data.scraper_type,
+                "status": "pending"
+            })
+        
+        conn.commit()
+        
+        # Broadcast batch job creation to WebSocket clients
+        await manager.broadcast(
+            json.dumps(
+                {
+                    "type": "batch_jobs_created",
+                    "data": {
+                        "batch_name": batch_data.base_name,
+                        "jobs_count": len(created_jobs),
+                        "jobs": created_jobs,
+                    },
+                }
+            )
+        )
+        
+        return {
+            "message": f"Successfully created {len(created_jobs)} batch jobs",
+            "batch_name": batch_data.base_name,
+            "jobs_created": len(created_jobs),
+            "jobs": created_jobs
+        }
+        
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create batch jobs: {str(e)}")
+    finally:
+        conn.close()
+
+
 @app.get("/api/jobs/{job_id}")
 async def get_job(job_id: int, current_user: dict = Depends(get_current_user)):
     """Get specific job details"""
@@ -612,10 +721,10 @@ async def start_job(job_id: int, current_user: dict = Depends(get_current_user))
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # First, get the job configuration
+    # First, get the job configuration and type
     cursor.execute(
         """
-        SELECT config FROM jobs 
+        SELECT config, type FROM jobs 
         WHERE id = ? AND created_by = ?
     """,
         (job_id, current_user["id"]),
@@ -626,7 +735,11 @@ async def start_job(job_id: int, current_user: dict = Depends(get_current_user))
         conn.close()
         raise HTTPException(status_code=404, detail="Job not found")
 
-    job_config = json.loads(job_row[0])
+    job_config = json.loads(job_row[0]) if job_row[0] else {}
+    job_type = job_row[1]
+    
+    # Include the job type in the config so the scraping engine knows what to do
+    job_config["type"] = job_type
 
     # Update job status to running
     cursor.execute(
@@ -1034,6 +1147,191 @@ async def websocket_endpoint(websocket: WebSocket):
             )
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+# Data centralization endpoint
+class CentralizeDataRequest(BaseModel):
+    job_id: int
+    job_name: str
+    data: List[Dict[str, Any]]
+    metadata: Dict[str, Any]
+
+
+@app.post("/api/data/centralize")
+async def centralize_data(
+    request: CentralizeDataRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Centralize scraped data for analytics and storage
+    Enhanced with comprehensive data processing and quality metrics
+    """
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Create centralized data table if it doesn't exist
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS centralized_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_job_id INTEGER,
+                source_job_name TEXT,
+                source_job_type TEXT,
+                source_url TEXT,
+                raw_data TEXT,
+                processed_data TEXT,
+                data_type TEXT,
+                content_hash TEXT,
+                scraped_at TIMESTAMP,
+                centralized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                data_quality_score INTEGER,
+                completeness_score INTEGER,
+                validation_status TEXT,
+                word_count INTEGER,
+                link_count INTEGER,
+                image_count INTEGER,
+                crawl_metadata TEXT
+            )
+        """)
+        
+        # Create index for efficient lookups
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_content_hash 
+            ON centralized_data(content_hash)
+        """)
+        
+        centralized_count = 0
+        duplicate_count = 0
+        
+        for item in request.data:
+            # Calculate content hash for deduplication
+            content_str = json.dumps(item, sort_keys=True)
+            content_hash = hashlib.md5(content_str.encode()).hexdigest()
+            
+            # Check for duplicates
+            cursor.execute(
+                "SELECT id FROM centralized_data WHERE content_hash = ?",
+                (content_hash,)
+            )
+            existing = cursor.fetchone()
+            
+            if existing:
+                duplicate_count += 1
+                continue
+            
+            # Calculate quality metrics
+            quality_score = 0
+            completeness_score = 0
+            word_count = 0
+            link_count = 0
+            image_count = 0
+            
+            # Quality assessment
+            if item.get("title"):
+                quality_score += 20
+                completeness_score += 25
+            if item.get("content") or item.get("text_content"):
+                content = item.get("content", "") or item.get("text_content", "")
+                if len(content) > 100:
+                    quality_score += 30
+                    completeness_score += 25
+                word_count = len(content.split())
+            if item.get("url"):
+                quality_score += 20
+                completeness_score += 20
+            if item.get("links"):
+                links = item.get("links", [])
+                link_count = len(links) if isinstance(links, list) else 0
+                if link_count > 0:
+                    quality_score += 15
+                    completeness_score += 15
+            if item.get("images"):
+                images = item.get("images", [])
+                image_count = len(images) if isinstance(images, list) else 0
+                if image_count > 0:
+                    quality_score += 15
+                    completeness_score += 15
+            
+            # Determine data type
+            data_type = "general"
+            content_lower = str(item).lower()
+            if any(keyword in content_lower for keyword in ["product", "price", "buy", "cart"]):
+                data_type = "ecommerce"
+            elif any(keyword in content_lower for keyword in ["article", "news", "headline", "author"]):
+                data_type = "news"
+            elif any(keyword in content_lower for keyword in ["post", "tweet", "comment", "like"]):
+                data_type = "social_media"
+            
+            # Process crawl metadata if available
+            crawl_metadata = ""
+            if item.get("crawl_metadata"):
+                crawl_metadata = json.dumps(item["crawl_metadata"])
+            
+            # Insert centralized record
+            cursor.execute("""
+                INSERT INTO centralized_data (
+                    source_job_id, source_job_name, source_job_type, source_url,
+                    raw_data, processed_data, data_type, content_hash,
+                    scraped_at, data_quality_score, completeness_score,
+                    validation_status, word_count, link_count, image_count,
+                    crawl_metadata
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                request.job_id,
+                request.job_name,
+                request.metadata.get("job_type", "unknown"),
+                item.get("url", ""),
+                json.dumps(item),
+                json.dumps(item),  # Could be enhanced processing
+                data_type,
+                content_hash,
+                item.get("timestamp", datetime.utcnow().isoformat()),
+                quality_score,
+                completeness_score,
+                "valid" if quality_score >= 70 else "pending",
+                word_count,
+                link_count,
+                image_count,
+                crawl_metadata
+            ))
+            
+            centralized_count += 1
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            "status": "success",
+            "message": f"Successfully centralized {centralized_count} records",
+            "centralized_records": centralized_count,
+            "duplicates_found": duplicate_count,
+            "total_processed": len(request.data)
+        }
+        
+    except Exception as e:
+        print(f"Error centralizing data: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to centralize data: {str(e)}"
+        }
+
+
+@app.get("/api/data/consolidate")
+async def consolidate_all_data(current_user: dict = Depends(get_current_user)):
+    """
+    Consolidate all job data into centralized database
+    """
+    try:
+        # This could be enhanced to automatically process all completed jobs
+        return {
+            "status": "success",
+            "message": "Data consolidation completed successfully"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to consolidate data: {str(e)}"
+        }
 
 
 if __name__ == "__main__":

@@ -1,0 +1,57 @@
+# Dockerfile for Queue System Components
+# Supports multiple worker types and API services
+
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    wget \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create application directory
+WORKDIR /app
+
+# Copy requirements
+COPY requirements.txt requirements-consolidated.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-consolidated.txt
+
+# Install additional queue-specific dependencies
+RUN pip install --no-cache-dir \
+    redis>=4.5.0 \
+    kafka-python>=2.0.0 \
+    boto3>=1.26.0 \
+    rich>=13.0.0 \
+    click>=8.0.0
+
+# Copy application code
+COPY . .
+
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Health check script
+COPY docker/healthcheck.sh /usr/local/bin/healthcheck.sh
+USER root
+RUN chmod +x /usr/local/bin/healthcheck.sh
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD /usr/local/bin/healthcheck.sh
+
+# Default command (can be overridden)
+CMD ["python", "-m", "business_intel_scraper.backend.queue.api"]
