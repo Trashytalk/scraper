@@ -243,7 +243,16 @@ const App = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        setAnalytics(data);
+        // Transform API response to match frontend interface
+        const transformedData = {
+          total_jobs: data.jobs?.total || 0,
+          completed_jobs: data.jobs?.completed || 0,
+          failed_jobs: data.jobs?.failed || 0,
+          running_jobs: data.jobs?.running || 0,
+          total_data_points: data.results?.total || 0,
+          avg_completion_time: 0, // Will need to calculate this from performance data
+        };
+        setAnalytics(transformedData);
       }
     } catch (error) {
       console.error("Failed to fetch analytics:", error);
@@ -1199,221 +1208,14 @@ const App = () => {
 
       {/* Operations Tab */}
       {currentTab === "operations" && (
-        <OperationsInterface
-          jobs={jobs}
-          newJob={newJob}
-          setNewJob={setNewJob}
-          operationsConfig={operationsConfig}
-          updateOperationsConfig={updateOperationsConfig}
-          toggleSection={toggleSection}
-          configPanelOpen={configPanelOpen}
-          toggleConfigPanel={toggleConfigPanel}
-          workflowSidebarOpen={workflowSidebarOpen}
-          setWorkflowSidebarOpen={setWorkflowSidebarOpen}
-          selectedJobForWorkflow={selectedJobForWorkflow}
-          setSelectedJobForWorkflow={setSelectedJobForWorkflow}
-          isSubmitting={isSubmitting}
-          createJob={submitJob}
-          fetchJobs={fetchJobs}
-          getJobDetails={getJobDetails}
-          getJobResults={getJobResults}
-          startJob={startJob}
-          resetOperationsConfig={resetOperationsConfig}
-        />
-      )}
-
-      {/* Dashboard Tab */}
-      {currentTab === "dashboard" && (
         <div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "20px",
-              marginBottom: "30px",
-            }}
-          >
-            {analytics && (
-              <>
-                <div
-                  style={{
-                    padding: "20px",
-                    backgroundColor: "#f8f9fa",
-                    borderRadius: "8px",
-                    border: "1px solid #ddd",
-                  }}
-                >
-                  <h3 style={{ margin: "0 0 10px 0", color: "#1976d2" }}>
-                    Total Jobs
-                  </h3>
-                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
-                    {analytics.total_jobs}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    padding: "20px",
-                    backgroundColor: "#d4edda",
-                    borderRadius: "8px",
-                    border: "1px solid #c3e6cb",
-                  }}
-                >
-                  <h3 style={{ margin: "0 0 10px 0", color: "#155724" }}>
-                    Completed
-                  </h3>
-                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
-                    {analytics.completed_jobs}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    padding: "20px",
-                    backgroundColor: "#fff3cd",
-                    borderRadius: "8px",
-                    border: "1px solid #ffeaa7",
-                  }}
-                >
-                  <h3 style={{ margin: "0 0 10px 0", color: "#856404" }}>
-                    Running
-                  </h3>
-                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
-                    {analytics.running_jobs}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    padding: "20px",
-                    backgroundColor: "#f8d7da",
-                    borderRadius: "8px",
-                    border: "1px solid #f5c6cb",
-                  }}
-                >
-                  <h3 style={{ margin: "0 0 10px 0", color: "#721c24" }}>
-                    Failed
-                  </h3>
-                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
-                    {analytics.failed_jobs}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Recent Jobs */}
-          <div
-            style={{
-              backgroundColor: "#f8f9fa",
-              padding: "20px",
-              borderRadius: "8px",
-              marginBottom: "20px",
-            }}
-          >
-            <h2>🔄 Recent Jobs</h2>
-            {jobs.slice(0, 5).map((job) => (
-              <div
-                key={job.id}
-                style={{
-                  padding: "15px",
-                  border: "1px solid #ddd",
-                  borderRadius: "5px",
-                  backgroundColor: "white",
-                  marginBottom: "10px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <strong>{job.name}</strong>
-                  <div style={{ fontSize: "12px", color: "#666" }}>
-                    Created: {new Date(job.created_at).toLocaleString()}
-                  </div>
-                </div>
-                <div
-                  style={{ display: "flex", gap: "10px", alignItems: "center" }}
-                >
-                  <span
-                    style={{
-                      padding: "4px 8px",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      backgroundColor:
-                        job.status === "completed"
-                          ? "#d4edda"
-                          : job.status === "failed"
-                            ? "#f8d7da"
-                            : job.status === "running"
-                              ? "#fff3cd"
-                              : "#e2e3e5",
-                      color:
-                        job.status === "completed"
-                          ? "#155724"
-                          : job.status === "failed"
-                            ? "#721c24"
-                            : job.status === "running"
-                              ? "#856404"
-                              : "#383d41",
-                    }}
-                  >
-                    {job.status}
-                  </span>
-                  <button
-                    onClick={() => getJobDetails(job.id)}
-                    style={{
-                      padding: "4px 8px",
-                      fontSize: "12px",
-                      backgroundColor: "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Details
-                  </button>
-                  {job.status === "pending" && (
-                    <button
-                      onClick={() => startJob(job.id)}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: "12px",
-                        backgroundColor: "#28a745",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Start
-                    </button>
-                  )}
-                  {job.status === "completed" && (
-                    <button
-                      onClick={() => getJobResults(job.id)}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: "12px",
-                        backgroundColor: "#17a2b8",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      View Results
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Quick Create Job */}
+          {/* Quick Create Job Section - Added to existing operations */}
           <div
             style={{
               backgroundColor: "#e3f2fd",
               padding: "20px",
               borderRadius: "8px",
+              marginBottom: "20px",
             }}
           >
             <h2>🚀 Quick Create Job</h2>
@@ -1761,9 +1563,293 @@ const App = () => {
                   ? "Creating..."
                   : newJob.config?.batch_mode
                     ? `Create ${Math.ceil(extractedUrls.length / (newJob.config?.batch_size || 10))} Jobs`
-                    : "Create"}
+                    : "Create Job"}
               </button>
             </form>
+            
+            {/* Enhanced Crawling Options */}
+            <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+              <h4 style={{ margin: "0 0 15px 0", color: "#1976d2" }}>
+                🚀 Enhanced Crawling Options
+              </h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={newJob.config?.extract_full_html || false}
+                    onChange={(e) =>
+                      setNewJob({
+                        ...newJob,
+                        config: {
+                          ...newJob.config,
+                          extract_full_html: e.target.checked,
+                        },
+                      })
+                    }
+                  />
+                  <span style={{ fontWeight: "500" }}>Extract Full HTML</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={newJob.config?.crawl_entire_domain || false}
+                    onChange={(e) =>
+                      setNewJob({
+                        ...newJob,
+                        config: {
+                          ...newJob.config,
+                          crawl_entire_domain: e.target.checked,
+                        },
+                      })
+                    }
+                  />
+                  <span style={{ fontWeight: "500" }}>Crawl Entire Domain</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={newJob.config?.include_images || false}
+                    onChange={(e) =>
+                      setNewJob({
+                        ...newJob,
+                        config: {
+                          ...newJob.config,
+                          include_images: e.target.checked,
+                        },
+                      })
+                    }
+                  />
+                  <span style={{ fontWeight: "500" }}>Include Images</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={newJob.config?.save_to_database !== false}
+                    onChange={(e) =>
+                      setNewJob({
+                        ...newJob,
+                        config: {
+                          ...newJob.config,
+                          save_to_database: e.target.checked,
+                        },
+                      })
+                    }
+                  />
+                  <span style={{ fontWeight: "500" }}>Save to Database</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Original OperationsInterface - Restored */}
+          <OperationsInterface
+            jobs={jobs}
+            newJob={newJob}
+            setNewJob={setNewJob}
+            operationsConfig={operationsConfig}
+            updateOperationsConfig={updateOperationsConfig}
+            toggleSection={toggleSection}
+            configPanelOpen={configPanelOpen}
+            toggleConfigPanel={toggleConfigPanel}
+            workflowSidebarOpen={workflowSidebarOpen}
+            setWorkflowSidebarOpen={setWorkflowSidebarOpen}
+            selectedJobForWorkflow={selectedJobForWorkflow}
+            setSelectedJobForWorkflow={setSelectedJobForWorkflow}
+            isSubmitting={isSubmitting}
+            createJob={submitJob}
+            fetchJobs={fetchJobs}
+            getJobDetails={getJobDetails}
+            getJobResults={getJobResults}
+            startJob={startJob}
+            resetOperationsConfig={resetOperationsConfig}
+          />
+        </div>
+      )}
+
+      {/* Dashboard Tab */}
+      {currentTab === "dashboard" && (
+        <div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "20px",
+              marginBottom: "30px",
+            }}
+          >
+            {analytics && (
+              <>
+                <div
+                  style={{
+                    padding: "20px",
+                    backgroundColor: "#f8f9fa",
+                    borderRadius: "8px",
+                    border: "1px solid #ddd",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 10px 0", color: "#1976d2" }}>
+                    Total Jobs
+                  </h3>
+                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
+                    {analytics.total_jobs}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: "20px",
+                    backgroundColor: "#d4edda",
+                    borderRadius: "8px",
+                    border: "1px solid #c3e6cb",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 10px 0", color: "#155724" }}>
+                    Completed
+                  </h3>
+                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
+                    {analytics.completed_jobs}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: "20px",
+                    backgroundColor: "#fff3cd",
+                    borderRadius: "8px",
+                    border: "1px solid #ffeaa7",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 10px 0", color: "#856404" }}>
+                    Running
+                  </h3>
+                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
+                    {analytics.running_jobs}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: "20px",
+                    backgroundColor: "#f8d7da",
+                    borderRadius: "8px",
+                    border: "1px solid #f5c6cb",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 10px 0", color: "#721c24" }}>
+                    Failed
+                  </h3>
+                  <div style={{ fontSize: "2em", fontWeight: "bold" }}>
+                    {analytics.failed_jobs}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Recent Jobs */}
+          <div
+            style={{
+              backgroundColor: "#f8f9fa",
+              padding: "20px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+            }}
+          >
+            <h2>🔄 Recent Jobs</h2>
+            {jobs.slice(0, 5).map((job) => (
+              <div
+                key={job.id}
+                style={{
+                  padding: "15px",
+                  border: "1px solid #ddd",
+                  borderRadius: "5px",
+                  backgroundColor: "white",
+                  marginBottom: "10px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <strong>{job.name}</strong>
+                  <div style={{ fontSize: "12px", color: "#666" }}>
+                    Created: {new Date(job.created_at).toLocaleString()}
+                  </div>
+                </div>
+                <div
+                  style={{ display: "flex", gap: "10px", alignItems: "center" }}
+                >
+                  <span
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      backgroundColor:
+                        job.status === "completed"
+                          ? "#d4edda"
+                          : job.status === "failed"
+                            ? "#f8d7da"
+                            : job.status === "running"
+                              ? "#fff3cd"
+                              : "#e2e3e5",
+                      color:
+                        job.status === "completed"
+                          ? "#155724"
+                          : job.status === "failed"
+                            ? "#721c24"
+                            : job.status === "running"
+                              ? "#856404"
+                              : "#383d41",
+                    }}
+                  >
+                    {job.status}
+                  </span>
+                  <button
+                    onClick={() => getJobDetails(job.id)}
+                    style={{
+                      padding: "4px 8px",
+                      fontSize: "12px",
+                      backgroundColor: "#007bff",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Details
+                  </button>
+                  {job.status === "pending" && (
+                    <button
+                      onClick={() => startJob(job.id)}
+                      style={{
+                        padding: "4px 8px",
+                        fontSize: "12px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "3px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Start
+                    </button>
+                  )}
+                  {job.status === "completed" && (
+                    <button
+                      onClick={() => getJobResults(job.id)}
+                      style={{
+                        padding: "4px 8px",
+                        fontSize: "12px",
+                        backgroundColor: "#17a2b8",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "3px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      View Results
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

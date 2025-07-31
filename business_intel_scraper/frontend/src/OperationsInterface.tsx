@@ -519,7 +519,7 @@ const OperationsInterface: React.FC<OperationsProps> = ({
               {/* Universal Configuration */}
               <div style={{ marginBottom: "20px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "6px", border: "1px solid #dee2e6" }}>
                 <h4 style={{ margin: "0 0 10px 0", color: "#495057" }}>⚙️ Universal Settings</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "15px" }}>
                   <div>
                     <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px" }}>
                       <input
@@ -547,6 +547,65 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                     </label>
                   </div>
                 </div>
+
+                {/* Enhanced Crawling Options */}
+                <div style={{ borderTop: "1px solid #dee2e6", paddingTop: "15px" }}>
+                  <h5 style={{ margin: "0 0 10px 0", color: "#495057", fontSize: "14px", fontWeight: "600" }}>🚀 Enhanced Crawling Options</h5>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px" }}>
+                        <input
+                          type="checkbox"
+                          title="Extract the complete HTML source code of each page. Useful for preserving original formatting and structure."
+                          checked={newJob.config?.extract_full_html || false}
+                          onChange={(e) => updateJobConfig("extract_full_html", e.target.checked)}
+                        />
+                        <span title="Extract the complete HTML source code of each page. Useful for preserving original formatting and structure.">
+                          Extract Full HTML ℹ️
+                        </span>
+                      </label>
+                    </div>
+                    <div>
+                      <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px" }}>
+                        <input
+                          type="checkbox"
+                          title="Automatically crawl all pages within the same domain. When enabled, the crawler will discover and process all reachable pages on the website."
+                          checked={newJob.config?.crawl_entire_domain || false}
+                          onChange={(e) => updateJobConfig("crawl_entire_domain", e.target.checked)}
+                        />
+                        <span title="Automatically crawl all pages within the same domain. When enabled, the crawler will discover and process all reachable pages on the website.">
+                          Crawl Entire Domain ℹ️
+                        </span>
+                      </label>
+                    </div>
+                    <div>
+                      <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px" }}>
+                        <input
+                          type="checkbox"
+                          title="Download and include image files found on pages. Useful for visual content analysis and archival purposes."
+                          checked={newJob.config?.include_images || false}
+                          onChange={(e) => updateJobConfig("include_images", e.target.checked)}
+                        />
+                        <span title="Download and include image files found on pages. Useful for visual content analysis and archival purposes.">
+                          Include Images ℹ️
+                        </span>
+                      </label>
+                    </div>
+                    <div>
+                      <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px" }}>
+                        <input
+                          type="checkbox"
+                          title="Save extracted data to the database for persistence and later analysis. Recommended for most use cases."
+                          checked={newJob.config?.save_to_database !== false}
+                          onChange={(e) => updateJobConfig("save_to_database", e.target.checked)}
+                        />
+                        <span title="Save extracted data to the database for persistence and later analysis. Recommended for most use cases.">
+                          Save to Database ℹ️
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </details>
@@ -567,7 +626,7 @@ const OperationsInterface: React.FC<OperationsProps> = ({
               marginTop: "10px",
             }}
           >
-            {isSubmitting ? "Creating Collection Job..." : "🚀 Start Collection"}
+            {isSubmitting ? "Creating Job..." : "🚀 Create Job"}
           </button>
         </form>
       </div>
@@ -705,7 +764,7 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                           fontWeight: "bold",
                         }}
                       >
-                        ▶️ Start Collection
+                        ▶️ Create Job
                       </button>
                     )}
                     
