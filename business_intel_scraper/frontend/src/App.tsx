@@ -477,9 +477,16 @@ const App = () => {
       let extractedData = [];
       let totalCount = 0;
       
-      // Handle intelligent crawling results
-      if (data && typeof data === 'object' && data.crawled_data) {
-        // Intelligent crawling result structure
+      // Handle intelligent crawling results - check if it's an array with crawling data
+      if (Array.isArray(data) && data.length > 0 && data[0].crawled_data) {
+        // Intelligent crawling result structure (array with nested crawled_data)
+        const crawlingResult = data[0];
+        extractedData = crawlingResult.crawled_data || [];
+        totalCount = crawlingResult.summary?.data_extracted || extractedData.length;
+        console.log("Detected intelligent crawling data:", crawlingResult.summary);
+        console.log("Extracted data count:", extractedData.length);
+      } else if (data && typeof data === 'object' && data.crawled_data) {
+        // Direct crawling result structure  
         extractedData = data.crawled_data || [];
         totalCount = data.summary?.data_extracted || extractedData.length;
         console.log("Detected intelligent crawling data:", data.summary);
@@ -2034,62 +2041,144 @@ const App = () => {
                   overflow: "auto",
                 }}
               >
-                <h2>Job Details: {selectedJob.name}</h2>
+                <h2>📊 Job Details: {selectedJob.name}</h2>
                 <div style={{ marginBottom: "20px" }}>
-                  <strong>Status:</strong> {selectedJob.status}
-                  <br />
-                  <strong>Type:</strong> {selectedJob.type}
-                  <br />
-                  <strong>Created:</strong>{" "}
-                  {new Date(selectedJob.created_at).toLocaleString()}
-                  <br />
-                  {selectedJob.started_at && (
-                    <>
-                      <strong>Started:</strong>{" "}
-                      {new Date(selectedJob.started_at).toLocaleString()}
-                      <br />
-                    </>
-                  )}
-                  {selectedJob.completed_at && (
-                    <>
-                      <strong>Completed:</strong>{" "}
-                      {new Date(selectedJob.completed_at).toLocaleString()}
-                      <br />
-                    </>
-                  )}
-                  {selectedJob.error_message && (
-                    <>
-                      <strong>Error:</strong> {selectedJob.error_message}
-                      <br />
-                    </>
-                  )}
+                  <div style={{ display: "grid", gap: "8px" }}>
+                    <div><strong>Job ID:</strong> {selectedJob.id}</div>
+                    <div><strong>Status:</strong> <span style={{ 
+                      color: selectedJob.status === 'completed' ? '#28a745' : 
+                             selectedJob.status === 'failed' ? '#dc3545' : 
+                             selectedJob.status === 'running' ? '#ffc107' : '#6c757d',
+                      fontWeight: 'bold'
+                    }}>{selectedJob.status}</span></div>
+                    <div><strong>Type:</strong> {selectedJob.type}</div>
+                    <div><strong>Created:</strong> {new Date(selectedJob.created_at).toLocaleString()}</div>
+                    {selectedJob.started_at && (
+                      <div><strong>Started:</strong> {new Date(selectedJob.started_at).toLocaleString()}</div>
+                    )}
+                    {selectedJob.completed_at && (
+                      <div><strong>Completed:</strong> {new Date(selectedJob.completed_at).toLocaleString()}</div>
+                    )}
+                    {selectedJob.results_count && (
+                      <div><strong>Results Count:</strong> {selectedJob.results_count}</div>
+                    )}
+                    {selectedJob.error_message && (
+                      <div style={{ color: '#dc3545' }}><strong>Error:</strong> {selectedJob.error_message}</div>
+                    )}
+                  </div>
                 </div>
+                
+                {/* Configuration Section */}
                 <div style={{ marginBottom: "20px" }}>
                   <strong>Configuration:</strong>
-                  <pre
+                  <div style={{ 
+                    backgroundColor: "#f8f9fa", 
+                    padding: "15px", 
+                    borderRadius: "6px",
+                    border: "1px solid #e9ecef",
+                    marginTop: "8px" 
+                  }}>
+                    {selectedJob.config && typeof selectedJob.config === 'object' ? (
+                      <div style={{ display: "grid", gap: "8px" }}>
+                        {selectedJob.config.url && (
+                          <div><strong>URL:</strong> <a href={selectedJob.config.url} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff" }}>{selectedJob.config.url}</a></div>
+                        )}
+                        {selectedJob.config.scraper_type && (
+                          <div><strong>Scraper Type:</strong> {selectedJob.config.scraper_type}</div>
+                        )}
+                        {selectedJob.config.summary && (
+                          <div style={{ marginTop: "10px" }}>
+                            <strong>Crawling Summary:</strong>
+                            <div style={{ fontSize: "14px", marginTop: "5px" }}>
+                              {(() => {
+                                try {
+                                  const summary = typeof selectedJob.config.summary === 'string' 
+                                    ? JSON.parse(selectedJob.config.summary)
+                                    : selectedJob.config.summary;
+                                  return (
+                                    <div style={{ display: "grid", gap: "4px" }}>
+                                      {summary.pages_processed && <div>📄 Pages Processed: {summary.pages_processed}</div>}
+                                      {summary.urls_discovered && <div>🔗 URLs Discovered: {summary.urls_discovered}</div>}
+                                      {summary.data_extracted && <div>📊 Data Extracted: {summary.data_extracted}</div>}
+                                      {summary.total_crawl_time && <div>⏱️ Crawl Time: {summary.total_crawl_time}s</div>}
+                                      {summary.images_extracted !== undefined && <div>🖼️ Images Extracted: {summary.images_extracted}</div>}
+                                      {summary.domains_crawled && <div>🌐 Domains: {summary.domains_crawled.join(', ')}</div>}
+                                    </div>
+                                  );
+                                } catch {
+                                  return <div>{selectedJob.config.summary}</div>;
+                                }
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                        {selectedJob.config.config && Object.keys(selectedJob.config.config).length > 0 && (
+                          <div style={{ marginTop: "10px" }}>
+                            <strong>Advanced Config:</strong>
+                            <pre style={{ 
+                              fontSize: "12px", 
+                              marginTop: "5px",
+                              backgroundColor: "#ffffff",
+                              padding: "8px",
+                              borderRadius: "4px",
+                              border: "1px solid #dee2e6"
+                            }}>
+                              {JSON.stringify(selectedJob.config.config, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <pre style={{ 
+                        fontSize: "12px", 
+                        margin: 0,
+                        whiteSpace: "pre-wrap",
+                        backgroundColor: "#ffffff",
+                        padding: "8px",
+                        borderRadius: "4px",
+                        border: "1px solid #dee2e6"
+                      }}>
+                        {JSON.stringify(selectedJob.config, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                  {selectedJob.status === 'completed' && (
+                    <button
+                      onClick={() => {
+                        setSelectedJob(null);
+                        getJobResults(selectedJob.id);
+                      }}
+                      style={{
+                        padding: "10px 20px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "14px"
+                      }}
+                    >
+                      📊 View Results
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedJob(null)}
                     style={{
-                      backgroundColor: "#f8f9fa",
-                      padding: "10px",
+                      padding: "10px 20px",
+                      backgroundColor: "#6c757d",
+                      color: "white",
+                      border: "none",
                       borderRadius: "4px",
-                      overflow: "auto",
+                      cursor: "pointer",
                     }}
                   >
-                    {JSON.stringify(selectedJob.config, null, 2)}
-                  </pre>
+                    Close
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSelectedJob(null)}
-                  style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#6c757d",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Close
-                </button>
               </div>
             </div>
           )}

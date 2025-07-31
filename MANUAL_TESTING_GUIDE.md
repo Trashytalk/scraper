@@ -229,9 +229,20 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:8000/api/performance/summ
 ### Test 18: Results Viewer
 
 1. **Open Job Results**: Click "View Details" on completed job
-2. **Test Job Information**: Verify job details are displayed correctly
+2. **Enhanced Job Details Modal**: 
+   - Verify comprehensive job information is displayed (not console message)
+   - Check job ID, status with color coding, type, timestamps
+   - Verify configuration shows URL as clickable link
+   - Check crawling summary with pages processed, URLs discovered, data extracted
+   - Test "View Results" button for completed jobs
 3. **Test Modal Operations**: Verify modal opens and closes properly
-4. **Check Data Display**: Verify scraped data is shown appropriately
+4. **Show Collected Data**: Click the "Show Collected Data" button
+   - **Fixed**: Should now display actual scraped content (50+ items with full data)
+   - **No longer shows**: "Item 1" placeholder text
+   - **Displays**: Complete URLs, titles, descriptions, links, text content, images, metadata
+   - **Pagination**: Navigate through multiple pages of results
+   - **Search**: Filter results using the search box
+   - **Export**: Test JSON/CSV export functionality
 
 ### Test 19: Configuration Panel
 1. **Open Operations Tab**: Click "🎯 Operations"
@@ -416,5 +427,7 @@ After completing all tests, you should have verified:
   - Quick Create section (Extract Full HTML, Crawl Entire Domain, Include Images, Save to Database)
   - Advanced Configuration → Universal Settings → Enhanced Crawling Options
 - ✅ Both quick creation and comprehensive operations management available in unified interface
+- ✅ **NEW**: "View Details" modal enhanced with comprehensive job information, crawling summary, and direct action buttons
+- ✅ **FIXED**: "Show Collected Data" now displays actual scraped content (50+ items) instead of "Item 1" placeholder
 
-**🎉 The Business Intelligence Scraper Platform now provides maximum flexibility: quick job creation for immediate needs, plus comprehensive advanced configuration for power users - with enhanced crawling options accessible in both interfaces!**
+**🎉 The Business Intelligence Scraper Platform now provides maximum flexibility: quick job creation for immediate needs, plus comprehensive advanced configuration for power users - with enhanced crawling options accessible in both interfaces! Both View Details and Show Collected Data functionality now work properly with rich, comprehensive data display.**
