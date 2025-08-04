@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 from dotenv import load_dotenv
 
 # Add project root to Python path
@@ -30,8 +31,9 @@ try:
     print(f"SYNC_DATABASE_URL: {SYNC_DATABASE_URL}")
 
     print("\n=== Database Initialization Test ===")
-    from business_intel_scraper.database.config import init_database
     import asyncio
+
+    from business_intel_scraper.database.config import init_database
 
     asyncio.run(init_database())
     print("✅ Database initialization successful!")

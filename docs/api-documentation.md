@@ -4,7 +4,9 @@
 
 **Complete REST API documentation for the Business Intelligence Scraper Platform**
 
+
 ---
+
 
 ## 📋 Table of Contents
 
@@ -24,7 +26,9 @@
 - [WebSocket API](#websocket-api)
 - [SDK & Examples](#sdk--examples)
 
+
 ---
+
 
 ## 🎯 Overview
 
@@ -39,7 +43,9 @@ The Business Intelligence Scraper API provides comprehensive access to all platf
 - **📚 Auto-Documentation**: Interactive Swagger UI at `/docs`
 - **🔧 Developer Friendly**: SDKs, examples, and comprehensive error handling
 
+
 ---
+
 
 ## 🔐 Authentication
 
@@ -50,16 +56,20 @@ All API endpoints require authentication using JWT Bearer tokens. Obtain tokens 
 #### Login Flow
 
 ```bash
+
 # 1. Login to get access token
+
 curl -X POST "http://localhost:8000/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
+
     "username": "your_username",
     "password": "your_password",
     "mfa_token": "123456"  # Optional, if MFA enabled
   }'
 
 # Response
+
 {
   "success": true,
   "data": {
@@ -75,25 +85,33 @@ curl -X POST "http://localhost:8000/auth/login" \
     }
   }
 }
+
 ```
 
 #### Using Access Tokens
 
 ```bash
+
 # Include token in Authorization header
+
 curl -X GET "http://localhost:8000/api/data" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+
 ```
 
 #### Token Refresh
 
 ```bash
+
 # Refresh expired access token
+
 curl -X POST "http://localhost:8000/auth/refresh" \
   -H "Content-Type: application/json" \
   -d '{
+
     "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
   }'
+
 ```
 
 ### Multi-Factor Authentication (MFA)
@@ -101,12 +119,15 @@ curl -X POST "http://localhost:8000/auth/refresh" \
 #### Setup MFA
 
 ```bash
+
 # Enable MFA for user account
+
 curl -X POST "http://localhost:8000/auth/mfa/setup" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json"
 
 # Response includes QR code and backup codes
+
 {
   "success": true,
   "data": {
@@ -116,31 +137,38 @@ curl -X POST "http://localhost:8000/auth/mfa/setup" \
     "setup_url": "otpauth://totp/BusinessIntelScraper:user@example.com?secret=..."
   }
 }
+
 ```
 
 #### Verify MFA Setup
 
 ```bash
+
 # Verify MFA with TOTP token
+
 curl -X POST "http://localhost:8000/auth/mfa/verify" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+
     "totp_token": "123456"
   }'
+
 ```
 
+
 ---
+
 
 ## 🌐 Base URL & Versioning
 
 ### Base URLs
 
-| Environment | Base URL |
-|------------|----------|
-| Production | `https://your-domain.com/api/v2` |
-| Staging | `https://staging.your-domain.com/api/v2` |
-| Development | `http://localhost:8000/api/v2` |
+|   Environment | Base URL   |
+|  ------------|----------  |
+|   Production | `https://your-domain.com/api/v2`   |
+|   Staging | `https://staging.your-domain.com/api/v2`   |
+|   Development | `http://localhost:8000/api/v2`   |
 
 ### API Versioning
 
@@ -154,13 +182,16 @@ The API uses URL path versioning:
 
 All requests should use `Content-Type: application/json` unless specified otherwise.
 
+
 ---
+
 
 ## 📨 Request/Response Format
 
 ### Standard Request Format
 
 ```json
+
 {
   "data": {
     // Request payload
@@ -171,6 +202,7 @@ All requests should use `Content-Type: application/json` unless specified otherw
     "version": "v2"
   }
 }
+
 ```
 
 ### Standard Response Format
@@ -178,6 +210,7 @@ All requests should use `Content-Type: application/json` unless specified otherw
 #### Success Response
 
 ```json
+
 {
   "success": true,
   "data": {
@@ -198,11 +231,13 @@ All requests should use `Content-Type: application/json` unless specified otherw
     "has_previous": false
   }
 }
+
 ```
 
 #### Error Response
 
 ```json
+
 {
   "success": false,
   "error": {
@@ -220,38 +255,44 @@ All requests should use `Content-Type: application/json` unless specified otherw
     "version": "v2"
   }
 }
+
 ```
 
+
 ---
+
 
 ## 🚦 Rate Limiting
 
 ### Rate Limit Rules
 
-| Endpoint Category | Rate Limit | Burst | Block Duration |
-|------------------|------------|-------|----------------|
-| Authentication | 10 req/min | 2 | 15 minutes |
-| Data Retrieval | 100 req/min | 10 | 5 minutes |
-| Data Search | 50 req/min | 5 | 5 minutes |
-| Data Upload | 5 req/min | 1 | 10 minutes |
-| Analytics | 30 req/min | 5 | 5 minutes |
-| System Admin | 20 req/min | 3 | 10 minutes |
+|   Endpoint Category | Rate Limit | Burst | Block Duration   |
+|  ------------------|------------|-------|----------------  |
+|   Authentication | 10 req/min | 2 | 15 minutes   |
+|   Data Retrieval | 100 req/min | 10 | 5 minutes   |
+|   Data Search | 50 req/min | 5 | 5 minutes   |
+|   Data Upload | 5 req/min | 1 | 10 minutes   |
+|   Analytics | 30 req/min | 5 | 5 minutes   |
+|   System Admin | 20 req/min | 3 | 10 minutes   |
 
 ### Rate Limit Headers
 
 Every API response includes rate limiting information:
 
 ```http
+
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 87
 X-RateLimit-Reset: 1642781400
 X-RateLimit-Burst: 10
 X-RateLimit-Burst-Remaining: 8
+
 ```
 
 ### Rate Limit Exceeded Response
 
 ```json
+
 {
   "success": false,
   "error": {
@@ -264,46 +305,50 @@ X-RateLimit-Burst-Remaining: 8
     }
   }
 }
+
 ```
 
+
 ---
+
 
 ## ❌ Error Handling
 
 ### HTTP Status Codes
 
-| Status Code | Description | Example |
-|-------------|-------------|---------|
-| `200` | Success | Request completed successfully |
-| `201` | Created | Resource created successfully |
-| `400` | Bad Request | Invalid request parameters |
-| `401` | Unauthorized | Authentication required |
-| `403` | Forbidden | Insufficient permissions |
-| `404` | Not Found | Resource not found |
-| `422` | Validation Error | Request validation failed |
-| `429` | Rate Limited | Rate limit exceeded |
-| `500` | Server Error | Internal server error |
-| `503` | Service Unavailable | Service temporarily unavailable |
+|   Status Code | Description | Example   |
+|  -------------|-------------|---------  |
+|   `200` | Success | Request completed successfully   |
+|   `201` | Created | Resource created successfully   |
+|   `400` | Bad Request | Invalid request parameters   |
+|   `401` | Unauthorized | Authentication required   |
+|   `403` | Forbidden | Insufficient permissions   |
+|   `404` | Not Found | Resource not found   |
+|   `422` | Validation Error | Request validation failed   |
+|   `429` | Rate Limited | Rate limit exceeded   |
+|   `500` | Server Error | Internal server error   |
+|   `503` | Service Unavailable | Service temporarily unavailable   |
 
 ### Error Codes
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `VALIDATION_ERROR` | Request validation failed | 422 |
-| `AUTHENTICATION_REQUIRED` | Authentication token required | 401 |
-| `INVALID_CREDENTIALS` | Invalid username/password | 401 |
-| `TOKEN_EXPIRED` | Access token has expired | 401 |
-| `INSUFFICIENT_PERMISSIONS` | User lacks required permissions | 403 |
-| `RESOURCE_NOT_FOUND` | Requested resource not found | 404 |
-| `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | 429 |
-| `SERVER_ERROR` | Internal server error | 500 |
-| `SERVICE_UNAVAILABLE` | Service temporarily unavailable | 503 |
+|   Code | Description | HTTP Status   |
+|  ------|-------------|-------------  |
+|   `VALIDATION_ERROR` | Request validation failed | 422   |
+|   `AUTHENTICATION_REQUIRED` | Authentication token required | 401   |
+|   `INVALID_CREDENTIALS` | Invalid username/password | 401   |
+|   `TOKEN_EXPIRED` | Access token has expired | 401   |
+|   `INSUFFICIENT_PERMISSIONS` | User lacks required permissions | 403   |
+|   `RESOURCE_NOT_FOUND` | Requested resource not found | 404   |
+|   `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | 429   |
+|   `SERVER_ERROR` | Internal server error | 500   |
+|   `SERVICE_UNAVAILABLE` | Service temporarily unavailable | 503   |
 
 ### Error Response Examples
 
 #### Validation Error
 
 ```json
+
 {
   "success": false,
   "error": {
@@ -325,11 +370,13 @@ X-RateLimit-Burst-Remaining: 8
     }
   }
 }
+
 ```
 
 #### Permission Error
 
 ```json
+
 {
   "success": false,
   "error": {
@@ -341,9 +388,12 @@ X-RateLimit-Burst-Remaining: 8
     }
   }
 }
+
 ```
 
+
 ---
+
 
 ## 🔐 Authentication Endpoints
 
@@ -352,17 +402,22 @@ X-RateLimit-Burst-Remaining: 8
 Authenticate user and obtain access tokens.
 
 **Request:**
+
 ```json
+
 {
   "username": "user@example.com",
   "password": "secure_password",
   "mfa_token": "123456",  // Optional
   "remember_me": true     // Optional
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -380,6 +435,7 @@ Authenticate user and obtain access tokens.
     }
   }
 }
+
 ```
 
 ### POST /auth/logout
@@ -387,20 +443,26 @@ Authenticate user and obtain access tokens.
 Logout user and invalidate tokens.
 
 **Request:**
+
 ```json
+
 {
   "all_devices": false  // Optional: logout from all devices
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
     "message": "Successfully logged out"
   }
 }
+
 ```
 
 ### POST /auth/refresh
@@ -408,14 +470,19 @@ Logout user and invalidate tokens.
 Refresh expired access token.
 
 **Request:**
+
 ```json
+
 {
   "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -424,6 +491,7 @@ Refresh expired access token.
     "expires_in": 1800
   }
 }
+
 ```
 
 ### POST /auth/register
@@ -431,7 +499,9 @@ Refresh expired access token.
 Register new user account (if registration is enabled).
 
 **Request:**
+
 ```json
+
 {
   "username": "newuser",
   "email": "newuser@example.com",
@@ -440,6 +510,7 @@ Register new user account (if registration is enabled).
   "last_name": "Doe",
   "role": "analyst"  // Optional, defaults to viewer
 }
+
 ```
 
 ### GET /auth/me
@@ -447,7 +518,9 @@ Register new user account (if registration is enabled).
 Get current authenticated user information.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -464,9 +537,12 @@ Get current authenticated user information.
     "active_sessions": 2
   }
 }
+
 ```
 
+
 ---
+
 
 ## 📊 Data Management Endpoints
 
@@ -476,27 +552,32 @@ Retrieve collected data with filtering and pagination.
 
 **Query Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `page` | integer | Page number | 1 |
-| `per_page` | integer | Items per page (max 1000) | 50 |
-| `data_type` | string | Filter by data type | all |
-| `source_domain` | string | Filter by source domain | all |
-| `date_from` | string | Start date (ISO format) | 24h ago |
-| `date_to` | string | End date (ISO format) | now |
-| `quality_min` | float | Minimum quality score | 0.0 |
-| `search` | string | Text search query | - |
-| `sort_by` | string | Sort field | scraped_at |
-| `sort_order` | string | Sort order (asc/desc) | desc |
+|   Parameter | Type | Description | Default   |
+|  -----------|------|-------------|---------  |
+|   `page` | integer | Page number | 1   |
+|   `per_page` | integer | Items per page (max 1000) | 50   |
+|   `data_type` | string | Filter by data type | all   |
+|   `source_domain` | string | Filter by source domain | all   |
+|   `date_from` | string | Start date (ISO format) | 24h ago   |
+|   `date_to` | string | End date (ISO format) | now   |
+|   `quality_min` | float | Minimum quality score | 0.0   |
+|   `search` | string | Text search query | -   |
+|   `sort_by` | string | Sort field | scraped_at   |
+|   `sort_order` | string | Sort order (asc/desc) | desc   |
 
 **Example Request:**
+
 ```bash
+
 curl -X GET "http://localhost:8000/api/data?page=1&per_page=20&data_type=news&quality_min=70" \
   -H "Authorization: Bearer $TOKEN"
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": [
@@ -526,6 +607,7 @@ curl -X GET "http://localhost:8000/api/data?page=1&per_page=20&data_type=news&qu
     "has_previous": false
   }
 }
+
 ```
 
 ### GET /data/{id}
@@ -533,7 +615,9 @@ curl -X GET "http://localhost:8000/api/data?page=1&per_page=20&data_type=news&qu
 Get specific data record by ID.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -554,6 +638,7 @@ Get specific data record by ID.
     }
   }
 }
+
 ```
 
 ### POST /data/search
@@ -561,7 +646,9 @@ Get specific data record by ID.
 Advanced data search with complex filters.
 
 **Request:**
+
 ```json
+
 {
   "query": "artificial intelligence machine learning",
   "filters": {
@@ -589,10 +676,13 @@ Advanced data search with complex filters.
   "highlight": true,
   "facets": ["data_type", "source_domain", "content_category"]
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -631,6 +721,7 @@ Advanced data search with complex filters.
     "total_pages": 8
   }
 }
+
 ```
 
 ### POST /data/export
@@ -638,7 +729,9 @@ Advanced data search with complex filters.
 Export data in various formats.
 
 **Request:**
+
 ```json
+
 {
   "format": "csv",  // csv, json, excel, pdf
   "filters": {
@@ -654,10 +747,13 @@ Export data in various formats.
     "compress": true
   }
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -669,6 +765,7 @@ Export data in various formats.
     "format": "csv"
   }
 }
+
 ```
 
 ### DELETE /data/{id}
@@ -676,7 +773,9 @@ Export data in various formats.
 Delete specific data record.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -684,9 +783,12 @@ Delete specific data record.
     "deleted_id": "rec_123"
   }
 }
+
 ```
 
+
 ---
+
 
 ## 📈 Analytics Endpoints
 
@@ -696,14 +798,16 @@ Get dashboard analytics data.
 
 **Query Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `time_range` | string | Time range (1h, 24h, 7d, 30d, 90d) | 24h |
-| `data_types` | string | Comma-separated data types | all |
-| `refresh` | boolean | Force refresh cached data | false |
+|   Parameter | Type | Description | Default   |
+|  -----------|------|-------------|---------  |
+|   `time_range` | string | Time range (1h, 24h, 7d, 30d, 90d) | 24h   |
+|   `data_types` | string | Comma-separated data types | all   |
+|   `refresh` | boolean | Force refresh cached data | false   |
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -746,6 +850,7 @@ Get dashboard analytics data.
     }
   }
 }
+
 ```
 
 ### GET /analytics/metrics
@@ -754,12 +859,12 @@ Get specific analytics metrics.
 
 **Query Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `metrics` | string | Comma-separated metric names |
-| `time_range` | string | Time range for metrics |
-| `aggregation` | string | Aggregation method (avg, sum, count) |
-| `group_by` | string | Group results by field |
+|   Parameter | Type | Description   |
+|  -----------|------|-------------  |
+|   `metrics` | string | Comma-separated metric names   |
+|   `time_range` | string | Time range for metrics   |
+|   `aggregation` | string | Aggregation method (avg, sum, count)   |
+|   `group_by` | string | Group results by field   |
 
 **Available Metrics:**
 - `collection_rate` - Data collection rate per hour
@@ -771,7 +876,9 @@ Get specific analytics metrics.
 - `system_performance` - System performance metrics
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -798,6 +905,7 @@ Get specific analytics metrics.
     ]
   }
 }
+
 ```
 
 ### POST /analytics/reports
@@ -805,7 +913,9 @@ Get specific analytics metrics.
 Generate custom analytics reports.
 
 **Request:**
+
 ```json
+
 {
   "report_type": "weekly_summary",
   "parameters": {
@@ -824,10 +934,13 @@ Generate custom analytics reports.
     "schedule": "weekly"  // Optional: for recurring reports
   }
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -838,6 +951,7 @@ Generate custom analytics reports.
     "preview_url": "https://api.example.com/reports/rpt_456/preview"
   }
 }
+
 ```
 
 ### GET /analytics/insights
@@ -845,7 +959,9 @@ Generate custom analytics reports.
 Get AI-generated insights and recommendations.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -883,9 +999,12 @@ Get AI-generated insights and recommendations.
     ]
   }
 }
+
 ```
 
+
 ---
+
 
 ## 🔧 Job Management Endpoints
 
@@ -895,16 +1014,18 @@ List all scraping jobs with filtering and pagination.
 
 **Query Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `status` | string | Filter by job status | all |
-| `type` | string | Filter by job type | all |
-| `page` | integer | Page number | 1 |
-| `per_page` | integer | Items per page | 20 |
-| `sort_by` | string | Sort field | created_at |
+|   Parameter | Type | Description | Default   |
+|  -----------|------|-------------|---------  |
+|   `status` | string | Filter by job status | all   |
+|   `type` | string | Filter by job type | all   |
+|   `page` | integer | Page number | 1   |
+|   `per_page` | integer | Items per page | 20   |
+|   `sort_by` | string | Sort field | created_at   |
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": [
@@ -936,6 +1057,7 @@ List all scraping jobs with filtering and pagination.
     "total_pages": 4
   }
 }
+
 ```
 
 ### POST /jobs
@@ -943,7 +1065,9 @@ List all scraping jobs with filtering and pagination.
 Create a new scraping job.
 
 **Request:**
+
 ```json
+
 {
   "name": "E-commerce Product Scraper",
   "type": "web_scraping",
@@ -981,10 +1105,13 @@ Create a new scraping job.
     "retry_delay": 300
   }
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -995,6 +1122,7 @@ Create a new scraping job.
     "created_at": "2025-07-24T10:30:00Z"
   }
 }
+
 ```
 
 ### GET /jobs/{id}
@@ -1002,7 +1130,9 @@ Create a new scraping job.
 Get detailed information about a specific job.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -1042,6 +1172,7 @@ Get detailed information about a specific job.
     ]
   }
 }
+
 ```
 
 ### PUT /jobs/{id}
@@ -1049,7 +1180,9 @@ Get detailed information about a specific job.
 Update job configuration.
 
 **Request:**
+
 ```json
+
 {
   "name": "Updated Tech News Scraper",
   "config": {
@@ -1063,6 +1196,7 @@ Update job configuration.
   "schedule": "0 */4 * * *",  // Every 4 hours instead of 6
   "enabled": true
 }
+
 ```
 
 ### DELETE /jobs/{id}
@@ -1070,7 +1204,9 @@ Update job configuration.
 Delete a scraping job.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -1078,6 +1214,7 @@ Delete a scraping job.
     "deleted_id": "job_123"
   }
 }
+
 ```
 
 ### POST /jobs/{id}/start
@@ -1085,15 +1222,20 @@ Delete a scraping job.
 Start job execution immediately.
 
 **Request:**
+
 ```json
+
 {
   "force": false,  // Force start even if job is already running
   "priority": "normal"  // normal, high, low
 }
+
 ```
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -1103,6 +1245,7 @@ Start job execution immediately.
     "estimated_completion": "2025-07-24T10:45:00Z"
   }
 }
+
 ```
 
 ### POST /jobs/{id}/stop
@@ -1110,7 +1253,9 @@ Start job execution immediately.
 Stop running job.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -1119,6 +1264,7 @@ Stop running job.
     "stopped_at": "2025-07-24T10:32:00Z"
   }
 }
+
 ```
 
 ### GET /jobs/{id}/runs
@@ -1127,14 +1273,16 @@ Get job execution history.
 
 **Query Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `status` | string | Filter by run status | all |
-| `limit` | integer | Number of runs to return | 50 |
-| `offset` | integer | Offset for pagination | 0 |
+|   Parameter | Type | Description | Default   |
+|  -----------|------|-------------|---------  |
+|   `status` | string | Filter by run status | all   |
+|   `limit` | integer | Number of runs to return | 50   |
+|   `offset` | integer | Offset for pagination | 0   |
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": [
@@ -1159,9 +1307,12 @@ Get job execution history.
     }
   ]
 }
+
 ```
 
+
 ---
+
 
 ## 👥 User Management Endpoints
 
@@ -1171,15 +1322,17 @@ List all users (Admin only).
 
 **Query Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `role` | string | Filter by user role | all |
-| `status` | string | Filter by user status | all |
-| `page` | integer | Page number | 1 |
-| `per_page` | integer | Items per page | 20 |
+|   Parameter | Type | Description | Default   |
+|  -----------|------|-------------|---------  |
+|   `role` | string | Filter by user role | all   |
+|   `status` | string | Filter by user status | all   |
+|   `page` | integer | Page number | 1   |
+|   `per_page` | integer | Items per page | 20   |
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": [
@@ -1198,6 +1351,7 @@ List all users (Admin only).
     }
   ]
 }
+
 ```
 
 ### POST /users
@@ -1205,7 +1359,9 @@ List all users (Admin only).
 Create new user (Admin only).
 
 **Request:**
+
 ```json
+
 {
   "username": "newanalyst",
   "email": "newanalyst@company.com",
@@ -1216,6 +1372,7 @@ Create new user (Admin only).
   "permissions": ["read_data", "create_reports"],
   "send_welcome_email": true
 }
+
 ```
 
 ### GET /users/{id}
@@ -1223,7 +1380,9 @@ Create new user (Admin only).
 Get user details.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -1246,6 +1405,7 @@ Get user details.
     }
   }
 }
+
 ```
 
 ### PUT /users/{id}
@@ -1253,7 +1413,9 @@ Get user details.
 Update user information.
 
 **Request:**
+
 ```json
+
 {
   "first_name": "John",
   "last_name": "Doe",
@@ -1261,6 +1423,7 @@ Update user information.
   "role": "senior_analyst",
   "permissions": ["read_data", "create_reports", "manage_jobs", "export_data"]
 }
+
 ```
 
 ### DELETE /users/{id}
@@ -1272,12 +1435,15 @@ Delete user account (Admin only).
 Change user password.
 
 **Request:**
+
 ```json
+
 {
   "current_password": "current_password",
   "new_password": "NewSecurePassword123!",
   "confirm_password": "NewSecurePassword123!"
 }
+
 ```
 
 ### POST /users/{id}/reset-password
@@ -1285,14 +1451,19 @@ Change user password.
 Reset user password (Admin only).
 
 **Request:**
+
 ```json
+
 {
   "send_email": true,
   "temporary_password": "TempPass123!"  // Optional
 }
+
 ```
 
+
 ---
+
 
 ## 📊 System Monitoring Endpoints
 
@@ -1301,7 +1472,9 @@ Reset user password (Admin only).
 Get overall system health status.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -1337,6 +1510,7 @@ Get overall system health status.
     }
   }
 }
+
 ```
 
 ### GET /system/metrics
@@ -1345,14 +1519,16 @@ Get detailed system performance metrics.
 
 **Query Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `time_range` | string | Time range for metrics | 1h |
-| `metrics` | string | Specific metrics to include | all |
-| `aggregation` | string | Aggregation method | avg |
+|   Parameter | Type | Description | Default   |
+|  -----------|------|-------------|---------  |
+|   `time_range` | string | Time range for metrics | 1h   |
+|   `metrics` | string | Specific metrics to include | all   |
+|   `aggregation` | string | Aggregation method | avg   |
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": {
@@ -1382,6 +1558,7 @@ Get detailed system performance metrics.
     }
   }
 }
+
 ```
 
 ### GET /system/alerts
@@ -1389,7 +1566,9 @@ Get detailed system performance metrics.
 Get active system alerts.
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": [
@@ -1409,6 +1588,7 @@ Get active system alerts.
     }
   ]
 }
+
 ```
 
 ### GET /system/logs
@@ -1417,15 +1597,17 @@ Get system logs with filtering.
 
 **Query Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `level` | string | Log level (debug, info, warning, error) | info |
-| `component` | string | Filter by component | all |
-| `since` | string | Logs since timestamp | 1h ago |
-| `limit` | integer | Number of logs to return | 100 |
+|   Parameter | Type | Description | Default   |
+|  -----------|------|-------------|---------  |
+|   `level` | string | Log level (debug, info, warning, error) | info   |
+|   `component` | string | Filter by component | all   |
+|   `since` | string | Logs since timestamp | 1h ago   |
+|   `limit` | integer | Number of logs to return | 100   |
 
 **Response:**
+
 ```json
+
 {
   "success": true,
   "data": [
@@ -1442,9 +1624,12 @@ Get system logs with filtering.
     }
   ]
 }
+
 ```
 
+
 ---
+
 
 ## 🔌 WebSocket API
 
@@ -1453,7 +1638,9 @@ Get system logs with filtering.
 Connect to WebSocket for real-time updates:
 
 ```javascript
+
 const ws = new WebSocket('ws://localhost:8000/ws');
+
 ```
 
 ### Authentication
@@ -1461,10 +1648,12 @@ const ws = new WebSocket('ws://localhost:8000/ws');
 Authenticate WebSocket connection:
 
 ```javascript
+
 ws.send(JSON.stringify({
   type: 'auth',
   token: 'your_access_token'
 }));
+
 ```
 
 ### Subscription
@@ -1472,10 +1661,12 @@ ws.send(JSON.stringify({
 Subscribe to real-time channels:
 
 ```javascript
+
 ws.send(JSON.stringify({
   type: 'subscribe',
   channels: ['job_updates', 'system_metrics', 'alerts', 'data_updates']
 }));
+
 ```
 
 ### Message Types
@@ -1483,6 +1674,7 @@ ws.send(JSON.stringify({
 #### Job Updates
 
 ```json
+
 {
   "type": "job_update",
   "data": {
@@ -1493,11 +1685,13 @@ ws.send(JSON.stringify({
     "estimated_completion": "2025-07-24T10:35:00Z"
   }
 }
+
 ```
 
 #### System Metrics
 
 ```json
+
 {
   "type": "system_metrics",
   "data": {
@@ -1508,11 +1702,13 @@ ws.send(JSON.stringify({
     "requests_per_minute": 234
   }
 }
+
 ```
 
 #### Alerts
 
 ```json
+
 {
   "type": "alert",
   "data": {
@@ -1523,27 +1719,34 @@ ws.send(JSON.stringify({
     "triggered_at": "2025-07-24T10:30:00Z"
   }
 }
+
 ```
 
+
 ---
+
 
 ## 🛠️ SDK & Examples
 
 ### Python SDK
 
 ```python
+
 from business_intel_scraper_sdk import BusinessIntelClient
 
 # Initialize client
+
 client = BusinessIntelClient(
     base_url="http://localhost:8000",
     api_key="your_api_key"
 )
 
 # Authenticate
+
 client.login(username="your_username", password="your_password")
 
 # Get data
+
 data = client.data.list(
     data_type="news",
     limit=50,
@@ -1551,12 +1754,14 @@ data = client.data.list(
 )
 
 # Search data
+
 results = client.data.search(
     query="artificial intelligence",
     filters={"data_type": "news", "language": "en"}
 )
 
 # Create job
+
 job = client.jobs.create(
     name="Tech News Scraper",
     urls=["https://techcrunch.com/feed"],
@@ -1564,12 +1769,15 @@ job = client.jobs.create(
 )
 
 # Get analytics
+
 metrics = client.analytics.get_dashboard_metrics(time_range="24h")
+
 ```
 
 ### JavaScript SDK
 
 ```javascript
+
 import { BusinessIntelClient } from 'business-intel-scraper-sdk';
 
 // Initialize client
@@ -1597,58 +1805,78 @@ client.ws.subscribe(['job_updates', 'system_metrics']);
 client.ws.on('job_update', (data) => {
   console.log('Job update:', data);
 });
+
 ```
 
 ### cURL Examples
 
 #### Authentication
+
 ```bash
+
 # Login
+
 curl -X POST "http://localhost:8000/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username": "user", "password": "pass"}'
 
 # Use token
+
 export TOKEN="your_access_token"
+
 ```
 
 #### Data Operations
+
 ```bash
+
 # Get data
+
 curl -X GET "http://localhost:8000/api/data?limit=10" \
   -H "Authorization: Bearer $TOKEN"
 
 # Search data
+
 curl -X POST "http://localhost:8000/api/data/search" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"query": "AI", "filters": {"data_type": "news"}}'
 
 # Export data
+
 curl -X POST "http://localhost:8000/api/data/export" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"format": "csv", "filters": {"data_type": "news"}}'
+
 ```
 
 #### Job Management
+
 ```bash
+
 # List jobs
+
 curl -X GET "http://localhost:8000/api/jobs" \
   -H "Authorization: Bearer $TOKEN"
 
 # Create job
+
 curl -X POST "http://localhost:8000/api/jobs" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "News Scraper", "urls": ["https://example.com"]}'
 
 # Start job
+
 curl -X POST "http://localhost:8000/api/jobs/123/start" \
   -H "Authorization: Bearer $TOKEN"
+
 ```
 
+
 ---
+
 
 ## 📚 Additional Resources
 
@@ -1658,6 +1886,8 @@ curl -X POST "http://localhost:8000/api/jobs/123/start" \
 - **GitHub Repository**: [Source Code](https://github.com/Trashytalk/scraper)
 - **Support**: support@business-intel-scraper.com
 
+
 ---
+
 
 **Built with ❤️ by the Business Intelligence Scraper Team**

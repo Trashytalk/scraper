@@ -11,11 +11,11 @@ This script tests the comprehensive crawling system with all its features:
 - Rate limiting and robots.txt compliance
 """
 
-import sys
 import asyncio
 import json
-from pathlib import Path
 import logging
+import sys
+from pathlib import Path
 
 # Add the project root to the path
 sys.path.insert(0, str(Path(__file__).parent))

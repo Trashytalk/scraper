@@ -18,13 +18,16 @@ The Enhanced Distributed Crawler system provides enterprise-grade web crawling c
 - Global or per-domain throttling
 
 **Configuration**:
+
 ```python
+
 rate_limit_config = {
     'requests_per_second': 2.0,  # Max 2 requests per second per domain
     'burst_size': 10,            # Allow bursts up to 10 requests
     'jitter_factor': 0.2,        # Add 20% random jitter
     'per_domain': True           # Rate limit per domain
 }
+
 ```
 
 **Benefits**:
@@ -44,8 +47,11 @@ rate_limit_config = {
 - Better performance for large crawls
 
 **Configuration**:
+
 ```python
+
 dns_cache_ttl = 600  # Cache DNS results for 10 minutes
+
 ```
 
 **Benefits**:
@@ -74,7 +80,9 @@ dns_cache_ttl = 600  # Cache DNS results for 10 minutes
 - `link_type:form|link|image_link`
 
 **Database Fields**:
+
 ```sql
+
 last_crawled_at TIMESTAMP,
 link_depth INTEGER,
 requires_js BOOLEAN,
@@ -82,6 +90,7 @@ is_dynamic BOOLEAN,
 content_size INTEGER,
 etag VARCHAR(255),
 last_modified TIMESTAMP
+
 ```
 
 ### 4. JavaScript Rendering with Headless Browser
@@ -96,12 +105,15 @@ last_modified TIMESTAMP
 - Extraction of dynamically generated content
 
 **Configuration**:
+
 ```python
+
 enable_js_rendering = True
 browser_config = {
     'max_browsers': 3,      # Browser pool size
     'page_timeout': 45,     # Page load timeout
 }
+
 ```
 
 **Smart Detection**:
@@ -127,8 +139,11 @@ browser_config = {
 - Memory-efficient processing
 
 **Configuration**:
+
 ```python
+
 max_content_size = 100 * 1024 * 1024  # 100MB limit
+
 ```
 
 **Processing**:
@@ -150,14 +165,17 @@ max_content_size = 100 * 1024 * 1024  # 100MB limit
 
 **Dynamic Interval Calculation**:
 - Static content: 24 hours
-- JavaScript-heavy: 12 hours  
+- JavaScript-heavy: 12 hours
 - Dynamic content: 6 hours
 - Configurable per content type
 
 **Conditional Requests**:
+
 ```http
+
 If-None-Match: "33a64df551425fcc55e4d42a148795d9f25f89d4"
 If-Modified-Since: Wed, 21 Oct 2015 07:28:00 GMT
+
 ```
 
 ## Usage Examples
@@ -165,9 +183,11 @@ If-Modified-Since: Wed, 21 Oct 2015 07:28:00 GMT
 ### Basic Enhanced Setup
 
 ```python
+
 from business_intel_scraper.backend.queue import DistributedCrawlSystem, QueueBackend
 
 # Enhanced configuration
+
 rate_config = {
     'requests_per_second': 1.5,
     'jitter_factor': 0.1,
@@ -183,12 +203,15 @@ system = DistributedCrawlSystem(
 )
 
 await system.start()
+
 ```
 
 ### Adding URLs with Enhanced Metadata
 
 ```python
+
 # Add JavaScript-heavy sites
+
 await system.add_seed_urls(
     ["https://linkedin.com/company/", "https://crunchbase.com/"],
     job_id="js-business-sites",
@@ -198,44 +221,52 @@ await system.add_seed_urls(
 )
 
 # Add static business directories
+
 await system.add_seed_urls(
     ["https://yellowpages.com", "https://yelp.com"],
-    job_id="business-directories", 
+    job_id="business-directories",
     priority=6,
     requires_js=False,
     is_dynamic=False
 )
+
 ```
 
 ### Monitoring Enhanced Metrics
 
 ```python
+
 stats = await system.get_system_stats()
 
 print(f"JS Rendered Pages: {stats['crawl_metrics']['js_rendered_pages']}")
 print(f"Large Pages Skipped: {stats['crawl_metrics']['large_pages_skipped']}")
 print(f"Conditional Requests: {stats['crawl_metrics']['conditional_requests']}")
 print(f"Not Modified: {stats['crawl_metrics']['not_modified_responses']}")
+
 ```
 
 ## Performance Optimizations
 
 ### 1. Connection Pooling
+
 - Persistent HTTP connections
 - DNS caching
 - Connection limits per host
 
 ### 2. Browser Pool Management
+
 - Reuse browser instances
 - Graceful browser lifecycle
 - Memory management
 
 ### 3. Content Streaming
+
 - Chunked download
 - Size limit enforcement
 - Memory-efficient processing
 
 ### 4. Smart Crawling
+
 - Conditional requests
 - Dynamic intervals
 - Priority-based queuing
@@ -243,56 +274,75 @@ print(f"Not Modified: {stats['crawl_metrics']['not_modified_responses']}")
 ## Configuration Best Practices
 
 ### Rate Limiting
+
 ```python
+
 # Conservative (respectful)
+
 rate_config = {
     'requests_per_second': 0.5,
     'jitter_factor': 0.3
 }
 
 # Moderate (balanced)
+
 rate_config = {
     'requests_per_second': 2.0,
     'jitter_factor': 0.1
 }
 
 # Aggressive (fast)
+
 rate_config = {
     'requests_per_second': 5.0,
     'jitter_factor': 0.05
 }
+
 ```
 
 ### Content Size Limits
+
 ```python
+
 # Small sites
+
 max_content_size = 10 * 1024 * 1024  # 10MB
 
 # Medium sites
+
 max_content_size = 50 * 1024 * 1024  # 50MB
 
 # Large sites
+
 max_content_size = 200 * 1024 * 1024  # 200MB
+
 ```
 
 ### JavaScript Rendering
+
 ```python
+
 # Minimal (specific sites only)
+
 enable_js_rendering = True
 browser_config = {'max_browsers': 1}
 
 # Balanced (moderate usage)
+
 enable_js_rendering = True
 browser_config = {'max_browsers': 3, 'page_timeout': 30}
 
 # Heavy (JS-first approach)
+
 enable_js_rendering = True
 browser_config = {'max_browsers': 5, 'page_timeout': 60}
+
 ```
 
 ## Monitoring and Debugging
 
 ### Enhanced Metrics
+
 - `js_rendered_pages`: Pages rendered with browser
 - `large_pages_skipped`: Pages skipped due to size
 - `conditional_requests`: Requests with If-Modified-Since/ETag
@@ -300,32 +350,41 @@ browser_config = {'max_browsers': 5, 'page_timeout': 60}
 - `dns_cache_hits`: DNS cache utilization
 
 ### Logging
+
 ```python
+
 import logging
 logging.getLogger('distributed_crawler').setLevel(logging.DEBUG)
+
 ```
 
 ### Database Queries
+
 ```sql
+
 -- Find JavaScript-heavy sites
+
 SELECT url, requires_js, content_size FROM crawl_records WHERE requires_js = true;
 
 -- Dynamic content analysis
-SELECT domain, AVG(content_size), COUNT(*) 
-FROM crawl_records 
-WHERE is_dynamic = true 
+
+SELECT domain, AVG(content_size), COUNT(*)
+FROM crawl_records
+WHERE is_dynamic = true
 GROUP BY domain;
 
 -- Crawl frequency analysis
-SELECT 
-    CASE 
+
+SELECT
+    CASE
         WHEN recrawl_interval_hours <= 6 THEN 'Dynamic'
         WHEN recrawl_interval_hours <= 12 THEN 'JS-Heavy'
         ELSE 'Static'
     END as content_type,
     COUNT(*) as url_count
-FROM crawl_records 
+FROM crawl_records
 GROUP BY content_type;
+
 ```
 
 ## Troubleshooting

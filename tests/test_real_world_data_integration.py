@@ -6,9 +6,9 @@ Tests the platform with actual Fortune 500 company data and business intelligenc
 
 import asyncio
 import sys
-from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Any
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Add project root to path
 project_root = Path(__file__).parent
@@ -333,9 +333,10 @@ class RealWorldDataTester:
         print("📅 Testing Time-Series Event Processing...")
 
         try:
+            from datetime import datetime, timedelta
+
             from business_intel_scraper.backend.db.models import Event
             from business_intel_scraper.backend.db.utils import get_db_session
-            from datetime import datetime, timedelta
 
             # Define realistic business events
             business_events = [

@@ -27,40 +27,55 @@ The Business Intelligence Scraper now includes comprehensive AI integration capa
 ### 1. Setup AI Features
 
 ```bash
+
 # Interactive AI setup
+
 python bis.py ai setup
 
 # Check AI system status
+
 python bis.py ai status
 
 # Generate AI requirements
+
 python bis.py ai requirements
+
 ```
 
 ### 2. Install AI Dependencies
 
 ```bash
+
 # AI packages are now included in main requirements
+
 pip install -r requirements.txt
 
 # For development
+
 python bis.py install --include-ai
+
 ```
 
 ### 3. Test AI Capabilities
 
 ```bash
+
 # Test entity extraction
+
 python bis.py ai test-entities "Apple Inc. released new iPhone in California"
 
 # Test text classification
+
 python bis.py ai test-classification "This is a job posting for a software engineer position"
 
 # Test sentiment analysis
+
 python bis.py ai test-sentiment "I love this new product! It's amazing."
 
 # Test summarization
+
 python bis.py ai test-summary "Long text content here..."
+
 ```
 
 ## Configuration
@@ -70,22 +85,26 @@ python bis.py ai test-summary "Long text content here..."
 The AI system uses `config/ai_config.yaml` for configuration:
 
 ```yaml
+
 # Enable/disable AI features
+
 enabled: true
 
 # Model configurations
+
 models:
   spacy_en:
     name: "en_core_web_sm"
     type: "spacy"
     enabled: true
-  
+
   sentiment_classifier:
     name: "cardiffnlp/twitter-roberta-base-sentiment-latest"
     type: "transformers"
     enabled: true
-  
+
   # ... more models
+
 ```
 
 ### Environment Variables
@@ -93,10 +112,12 @@ models:
 Set these environment variables for optimal AI performance:
 
 ```bash
+
 export OPENAI_API_KEY="your-openai-api-key"  # For OpenAI models
 export TRANSFORMERS_CACHE="./data/ai_cache/transformers"
 export SENTENCE_TRANSFORMERS_HOME="./data/ai_cache/sentence_transformers"
 export TOKENIZERS_PARALLELISM=false
+
 ```
 
 ## API Usage
@@ -104,9 +125,11 @@ export TOKENIZERS_PARALLELISM=false
 ### Process Text with AI
 
 ```python
+
 import httpx
 
 # Process text with all AI features
+
 response = httpx.post("http://localhost:8000/ai/process-text", json={
     "text": "Apple Inc. announced record quarterly earnings today.",
     "include_entities": True,
@@ -119,12 +142,15 @@ result = response.json()
 print(f"Entities: {result['entities']}")
 print(f"Category: {result['classification']['category']}")
 print(f"Sentiment: {result['sentiment']}")
+
 ```
 
 ### Batch Processing
 
 ```python
+
 # Process multiple items
+
 response = httpx.post("http://localhost:8000/ai/process-data", json={
     "data": [
         {"title": "News Article 1", "content": "..."},
@@ -135,6 +161,7 @@ response = httpx.post("http://localhost:8000/ai/process-data", json={
 })
 
 processed_data = response.json()
+
 ```
 
 ## Scrapy Integration
@@ -144,32 +171,37 @@ processed_data = response.json()
 Add AI pipelines to your Scrapy settings:
 
 ```python
+
 # settings.py
+
 ITEM_PIPELINES = {
     'business_intel_scraper.backend.utils.ai_pipeline.AIEnhancementPipeline': 300,
     'business_intel_scraper.backend.utils.ai_pipeline.AIFilterPipeline': 400,
 }
 
 # AI Configuration
+
 AI_ENABLED = True
 AI_BATCH_SIZE = 10
 AI_PROCESS_ENTITIES = True
 AI_PROCESS_CLASSIFICATION = True
 AI_PROCESS_SENTIMENT = True
 AI_MIN_QUALITY_SCORE = 0.6
+
 ```
 
 ### Spider Implementation
 
 ```python
+
 import scrapy
 from business_intel_scraper.backend.utils.ai_settings import *
 
 class NewsSpider(scrapy.Spider):
     name = 'news'
-    
+
     custom_settings = NEWS_SCRAPER_AI_SETTINGS  # Pre-configured AI settings
-    
+
     def parse(self, response):
         # Extract data as usual
         yield {
@@ -178,6 +210,7 @@ class NewsSpider(scrapy.Spider):
             'url': response.url,
         }
         # AI pipeline will automatically enhance this data
+
 ```
 
 ### AI-Enhanced Output
@@ -185,11 +218,12 @@ class NewsSpider(scrapy.Spider):
 The AI pipeline adds these fields to your scraped items:
 
 ```json
+
 {
     "title": "Original title",
     "content": "Original content",
     "url": "Original URL",
-    
+
     // AI enhancements
     "ai_processed": true,
     "ai_quality_score": 0.85,
@@ -208,32 +242,38 @@ The AI pipeline adds these fields to your scraped items:
     "ai_summary": "Brief summary of the content",
     "ai_is_duplicate": false
 }
+
 ```
 
 ## Model Configuration
 
 ### Available Models
 
-| Model | Type | Purpose | Performance |
-|-------|------|---------|-------------|
-| `en_core_web_sm` | SpaCy | Entity extraction | Fast |
-| `twitter-roberta-base-sentiment` | Transformers | Sentiment analysis | Medium |
-| `bart-large-mnli` | Transformers | Text classification | Medium |
-| `bart-large-cnn` | Transformers | Summarization | Slow |
-| `all-MiniLM-L6-v2` | Sentence Transformers | Embeddings | Fast |
-| `gpt-3.5-turbo` | OpenAI | Advanced processing | API-based |
+|   Model | Type | Purpose | Performance   |
+|  -------|------|---------|-------------  |
+|   `en_core_web_sm` | SpaCy | Entity extraction | Fast   |
+|   `twitter-roberta-base-sentiment` | Transformers | Sentiment analysis | Medium   |
+|   `bart-large-mnli` | Transformers | Text classification | Medium   |
+|   `bart-large-cnn` | Transformers | Summarization | Slow   |
+|   `all-MiniLM-L6-v2` | Sentence Transformers | Embeddings | Fast   |
+|   `gpt-3.5-turbo` | OpenAI | Advanced processing | API-based   |
 
 ### Model Management
 
 ```bash
+
 # Enable/disable specific models
+
 python bis.py ai setup  # Interactive configuration
 
 # Check model status
+
 python bis.py ai status
 
 # Run performance benchmarks
+
 python bis.py ai benchmark
+
 ```
 
 ## Performance Optimization
@@ -243,14 +283,18 @@ python bis.py ai benchmark
 Process items in batches for better performance:
 
 ```python
+
 # Scrapy settings
+
 AI_BATCH_SIZE = 20  # Process 20 items at once
 
 # API batch processing
+
 response = httpx.post("/ai/batch-process", json={
     "data": large_dataset,
     "callback_url": "https://your-app.com/ai-callback"
 })
+
 ```
 
 ### Caching
@@ -258,20 +302,26 @@ response = httpx.post("/ai/batch-process", json={
 AI results are automatically cached to improve performance:
 
 ```yaml
+
 # config/ai_config.yaml
+
 cache_dir: "./data/ai_cache"
 models:
   spacy_en:
     cache_size: 1000  # Cache 1000 processed texts
+
 ```
 
 ### Resource Management
 
 ```yaml
+
 # Limit resource usage
+
 parallel_processing: true
 max_workers: 4
 max_text_length: 10000  # Skip very long texts
+
 ```
 
 ## Use Cases
@@ -279,37 +329,49 @@ max_text_length: 10000  # Skip very long texts
 ### 1. News Monitoring
 
 ```python
+
 # Monitor news sentiment about your company
+
 AI_REQUIRED_ENTITIES = ['ORG']  # Must mention organizations
 AI_PROCESS_SENTIMENT = True
 AI_MIN_QUALITY_SCORE = 0.7
+
 ```
 
 ### 2. Job Market Analysis
 
 ```python
+
 # Analyze job postings
+
 AI_REQUIRED_ENTITIES = ['ORG', 'MONEY']  # Company and salary
 AI_BLOCKED_CATEGORIES = ['spam']
 AI_PROCESS_CLASSIFICATION = True
+
 ```
 
 ### 3. Social Media Monitoring
 
 ```python
+
 # Track social media mentions
+
 AI_PROCESS_SENTIMENT = True
 AI_MIN_SENTIMENT_CONFIDENCE = 0.5
 AI_FILTER_DUPLICATES = True
+
 ```
 
 ### 4. E-commerce Intelligence
 
 ```python
+
 # Product and pricing analysis
+
 AI_REQUIRED_ENTITIES = ['MONEY', 'PRODUCT']
 AI_PROCESS_CLASSIFICATION = True
 AI_MIN_QUALITY_SCORE = 0.8
+
 ```
 
 ## Troubleshooting
@@ -320,7 +382,7 @@ AI_MIN_QUALITY_SCORE = 0.8
    ```bash
    # Check model status
    python bis.py ai status
-   
+
    # Reinstall AI dependencies (now in main requirements.txt)
    pip install -r requirements.txt
    ```
@@ -329,7 +391,7 @@ AI_MIN_QUALITY_SCORE = 0.8
    ```yaml
    # Reduce batch size
    AI_BATCH_SIZE: 5
-   
+
    # Disable heavy models
    models:
      summarizer:
@@ -340,7 +402,7 @@ AI_MIN_QUALITY_SCORE = 0.8
    ```yaml
    # Limit text length
    max_text_length: 5000
-   
+
    # Reduce cache size
    models:
      spacy_en:
@@ -352,13 +414,19 @@ AI_MIN_QUALITY_SCORE = 0.8
 Enable debug logging for troubleshooting:
 
 ```yaml
+
 # config/ai_config.yaml
+
 log_level: "DEBUG"
+
 ```
 
 ```bash
+
 # Check logs
+
 tail -f data/logs/ai.log
+
 ```
 
 ## API Reference
@@ -380,12 +448,15 @@ tail -f data/logs/ai.log
 ### CLI Commands
 
 ```bash
+
 # AI system management
+
 python bis.py ai setup          # Interactive setup
 python bis.py ai status         # Show status
 python bis.py ai requirements   # Generate requirements
 
 # Testing commands
+
 python bis.py ai test-entities "text"
 python bis.py ai test-classification "text"
 python bis.py ai test-sentiment "text"
@@ -393,12 +464,15 @@ python bis.py ai test-summary "text"
 python bis.py ai test-duplicates "text1" "text2"
 
 # Configuration management
+
 python bis.py ai export-config
 python bis.py ai import-config config.json
 
 # Utilities
+
 python bis.py ai benchmark      # Performance testing
 python bis.py ai process-file data.json  # Process file
+
 ```
 
 ## Best Practices
@@ -417,6 +491,8 @@ python bis.py ai process-file data.json  # Process file
 - 💬 [Community Support](https://github.com/your-repo/discussions)
 - 📧 [Email Support](mailto:support@example.com)
 
+
 ---
+
 
 *This AI integration transforms your scraper from a simple data collection tool into an intelligent business intelligence platform.*

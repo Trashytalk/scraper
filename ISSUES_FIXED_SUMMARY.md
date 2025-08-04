@@ -3,6 +3,7 @@
 ## 🚀 FIXED ISSUES
 
 ### 1. ✅ Crawler Actually Crawling
+
 **ISSUE:** "The Crawler is still not actually crawling at all"
 **STATUS:** ✅ FIXED - Crawling was working correctly all along
 
@@ -24,6 +25,7 @@
 - Not understanding the difference between URL discovery vs page processing
 
 ### 2. ✅ View Details/Hide Data Buttons Working
+
 **ISSUE:** "The 'View Details' Hide/Show Data' buttons do nothing"
 **STATUS:** ✅ FIXED
 
@@ -41,6 +43,7 @@
 - Error messages for failed requests
 
 ### 3. ✅ Hover Tooltips for Configuration Options
+
 **ISSUE:** "Need hover over icons for each user input section explaining the function"
 **STATUS:** ✅ FULLY IMPLEMENTED
 
@@ -60,6 +63,7 @@
 ## 🔧 ENHANCED FEATURES
 
 ### Improved Results Display
+
 - **Intelligent Data Handling:** Properly handles both single-page and crawling results
 - **Summary Metrics:** Shows pages processed, URLs discovered, data extracted
 - **Loading States:** Visual feedback during data fetching
@@ -67,6 +71,7 @@
 - **Data Preview:** Shows sample extracted data with titles and URLs
 
 ### Better User Experience
+
 - **ℹ️ Visual Indicators:** Information icons next to fields with tooltips
 - **Contextual Help:** Detailed explanations in tooltips
 - **Real Examples:** Concrete examples in tooltip text
@@ -74,7 +79,8 @@
 
 ## 🎯 CRAWLING SUCCESS TIPS
 
-### For Users Testing the Crawler:
+### For Users Testing the Crawler
+
 1. **Use Link-Rich Websites:**
    - ✅ httpbin.org (61+ discoverable URLs)
    - ✅ wikipedia.org (thousands of links)
@@ -94,13 +100,15 @@
 
 ## 🛠️ TECHNICAL IMPLEMENTATION
 
-### Frontend Changes (OperationsInterface.tsx):
+### Frontend Changes (OperationsInterface.tsx)
+
 - Added comprehensive tooltip system with `title` attributes
 - Fixed async result fetching with proper error handling
 - Improved button state management and user feedback
 - Enhanced data display for different result types
 
-### Backend Verification:
+### Backend Verification
+
 - Confirmed crawling engine is fully functional
 - Verified API endpoints return correct data
 - Validated job summary storage and retrieval

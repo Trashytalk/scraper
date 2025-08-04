@@ -5,6 +5,7 @@ This document describes the 8 advanced features that have been integrated into t
 ## Feature Overview
 
 ### ✅ Step 1: Enhanced Tooltips System
+
 **File**: `gui/components/tooltip_system.py`
 
 **Features**:
@@ -20,6 +21,7 @@ This document describes the 8 advanced features that have been integrated into t
 - Tooltips automatically adjust content complexity based on your level
 
 ### ✅ Step 2: TOR Integration
+
 **File**: `gui/components/tor_integration.py`
 
 **Features**:
@@ -37,6 +39,7 @@ This document describes the 8 advanced features that have been integrated into t
 - Rotate circuits manually or automatically
 
 ### ✅ Step 3: Network Configuration GUI
+
 **File**: `gui/components/network_config.py`
 
 **Features**:
@@ -53,6 +56,7 @@ This document describes the 8 advanced features that have been integrated into t
 - Set up geographic targeting preferences
 
 ### ✅ Step 4: Advanced Data Parsing
+
 **File**: `gui/components/advanced_parsing.py`
 
 **Features**:
@@ -70,6 +74,7 @@ This document describes the 8 advanced features that have been integrated into t
 - View extracted entities and analysis results
 
 ### ✅ Step 5: Embedded Browser
+
 **File**: `gui/components/embedded_browser.py`
 
 **Features**:
@@ -87,6 +92,7 @@ This document describes the 8 advanced features that have been integrated into t
 - Proxy settings are automatically applied
 
 ### ✅ Step 6: Data Visualization
+
 **File**: `gui/components/data_visualization.py`
 
 **Features**:
@@ -104,6 +110,7 @@ This document describes the 8 advanced features that have been integrated into t
 - Export visualizations for reports
 
 ### ✅ Step 7: OSINT Integration
+
 **File**: `gui/components/osint_integration.py`
 
 **Features**:
@@ -121,6 +128,7 @@ This document describes the 8 advanced features that have been integrated into t
 - Review results and generate reports
 
 ### ✅ Step 8: Data Enrichment
+
 **File**: `gui/components/data_enrichment.py`
 
 **Features**:
@@ -157,19 +165,22 @@ This document describes the 8 advanced features that have been integrated into t
 ## Configuration
 
 ### API Keys
+
 Configure your API keys in the respective configuration tabs:
 - **Clearbit**: Person and company enrichment
-- **FullContact**: Contact information enrichment  
+- **FullContact**: Contact information enrichment
 - **Hunter.io**: Email verification and finding
 - **Shodan**: IP and domain intelligence
 
 ### VPN Providers
+
 Set up your VPN credentials in the Network Configuration tab:
 - Username/password authentication
 - Certificate-based authentication (where applicable)
 - Server selection and optimization
 
 ### TOR Configuration
+
 - Default configuration works out-of-the-box
 - Custom exit node preferences
 - Circuit rotation intervals
@@ -178,16 +189,19 @@ Set up your VPN credentials in the Network Configuration tab:
 ## Performance Considerations
 
 ### Memory Usage
+
 - **Visualization**: Large datasets (>100k nodes) require significant RAM
 - **ML Models**: Transformer models can use 1-4GB GPU/CPU memory
 - **Browser**: Each tab uses ~100-200MB
 
 ### CPU Usage
+
 - **Data Processing**: ML operations are CPU-intensive
 - **Network Operations**: Concurrent connections managed efficiently
 - **Visualization Rendering**: GPU acceleration when available
 
 ### Storage
+
 - **Models**: ML models require 500MB-2GB disk space
 - **Cache**: Browser and data cache can grow to several GB
 - **Logs**: Comprehensive logging for debugging and analysis
@@ -195,16 +209,19 @@ Set up your VPN credentials in the Network Configuration tab:
 ## Security Notes
 
 ### Data Privacy
+
 - All processing done locally unless using external APIs
 - API credentials encrypted in local configuration
 - Optional data anonymization features
 
-### Network Security  
+### Network Security
+
 - TOR integration provides anonymity
 - VPN integration adds another layer of protection
 - Proxy rotation prevents tracking and blocking
 
 ### OSINT Ethics
+
 - Respect rate limits and terms of service
 - Only investigate public information
 - Follow legal and ethical guidelines
@@ -220,13 +237,18 @@ Set up your VPN credentials in the Network Configuration tab:
 5. **Browser Issues**: Clear cache and restart application
 
 ### Logging
+
 Enable debug logging for detailed troubleshooting:
+
 ```python
+
 import logging
 logging.basicConfig(level=logging.DEBUG)
+
 ```
 
 ### Support
+
 - Check logs in the "Logs" tab for errors
 - Review configuration settings
 - Consult API provider documentation
@@ -235,18 +257,21 @@ logging.basicConfig(level=logging.DEBUG)
 ## Advanced Usage
 
 ### Custom Integrations
+
 - Extend API providers by subclassing `APIProvider`
 - Add new OSINT modules by implementing `OSINTModule`
 - Create custom parsing rules with regex and ML models
 - Build custom visualization layouts
 
 ### Automation
+
 - Use job scheduling for regular OSINT investigations
-- Set up automated data enrichment pipelines  
+- Set up automated data enrichment pipelines
 - Configure webhook notifications for results
 - Export data to external systems
 
 ### Scaling
+
 - Distribute workload across multiple instances
 - Use database backends for large datasets
 - Implement Redis for shared caching
@@ -264,6 +289,8 @@ Planned improvements include:
 - Integration with popular SIEM systems
 - Custom dashboard builder
 
+
 ---
+
 
 **Note**: This implementation represents a comprehensive intelligence gathering and analysis platform. Always ensure compliance with local laws, terms of service, and ethical guidelines when using these features.

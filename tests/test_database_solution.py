@@ -4,26 +4,26 @@ Tests the new PostgreSQL-ready database models with SQLite for simplicity
 """
 
 import asyncio
-from datetime import datetime
-import sys
-import os
 import json
+import os
+import sys
+from datetime import datetime
 
 # Add path to import our modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 # Create a simple SQLite test database
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
 # Import our models
 from business_intel_scraper.database.models import (
-    Entity,
+    Base,
     Connection,
+    Entity,
     Event,
     Location,
-    Base,
 )
 
 # Create test database engine

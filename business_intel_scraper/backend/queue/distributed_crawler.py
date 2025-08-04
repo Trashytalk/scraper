@@ -448,6 +448,337 @@ class QueueManager:
     async def put_dead_url(self, crawl_url: CrawlURL, reason: str) -> bool:
         """Add URL to dead letter queue"""
         raise NotImplementedError
+
+
+class SQLiteQueueManager(QueueManager):
+    """SQLite-based queue implementation for fallback"""
+    
+    def __init__(self, db_path: str = "distributed_queue.db"):
+        self.db_path = db_path
+        self.logger = logging.getLogger(__name__)
+        
+    async def init_tables(self):
+        """Initialize database tables"""
+        import sqlite3
+        import threading
+        
+        # Use thread-local storage for SQLite connections
+        if not hasattr(self, '_local'):
+            self._local = threading.local()
+        
+        def _init_db():
+            conn = sqlite3.connect(self.db_path)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS frontier_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    url TEXT NOT NULL,
+                    source_url TEXT,
+                    depth INTEGER DEFAULT 0,
+                    priority INTEGER DEFAULT 5,
+                    created_at TEXT,
+                    scheduled_at TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    max_retries INTEGER DEFAULT 3,
+                    metadata TEXT,
+                    job_id TEXT,
+                    domain TEXT,
+                    link_depth INTEGER DEFAULT 0,
+                    requires_js BOOLEAN DEFAULT FALSE,
+                    content_size_estimate INTEGER,
+                    is_dynamic BOOLEAN DEFAULT FALSE
+                )
+            """)
+            
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS parse_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id TEXT NOT NULL UNIQUE,
+                    url TEXT NOT NULL,
+                    raw_id TEXT NOT NULL,
+                    storage_location TEXT NOT NULL,
+                    content_type TEXT DEFAULT 'text/html',
+                    priority INTEGER DEFAULT 5,
+                    created_at TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    max_retries INTEGER DEFAULT 3,
+                    metadata TEXT,
+                    requires_ocr BOOLEAN DEFAULT FALSE
+                )
+            """)
+            
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS retry_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    url TEXT NOT NULL,
+                    scheduled_for TEXT NOT NULL,
+                    retry_count INTEGER DEFAULT 0,
+                    reason TEXT,
+                    metadata TEXT,
+                    created_at TEXT
+                )
+            """)
+            
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS dead_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    url TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    failed_at TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    metadata TEXT,
+                    last_error TEXT
+                )
+            """)
+            
+            # Create indexes for performance
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_frontier_priority ON frontier_queue (priority DESC, id ASC)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_parse_priority ON parse_queue (priority DESC, id ASC)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_retry_scheduled ON retry_queue (scheduled_for ASC)")
+            
+            conn.commit()
+            conn.close()
+        
+        # Run in thread to avoid SQLite threading issues
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            await asyncio.get_event_loop().run_in_executor(executor, _init_db)
+    
+    def _get_connection(self):
+        """Get thread-local SQLite connection"""
+        import sqlite3
+        import threading
+        
+        if not hasattr(self, '_local'):
+            self._local = threading.local()
+            
+        if not hasattr(self._local, 'connection'):
+            self._local.connection = sqlite3.connect(self.db_path)
+            self._local.connection.row_factory = sqlite3.Row
+            
+        return self._local.connection
+    
+    async def put_frontier_url(self, crawl_url: CrawlURL) -> bool:
+        """Add URL to frontier queue"""
+        try:
+            def _insert():
+                conn = self._get_connection()
+                conn.execute("""
+                    INSERT INTO frontier_queue (
+                        url, source_url, depth, priority, created_at, scheduled_at,
+                        retry_count, max_retries, metadata, job_id, domain,
+                        link_depth, requires_js, content_size_estimate, is_dynamic
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    crawl_url.url,
+                    crawl_url.source_url,
+                    crawl_url.depth,
+                    crawl_url.priority,
+                    crawl_url.created_at.isoformat(),
+                    crawl_url.scheduled_at.isoformat(),
+                    crawl_url.retry_count,
+                    crawl_url.max_retries,
+                    json.dumps(crawl_url.metadata),
+                    crawl_url.job_id,
+                    crawl_url.domain,
+                    crawl_url.link_depth,
+                    crawl_url.requires_js,
+                    crawl_url.content_size_estimate,
+                    crawl_url.is_dynamic
+                ))
+                conn.commit()
+                return True
+            
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                result = await asyncio.get_event_loop().run_in_executor(executor, _insert)
+                return result
+                
+        except Exception as e:
+            self.logger.error(f"Failed to add URL to frontier queue: {e}")
+            return False
+    
+    async def get_frontier_url(self) -> Optional[CrawlURL]:
+        """Get next URL from frontier queue"""
+        try:
+            def _get():
+                conn = self._get_connection()
+                cursor = conn.execute("""
+                    SELECT * FROM frontier_queue 
+                    ORDER BY priority DESC, id ASC 
+                    LIMIT 1
+                """)
+                row = cursor.fetchone()
+                
+                if row:
+                    # Delete the record
+                    conn.execute("DELETE FROM frontier_queue WHERE id = ?", (row['id'],))
+                    conn.commit()
+                    
+                    # Convert back to CrawlURL
+                    return CrawlURL(
+                        url=row['url'],
+                        source_url=row['source_url'],
+                        depth=row['depth'],
+                        priority=row['priority'],
+                        created_at=datetime.fromisoformat(row['created_at']),
+                        scheduled_at=datetime.fromisoformat(row['scheduled_at']),
+                        retry_count=row['retry_count'],
+                        max_retries=row['max_retries'],
+                        metadata=json.loads(row['metadata']) if row['metadata'] else {},
+                        job_id=row['job_id'],
+                        link_depth=row['link_depth'],
+                        requires_js=bool(row['requires_js']),
+                        content_size_estimate=row['content_size_estimate'],
+                        is_dynamic=bool(row['is_dynamic'])
+                    )
+                return None
+            
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                result = await asyncio.get_event_loop().run_in_executor(executor, _get)
+                return result
+                
+        except Exception as e:
+            self.logger.error(f"Failed to get URL from frontier queue: {e}")
+            return None
+    
+    async def put_parse_task(self, parse_task: ParseTask) -> bool:
+        """Add task to parsing queue"""
+        try:
+            def _insert():
+                conn = self._get_connection()
+                conn.execute("""
+                    INSERT OR REPLACE INTO parse_queue (
+                        task_id, url, raw_id, storage_location, content_type,
+                        priority, created_at, retry_count, max_retries,
+                        metadata, requires_ocr
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    parse_task.task_id,
+                    parse_task.url,
+                    parse_task.raw_id,
+                    parse_task.storage_location,
+                    parse_task.content_type,
+                    parse_task.priority,
+                    parse_task.created_at.isoformat(),
+                    parse_task.retry_count,
+                    parse_task.max_retries,
+                    json.dumps(parse_task.metadata),
+                    parse_task.requires_ocr
+                ))
+                conn.commit()
+                return True
+            
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                result = await asyncio.get_event_loop().run_in_executor(executor, _insert)
+                return result
+                
+        except Exception as e:
+            self.logger.error(f"Failed to add parse task: {e}")
+            return False
+    
+    async def get_parse_task(self) -> Optional[ParseTask]:
+        """Get next parsing task"""
+        try:
+            def _get():
+                conn = self._get_connection()
+                cursor = conn.execute("""
+                    SELECT * FROM parse_queue 
+                    ORDER BY priority DESC, id ASC 
+                    LIMIT 1
+                """)
+                row = cursor.fetchone()
+                
+                if row:
+                    # Delete the record
+                    conn.execute("DELETE FROM parse_queue WHERE id = ?", (row['id'],))
+                    conn.commit()
+                    
+                    # Convert back to ParseTask
+                    return ParseTask(
+                        task_id=row['task_id'],
+                        url=row['url'],
+                        raw_id=row['raw_id'],
+                        storage_location=row['storage_location'],
+                        content_type=row['content_type'],
+                        priority=row['priority'],
+                        created_at=datetime.fromisoformat(row['created_at']),
+                        retry_count=row['retry_count'],
+                        max_retries=row['max_retries'],
+                        metadata=json.loads(row['metadata']) if row['metadata'] else {},
+                        requires_ocr=bool(row['requires_ocr'])
+                    )
+                return None
+            
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                result = await asyncio.get_event_loop().run_in_executor(executor, _get)
+                return result
+                
+        except Exception as e:
+            self.logger.error(f"Failed to get parse task: {e}")
+            return None
+    
+    async def put_retry_url(self, crawl_url: CrawlURL, delay_seconds: int) -> bool:
+        """Add URL to retry queue with delay"""
+        try:
+            scheduled_for = datetime.utcnow() + timedelta(seconds=delay_seconds)
+            
+            def _insert():
+                conn = self._get_connection()
+                conn.execute("""
+                    INSERT INTO retry_queue (
+                        url, scheduled_for, retry_count, reason, metadata, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    crawl_url.url,
+                    scheduled_for.isoformat(),
+                    crawl_url.retry_count,
+                    f"Retry attempt {crawl_url.retry_count}",
+                    json.dumps(crawl_url.metadata),
+                    datetime.utcnow().isoformat()
+                ))
+                conn.commit()
+                return True
+            
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                result = await asyncio.get_event_loop().run_in_executor(executor, _insert)
+                return result
+                
+        except Exception as e:
+            self.logger.error(f"Failed to add URL to retry queue: {e}")
+            return False
+    
+    async def put_dead_url(self, crawl_url: CrawlURL, reason: str) -> bool:
+        """Add URL to dead letter queue"""
+        try:
+            def _insert():
+                conn = self._get_connection()
+                conn.execute("""
+                    INSERT INTO dead_queue (
+                        url, reason, failed_at, retry_count, metadata, last_error
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    crawl_url.url,
+                    reason,
+                    datetime.utcnow().isoformat(),
+                    crawl_url.retry_count,
+                    json.dumps(crawl_url.metadata),
+                    reason
+                ))
+                conn.commit()
+                return True
+            
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                result = await asyncio.get_event_loop().run_in_executor(executor, _insert)
+                return result
+                
+        except Exception as e:
+            self.logger.error(f"Failed to add URL to dead queue: {e}")
+            return False
     
     async def get_queue_stats(self) -> Dict[str, int]:
         """Get queue statistics"""

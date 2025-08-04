@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Intelligence Scraper - API Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 100px);
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .auth-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .auth-section h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .endpoint-list {
+            list-style: none;
+        }
+
+        .endpoint-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .endpoint-item:hover {
+            background: #e9ecef;
+        }
+
+        .endpoint-item.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .method-GET { background: #28a745; color: white; }
+        .method-POST { background: #007bff; color: white; }
+        .method-PUT { background: #ffc107; color: black; }
+        .method-DELETE { background: #dc3545; color: white; }
+
+        .endpoint-details {
+            display: none;
+        }
+
+        .endpoint-details.active {
+            display: block;
+        }
+
+        .request-section, .response-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .request-section h3, .response-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .response-display {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 200px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-loading { background: #d1ecf1; color: #0c5460; }
+
+        .tab-nav {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-nav button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-nav button.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .auth-status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .auth-status.authenticated {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .auth-status.unauthenticated {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Business Intelligence Scraper</h1>
+        <p>Interactive API Explorer & Testing Tool</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <!-- Authentication Section -->
+            <div class="auth-section">
+                <h3>🔐 Authentication</h3>
+                <div id="authStatus" class="auth-status unauthenticated">
+                    Not Authenticated
+                </div>
+                
+                <div class="form-group">
+                    <label>API Base URL:</label>
+                    <select id="baseUrl">
+                        <option value="http://localhost:8000">Development (localhost:8000)</option>
+                        <option value="https://staging-api.business-intel-scraper.com">Staging</option>
+                        <option value="https://api.business-intel-scraper.com">Production</option>
+                    </select>
+                </div>
+
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab="jwt">JWT</button>
+                    <button class="tab-btn" data-tab="apikey">API Key</button>
+                </div>
+
+                <div id="jwtTab" class="tab-content active">
+                    <div class="form-group">
+                        <label>Username:</label>
+                        <input type="text" id="username" placeholder="Enter username">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="password" placeholder="Enter password">
+                    </div>
+                    <button class="btn btn-success" onclick="authenticate()">Authenticate</button>
+                </div>
+
+                <div id="apikeyTab" class="tab-content">
+                    <div class="form-group">
+                        <label>API Key:</label>
+                        <input type="text" id="apiKey" placeholder="Enter API key">
+                    </div>
+                    <button class="btn btn-success" onclick="setApiKey()">Set API Key</button>
+                </div>
+            </div>
+
+            <!-- Endpoint List -->
+            <div class="endpoints-section">
+                <h3>📡 API Endpoints</h3>
+                <ul id="endpointList" class="endpoint-list">
+                    <!-- Endpoints will be populated by JavaScript -->
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="welcomeScreen">
+                <h2>Welcome to the API Explorer! 👋</h2>
+                <p>Select an endpoint from the sidebar to start testing the API.</p>
+                
+                <div style="margin-top: 30px;">
+                    <h3>Quick Start:</h3>
+                    <ol>
+                        <li>Choose your environment (Development/Staging/Production)</li>
+                        <li>Authenticate using JWT or API Key</li>
+                        <li>Select an endpoint to test</li>
+                        <li>Fill in the parameters and execute the request</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div id="endpointDetails" class="endpoint-details">
+                <h2 id="endpointTitle"></h2>
+                <p id="endpointDescription"></p>
+
+                <div class="request-section">
+                    <h3>🔧 Request</h3>
+                    
+                    <div class="form-group">
+                        <label>URL:</label>
+                        <input type="text" id="requestUrl" readonly>
+                    </div>
+
+                    <div id="parametersSection" style="display: none;">
+                        <h4>Parameters:</h4>
+                        <div id="parametersContainer"></div>
+                    </div>
+
+                    <div id="bodySection" style="display: none;">
+                        <h4>Request Body:</h4>
+                        <textarea id="requestBody" placeholder="Enter JSON request body"></textarea>
+                    </div>
+
+                    <div id="headersSection">
+                        <h4>Headers:</h4>
+                        <div id="headersContainer">
+                            <div class="form-group">
+                                <label>Content-Type:</label>
+                                <input type="text" value="application/json" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="executeRequest()">🚀 Execute Request</button>
+                </div>
+
+                <div class="response-section">
+                    <h3>📥 Response</h3>
+                    <div id="responseStatus"></div>
+                    <div id="responseDisplay" class="response-display">
+                        Click "Execute Request" to see the response
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAuth = null;
+        let currentEndpoint = null;
+        let baseUrl = 'http://localhost:8000';
+
+        // API endpoints configuration
+        const endpoints = [
+            {
+                id: 'health',
+                name: 'Health Check',
+                method: 'GET',
+                path: '/api/health',
+                description: 'Check the health status of the API',
+                parameters: [],
+                requiresAuth: false
+            },
+            {
+                id: 'auth-login',
+                name: 'Login',
+                method: 'POST',
+                path: '/api/auth/login',
+                description: 'Authenticate user and get JWT token',
+                parameters: [],
+                body: {
+                    username: 'string',
+                    password: 'string'
+                },
+                requiresAuth: false
+            },
+            {
+                id: 'jobs-list',
+                name: 'List Jobs',
+                method: 'GET',
+                path: '/api/jobs',
+                description: 'Get list of all scraping jobs',
+                parameters: [
+                    { name: 'page', type: 'integer', required: false, description: 'Page number' },
+                    { name: 'limit', type: 'integer', required: false, description: 'Items per page' },
+                    { name: 'status', type: 'string', required: false, description: 'Filter by status' }
+                ],
+                requiresAuth: true
+            },
+            {
+                id: 'jobs-create',
+                name: 'Create Job',
+                method: 'POST',
+                path: '/api/jobs',
+                description: 'Create a new scraping job',
+                parameters: [],
+                body: {
+                    name: 'string',
+                    type: 'web_scraping',
+                    url: 'https://example.com',
+                    config: {
+                        crawl_links: true,
+                        max_pages: 10
+                    }
+                },
+                requiresAuth: true
+            },
+            {
+                id: 'jobs-detail',
+                name: 'Get Job Details',
+                method: 'GET',
+                path: '/api/jobs/{job_id}',
+                description: 'Get details of a specific job',
+                parameters: [
+                    { name: 'job_id', type: 'string', required: true, in: 'path', description: 'Job ID' }
+                ],
+                requiresAuth: true
+            },
+            {
+                id: 'jobs-start',
+                name: 'Start Job',
+                method: 'POST',
+                path: '/api/jobs/{job_id}/start',
+                description: 'Start executing a job',
+                parameters: [
+                    { name: 'job_id', type: 'string', required: true, in: 'path', description: 'Job ID' }
+                ],
+                requiresAuth: true
+            },
+            {
+                id: 'jobs-results',
+                name: 'Get Job Results',
+                method: 'GET',
+                path: '/api/jobs/{job_id}/results',
+                description: 'Get results from a completed job',
+                parameters: [
+                    { name: 'job_id', type: 'string', required: true, in: 'path', description: 'Job ID' },
+                    { name: 'format', type: 'string', required: false, description: 'Response format (json, csv)' }
+                ],
+                requiresAuth: true
+            },
+            {
+                id: 'analytics-summary',
+                name: 'Analytics Summary',
+                method: 'GET',
+                path: '/api/analytics/summary',
+                description: 'Get analytics summary',
+                parameters: [
+                    { name: 'period', type: 'string', required: false, description: 'Time period (day, week, month)' }
+                ],
+                requiresAuth: true
+            },
+            {
+                id: 'database-status',
+                name: 'Database Status',
+                method: 'GET',
+                path: '/api/database/status',
+                description: 'Get database status and statistics',
+                parameters: [],
+                requiresAuth: true
+            }
+        ];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTabs();
+            populateEndpoints();
+            
+            // Base URL change handler
+            document.getElementById('baseUrl').addEventListener('change', function() {
+                baseUrl = this.value;
+                updateAuthStatus();
+            });
+        });
+
+        function initializeTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    
+                    // Update tab buttons
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update tab content
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(tabName + 'Tab').classList.add('active');
+                });
+            });
+        }
+
+        function populateEndpoints() {
+            const endpointList = document.getElementById('endpointList');
+            
+            endpoints.forEach(endpoint => {
+                const li = document.createElement('li');
+                li.className = 'endpoint-item';
+                li.dataset.endpointId = endpoint.id;
+                li.innerHTML = `
+                    <span class="method method-${endpoint.method}">${endpoint.method}</span>
+                    <span>${endpoint.name}</span>
+                `;
+                
+                li.addEventListener('click', () => selectEndpoint(endpoint));
+                endpointList.appendChild(li);
+            });
+        }
+
+        function selectEndpoint(endpoint) {
+            currentEndpoint = endpoint;
+            
+            // Update active endpoint in sidebar
+            document.querySelectorAll('.endpoint-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-endpoint-id="${endpoint.id}"]`).classList.add('active');
+            
+            // Hide welcome screen, show endpoint details
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('endpointDetails').classList.add('active');
+            
+            // Populate endpoint details
+            document.getElementById('endpointTitle').textContent = `${endpoint.method} ${endpoint.path}`;
+            document.getElementById('endpointDescription').textContent = endpoint.description;
+            
+            // Build URL
+            let url = baseUrl + endpoint.path;
+            document.getElementById('requestUrl').value = url;
+            
+            // Show/hide parameters section
+            const parametersSection = document.getElementById('parametersSection');
+            const parametersContainer = document.getElementById('parametersContainer');
+            
+            if (endpoint.parameters && endpoint.parameters.length > 0) {
+                parametersSection.style.display = 'block';
+                parametersContainer.innerHTML = '';
+                
+                endpoint.parameters.forEach(param => {
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    div.innerHTML = `
+                        <label>${param.name} ${param.required ? '(required)' : '(optional)'}:</label>
+                        <input type="text" id="param-${param.name}" placeholder="${param.description || param.name}">
+                        <small>Type: ${param.type} | In: ${param.in || 'query'}</small>
+                    `;
+                    parametersContainer.appendChild(div);
+                });
+            } else {
+                parametersSection.style.display = 'none';
+            }
+            
+            // Show/hide body section
+            const bodySection = document.getElementById('bodySection');
+            const requestBody = document.getElementById('requestBody');
+            
+            if (endpoint.body) {
+                bodySection.style.display = 'block';
+                requestBody.value = JSON.stringify(endpoint.body, null, 2);
+            } else {
+                bodySection.style.display = 'none';
+                requestBody.value = '';
+            }
+            
+            // Clear previous response
+            document.getElementById('responseStatus').innerHTML = '';
+            document.getElementById('responseDisplay').textContent = 'Click "Execute Request" to see the response';
+        }
+
+        async function authenticate() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                alert('Please enter both username and password');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    currentAuth = {
+                        type: 'jwt',
+                        token: data.access_token
+                    };
+                    updateAuthStatus();
+                    alert('Authentication successful!');
+                } else {
+                    alert('Authentication failed: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Authentication error: ' + error.message);
+            }
+        }
+
+        function setApiKey() {
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!apiKey) {
+                alert('Please enter an API key');
+                return;
+            }
+            
+            currentAuth = {
+                type: 'apikey',
+                key: apiKey
+            };
+            updateAuthStatus();
+            alert('API key set successfully!');
+        }
+
+        function updateAuthStatus() {
+            const authStatus = document.getElementById('authStatus');
+            
+            if (currentAuth) {
+                authStatus.className = 'auth-status authenticated';
+                authStatus.textContent = `Authenticated (${currentAuth.type.toUpperCase()})`;
+            } else {
+                authStatus.className = 'auth-status unauthenticated';
+                authStatus.textContent = 'Not Authenticated';
+            }
+        }
+
+        async function executeRequest() {
+            if (!currentEndpoint) {
+                alert('Please select an endpoint first');
+                return;
+            }
+            
+            if (currentEndpoint.requiresAuth && !currentAuth) {
+                alert('This endpoint requires authentication');
+                return;
+            }
+            
+            // Build URL with parameters
+            let url = baseUrl + currentEndpoint.path;
+            const queryParams = [];
+            
+            if (currentEndpoint.parameters) {
+                currentEndpoint.parameters.forEach(param => {
+                    const value = document.getElementById(`param-${param.name}`)?.value;
+                    
+                    if (value) {
+                        if (param.in === 'path') {
+                            url = url.replace(`{${param.name}}`, encodeURIComponent(value));
+                        } else {
+                            queryParams.push(`${param.name}=${encodeURIComponent(value)}`);
+                        }
+                    } else if (param.required) {
+                        alert(`Required parameter "${param.name}" is missing`);
+                        return;
+                    }
+                });
+            }
+            
+            if (queryParams.length > 0) {
+                url += '?' + queryParams.join('&');
+            }
+            
+            // Build headers
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (currentAuth) {
+                if (currentAuth.type === 'jwt') {
+                    headers['Authorization'] = `Bearer ${currentAuth.token}`;
+                } else if (currentAuth.type === 'apikey') {
+                    headers['X-API-Key'] = currentAuth.key;
+                }
+            }
+            
+            // Build request options
+            const options = {
+                method: currentEndpoint.method,
+                headers
+            };
+            
+            // Add body for POST/PUT requests
+            if (['POST', 'PUT', 'PATCH'].includes(currentEndpoint.method)) {
+                const bodyText = document.getElementById('requestBody').value;
+                if (bodyText) {
+                    try {
+                        JSON.parse(bodyText); // Validate JSON
+                        options.body = bodyText;
+                    } catch (error) {
+                        alert('Invalid JSON in request body');
+                        return;
+                    }
+                }
+            }
+            
+            // Show loading state
+            const responseStatus = document.getElementById('responseStatus');
+            const responseDisplay = document.getElementById('responseDisplay');
+            
+            responseStatus.innerHTML = '<div class="status-indicator status-loading">⏳ Loading...</div>';
+            responseDisplay.textContent = 'Executing request...';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url, options);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                const responseText = await response.text();
+                let responseData;
+                
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch {
+                    responseData = responseText;
+                }
+                
+                // Update status
+                const statusClass = response.ok ? 'status-success' : 'status-error';
+                responseStatus.innerHTML = `
+                    <div class="status-indicator ${statusClass}">
+                        ${response.status} ${response.statusText} (${duration}ms)
+                    </div>
+                `;
+                
+                // Update response display
+                responseDisplay.textContent = typeof responseData === 'string' 
+                    ? responseData 
+                    : JSON.stringify(responseData, null, 2);
+                    
+            } catch (error) {
+                responseStatus.innerHTML = '<div class="status-indicator status-error">❌ Network Error</div>';
+                responseDisplay.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

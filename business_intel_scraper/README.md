@@ -7,10 +7,11 @@ A modular, scalable, and secure platform for gathering, enriching, and analyzing
 ## 🚀 **NEW: Enhanced Intelligent Crawling System**
 
 ### **Enterprise-Level Web Scraping Capabilities**
+
 The platform now includes 6 major enhancements for comprehensive enterprise data collection:
 
 - 📄 **Full HTML Extraction**: Complete HTML content capture from all crawled pages
-- 🌐 **Domain Crawling**: Comprehensive domain-wide crawling with subdomain support  
+- 🌐 **Domain Crawling**: Comprehensive domain-wide crawling with subdomain support
 - 📊 **Status Summaries**: Detailed crawl analytics with performance metrics and quality assessment
 - 🖼️ **Image Extraction**: Comprehensive image gathering including metadata and background images
 - 🔄 **Data Centralization**: Intelligent data consolidation with deduplication and quality scoring

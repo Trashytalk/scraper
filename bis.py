@@ -3,16 +3,17 @@ Enhanced CLI with Click framework
 Provides comprehensive command-line interface for the Business Intelligence Scraper
 """
 
-import click
 import os
+import time
 from pathlib import Path
+
+import click
 
 # Set up environment
 os.environ.setdefault("PYTHONPATH", str(Path(__file__).parent))
 
-from business_intel_scraper.backend.marketplace.cli import marketplace
 from business_intel_scraper.backend.ai.cli import ai
-
+from business_intel_scraper.backend.marketplace.cli import marketplace
 
 # Import analytics CLI commands
 try:
@@ -250,9 +251,9 @@ def test(coverage: bool):
 @cli.command()
 def docs():
     """Generate and serve documentation"""
+    import threading
     import webbrowser
     from http.server import HTTPServer, SimpleHTTPRequestHandler
-    import threading
 
     docs_dir = Path(__file__).parent / "docs"
     if not docs_dir.exists():
@@ -274,13 +275,14 @@ def docs():
     # Open browser
     try:
         webbrowser.open("http://localhost:8080")
-    except Exception:
-        pass
+    except Exception as e:
+        click.echo(f"Could not open browser automatically: {e}")
+        click.echo("Please manually navigate to http://localhost:8080")
 
     try:
         click.echo("Press Ctrl+C to stop the documentation server")
         while True:
-            pass
+            time.sleep(1)
     except KeyboardInterrupt:
         click.echo("\nShutting down documentation server...")
 

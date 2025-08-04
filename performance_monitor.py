@@ -4,36 +4,51 @@ Performance Monitoring and Optimization Module
 Provides real-time performance metrics, caching, and optimization features
 """
 
-import time
-import psutil
 import asyncio
-import sqlite3
 import json
 import logging
-from datetime import datetime
-from typing import Dict, Optional, Any
+import sqlite3
+import threading
+import time
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
-import threading
+from datetime import datetime
 from functools import wraps
+from typing import Any, Dict, Optional
+
+import psutil
 
 # Setup logging first
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from cachetools import TTLCache, LRUCache
+from cachetools import LRUCache, TTLCache
 
 # Optional Redis imports - gracefully handle import errors
 try:
     import redis
-    import aioredis
+    import redis.asyncio as redis_async
 
     REDIS_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Redis not available: {e}. Redis caching will be disabled.")
-    redis = None
-    aioredis = None
-    REDIS_AVAILABLE = False
+    aioredis = redis_async  # For backward compatibility
+except ImportError:
+    try:
+        import aioredis
+        import redis
+
+        REDIS_AVAILABLE = True
+    except ImportError:
+        REDIS_AVAILABLE = False
+        redis = None
+        aioredis = None
+        logger.warning(
+            "Redis not available: No module named 'redis' or 'aioredis'. Redis caching will be disabled."
+        )
+    except Exception as e:
+        REDIS_AVAILABLE = False
+        redis = None
+        aioredis = None
+        logger.warning(f"Redis import error: {e}. Redis caching will be disabled.")
 
 
 class PerformanceMetrics:
@@ -168,7 +183,7 @@ class CacheManager:
         self.redis_client = None
         self.redis_available = False
 
-        if redis_url and REDIS_AVAILABLE:
+        if redis_url and REDIS_AVAILABLE and redis:
             try:
                 self.redis_client = redis.from_url(redis_url)
                 self.redis_client.ping()
@@ -183,7 +198,7 @@ class CacheManager:
 
     async def get_async_redis(self, redis_url: str):
         """Get async Redis connection"""
-        if not REDIS_AVAILABLE:
+        if not REDIS_AVAILABLE or not aioredis:
             logger.warning("aioredis not available, async Redis disabled")
             return None
 
@@ -203,7 +218,7 @@ class CacheManager:
                     if value:
                         # Handle Redis response properly - ensure string type
                         if isinstance(value, bytes):
-                            value_str = value.decode('utf-8')
+                            value_str = value.decode("utf-8")
                         elif isinstance(value, str):
                             value_str = value
                         else:
@@ -215,22 +230,22 @@ class CacheManager:
 
             # Enhanced fallback to in-memory cache with validation
             try:
-                if cache_type == "ttl" and hasattr(self, 'ttl_cache'):
+                if cache_type == "ttl" and hasattr(self, "ttl_cache"):
                     value = self.ttl_cache.get(key)
                     if value is not None:
                         return value
-                elif cache_type == "lru" and hasattr(self, 'lru_cache'):
+                elif cache_type == "lru" and hasattr(self, "lru_cache"):
                     value = self.lru_cache.get(key)
                     if value is not None:
                         return value
-                elif cache_type == "job" and hasattr(self, 'job_cache'):
+                elif cache_type == "job" and hasattr(self, "job_cache"):
                     value = self.job_cache.get(key)
                     if value is not None:
                         return value
-                
+
                 # Log cache miss for debugging
                 logger.debug(f"Cache miss for key '{key}' in cache type '{cache_type}'")
-                
+
             except Exception as e:
                 logger.warning(f"In-memory cache error for key '{key}': {e}")
 
@@ -367,7 +382,7 @@ class DatabaseOptimizer:
         """Execute database query with connection pooling"""
         start_time = time.time()
         conn = None  # Initialize conn variable
-        
+
         try:
             # Get connection from pool or create new
             with self.pool_lock:

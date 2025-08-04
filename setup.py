@@ -4,7 +4,7 @@ Business Intelligence Scraper Setup
 Consolidated setup with optional dependency groups
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 
 # Read the README file for long description

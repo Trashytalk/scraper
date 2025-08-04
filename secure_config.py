@@ -7,6 +7,7 @@ import os
 import secrets
 from pathlib import Path
 from typing import List
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file

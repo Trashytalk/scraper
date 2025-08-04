@@ -1,0 +1,106 @@
+name: Advanced CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality and Security Checks
+  quality-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-consolidated.txt
+        pip install pylint black isort bandit safety mypy
+    
+    - name: Code formatting check
+      run: |
+        black --check .
+        isort --check-only .
+    
+    - name: Lint with pylint
+      run: |
+        pylint --exit-zero $(find . -name "*.py" | head -10)
+    
+    - name: Type checking with mypy
+      run: |
+        mypy --ignore-missing-imports $(find . -name "*.py" | head -5)
+    
+    - name: Security scan with bandit
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+    
+    - name: Dependency vulnerability check
+      run: |
+        safety check --json --output safety-report.json || true
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  # Deploy to Production
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    environment:
+      name: production
+      url: https://business-intel-scraper.com
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      env:
+        PRODUCTION_SERVER: ${{ secrets.PRODUCTION_SERVER }}
+        PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+      run: |
+        echo "$PRODUCTION_SSH_KEY" | base64 -d > prod_key
+        chmod 600 prod_key
+        
+        ssh -i prod_key -o StrictHostKeyChecking=no deploy@$PRODUCTION_SERVER << 'EOF'
+          cd /opt/business-intel-scraper
+          
+          # Create backup
+          docker-compose -f docker-compose.prod.yml exec -T postgres pg_dump -U postgres business_intel > backup_$(date +%Y%m%d_%H%M%S).sql
+          
+          # Deploy new version
+          docker-compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Wait for services to be ready
+          sleep 60
+          
+          # Run health check
+          curl -f http://localhost:8000/api/health
+          
+          # Clean up old images
+          docker system prune -f
+        EOF
+        
+        rm -f prod_key
+    
+    - name: Run production smoke tests
+      run: |
+        sleep 30
+        curl -f https://business-intel-scraper.com/api/health

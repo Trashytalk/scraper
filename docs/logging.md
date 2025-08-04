@@ -14,6 +14,7 @@ Add these variables to your `.env` file and restart the API and workers to enabl
 An easy way to aggregate logs is with the Elastic Stack (Elasticsearch, Logstash, Kibana). A minimal Logstash configuration that accepts the forwarded logs looks like:
 
 ```logstash
+
 input {
   http {
     host => "0.0.0.0"
@@ -27,6 +28,7 @@ output {
     index => "bi-scraper-logs-%{+YYYY.MM.dd}"
   }
 }
+
 ```
 
 Run Elasticsearch and Kibana using the official Docker images and start Logstash with the above pipeline. Set `LOG_FORWARD_URL=http://localhost:8080` for both the API service and any Celery workers. All JSON logs will then appear in Kibana.
@@ -41,19 +43,25 @@ If `LOG_FORWARD_URL` is configured they are also sent to the remote endpoint.
 To inspect logs locally run:
 
 ```bash
+
 tail -f business_intel_scraper/backend/logs/app.log
+
 ```
 
 You can also stream logs over SSE from the API:
 
 ```bash
+
 curl http://localhost:8000/logs/stream
+
 ```
 
 Start a worker with:
 
 ```bash
+
 celery -A business_intel_scraper.backend.workers.tasks.celery_app worker --loglevel=info
+
 ```
 
 Ensure the environment variables above are set for both the API and worker so log records are forwarded correctly.

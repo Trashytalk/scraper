@@ -1,63 +1,132 @@
 #!/usr/bin/env python3
 """
-Simplified Backend API Server for Business Intelligence Scraper
-Provides REST endpoints and WebSocket connections for the frontend
+Enhanced Backend API Server for Business Intelligence Scraper
+Provides REST endpoints and WebSocket connections with advanced configuration management
 """
 
+import asyncio
+import hashlib
+import json
+import logging
+import os
+import sqlite3
+import time
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+import jwt
+import uvicorn
 from fastapi import (
+    Depends,
     FastAPI,
     HTTPException,
-    Depends,
+    Request,
     WebSocket,
     WebSocketDisconnect,
-    Request,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-import asyncio
-import json
-import sqlite3
-import jwt
-import time
-import hashlib
-from datetime import datetime, timedelta
-import uvicorn
-import os
 
-# Import security components
-from secure_config import (
-    security_config,
-    database_config,
-    server_config,
-    validate_configuration,
-)
-from security_middleware import (
-    SecurityHeadersMiddleware,
-    InputValidationMiddleware,
-    RequestLoggingMiddleware,
-    get_limiter,
-    validate_job_config,
-    hash_password,
-    verify_password,
-)
+# Import centralized configuration
+from config.environment import get_api_url, get_config, get_test_credentials
+
+config = get_config()
+
+# Import enhanced error handling
+try:
+    from error_handling.enhanced_error_handler import (
+        ErrorCategory,
+        ErrorSeverity,
+        get_error_handler,
+        handle_errors,
+        init_error_handling,
+    )
+
+    ENHANCED_ERROR_HANDLING_AVAILABLE = True
+except ImportError:
+    logging.warning("Enhanced error handling not available")
+    ENHANCED_ERROR_HANDLING_AVAILABLE = False
+
+# Import enhanced monitoring
+try:
+    from monitoring.simple_health_monitor import (
+        SimpleHealthMonitor,
+        SimplePerformanceMiddleware,
+        background_health_monitoring,
+        get_health_monitor,
+        init_simple_monitoring,
+    )
+
+    ENHANCED_MONITORING_AVAILABLE = True
+except ImportError:
+    logging.warning("Enhanced monitoring not available")
+    ENHANCED_MONITORING_AVAILABLE = False
+
+# Import AI integration (Phase 4)
+try:
+    from ml_pipeline import (
+        AIIntegrationService,
+        ai_service,
+        create_ai_service,
+        get_default_ai_service,
+    )
+
+    AI_INTEGRATION_AVAILABLE = True
+    logging.info("🤖 AI Integration Service available")
+except ImportError:
+    logging.warning("AI Integration Service not available")
+    AI_INTEGRATION_AVAILABLE = False
+
+# Import enhanced configuration management
+try:
+    from config.advanced_config_manager import config_manager, get_config, init_config
+
+    ADVANCED_CONFIG_AVAILABLE = True
+except ImportError:
+    logging.warning(
+        "Advanced configuration manager not available, falling back to legacy config"
+    )
+    ADVANCED_CONFIG_AVAILABLE = False
+    config_manager = None
+
+    async def init_config(*args, **kwargs):
+        return None
+
+
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 # Import the real scraping engine
 from scraping_engine import execute_scraping_job
 
+# Import security components
+from secure_config import (
+    database_config,
+    security_config,
+    server_config,
+    validate_configuration,
+)
+from security_middleware import (
+    InputValidationMiddleware,
+    RequestLoggingMiddleware,
+    SecurityHeadersMiddleware,
+    get_limiter,
+    hash_password,
+    validate_job_config,
+    verify_password,
+)
+
 # Import performance monitoring (with fallback if dependencies missing)
 try:
     from performance_monitor import (
-        PerformanceMetrics,
         CacheManager,
         DatabaseOptimizer,
+        PerformanceMetrics,
         PerformanceMiddleware,
-        init_performance_system,
-        get_performance_summary,
-        cached,
         background_performance_monitor,
+        cached,
+        get_performance_summary,
+        init_performance_system,
     )
 
     PERFORMANCE_ENABLED = True
@@ -67,29 +136,162 @@ except ImportError:
     )
     PERFORMANCE_ENABLED = False
 
-    # Fallback implementations
+    # Enhanced fallback implementations
     class PerformanceMetrics:
+        def __init__(self):
+            self.request_metrics = {}
+            self.system_metrics = {}
+            self.start_time = time.time()
+
         def record_request(self, endpoint, duration, status_code):
-            pass
+            if endpoint not in self.request_metrics:
+                self.request_metrics[endpoint] = []
+
+            self.request_metrics[endpoint].append(
+                {
+                    "duration": duration,
+                    "status_code": status_code,
+                    "timestamp": time.time(),
+                }
+            )
+
+            # Keep only last 1000 requests per endpoint
+            if len(self.request_metrics[endpoint]) > 1000:
+                self.request_metrics[endpoint] = self.request_metrics[endpoint][-1000:]
 
         def get_system_metrics(self):
-            return {}
+            try:
+                import psutil
+
+                return {
+                    "cpu_percent": psutil.cpu_percent(interval=0.1),
+                    "memory_percent": psutil.virtual_memory().percent,
+                    "memory_used_mb": psutil.virtual_memory().used // (1024 * 1024),
+                    "disk_percent": psutil.disk_usage("/").percent,
+                    "uptime_seconds": time.time() - self.start_time,
+                    "active_connections": len(self.request_metrics),
+                    "timestamp": time.time(),
+                }
+            except ImportError:
+                return {
+                    "uptime_seconds": time.time() - self.start_time,
+                    "active_connections": len(self.request_metrics),
+                    "timestamp": time.time(),
+                    "note": "psutil not available - limited metrics",
+                }
 
         def get_endpoint_metrics(self):
-            return {}
+            metrics = {}
+            for endpoint, requests in self.request_metrics.items():
+                if requests:
+                    durations = [
+                        r["duration"] for r in requests[-100:]
+                    ]  # Last 100 requests
+                    success_count = len(
+                        [r for r in requests[-100:] if 200 <= r["status_code"] < 400]
+                    )
+
+                    metrics[endpoint] = {
+                        "total_requests": len(requests),
+                        "recent_requests": len(requests[-100:]),
+                        "avg_duration_ms": (
+                            sum(durations) / len(durations) * 1000 if durations else 0
+                        ),
+                        "min_duration_ms": min(durations) * 1000 if durations else 0,
+                        "max_duration_ms": max(durations) * 1000 if durations else 0,
+                        "success_rate": (
+                            success_count / len(requests[-100:])
+                            if requests[-100:]
+                            else 0
+                        ),
+                        "last_request": (
+                            max(r["timestamp"] for r in requests) if requests else 0
+                        ),
+                    }
+            return metrics
 
         def get_recent_performance(self):
-            return {}
+            recent_window = time.time() - 300  # Last 5 minutes
+            recent_requests = []
+
+            for endpoint, requests in self.request_metrics.items():
+                recent = [r for r in requests if r["timestamp"] > recent_window]
+                recent_requests.extend(recent)
+
+            if not recent_requests:
+                return {
+                    "requests_per_minute": 0,
+                    "avg_response_time": 0,
+                    "error_rate": 0,
+                    "total_requests": 0,
+                }
+
+            error_count = len([r for r in recent_requests if r["status_code"] >= 400])
+            durations = [r["duration"] for r in recent_requests]
+
+            return {
+                "requests_per_minute": len(recent_requests) / 5,  # 5 minute window
+                "avg_response_time": (
+                    sum(durations) / len(durations) if durations else 0
+                ),
+                "error_rate": error_count / len(recent_requests),
+                "total_requests": len(recent_requests),
+            }
 
     class CacheManager:
+        def __init__(self):
+            self.ttl_cache = {}
+            self.lru_cache = {}
+            self.cache_times = {}
+            self.max_size = 1000
+
         def get(self, key, cache_type="ttl"):
+            if cache_type == "ttl":
+                if key in self.ttl_cache and key in self.cache_times:
+                    if time.time() - self.cache_times[key] < 300:  # 5 min default TTL
+                        return self.ttl_cache[key]
+                    else:
+                        # Expired, remove
+                        del self.ttl_cache[key]
+                        del self.cache_times[key]
+                        return None
+                return self.ttl_cache.get(key)
+            elif cache_type == "lru":
+                if key in self.lru_cache:
+                    # Move to end (most recently used)
+                    value = self.lru_cache.pop(key)
+                    self.lru_cache[key] = value
+                    return value
             return None
 
         def set(self, key, value, cache_type="ttl", ttl=300):
-            pass
+            if cache_type == "ttl":
+                self.ttl_cache[key] = value
+                self.cache_times[key] = time.time()
+
+                # Simple cleanup of old entries
+                if len(self.ttl_cache) > self.max_size:
+                    # Remove oldest 10% of entries
+                    oldest_keys = sorted(
+                        self.cache_times.keys(), key=lambda k: self.cache_times[k]
+                    )[: self.max_size // 10]
+                    for old_key in oldest_keys:
+                        self.ttl_cache.pop(old_key, None)
+                        self.cache_times.pop(old_key, None)
+
+            elif cache_type == "lru":
+                if len(self.lru_cache) >= self.max_size:
+                    # Remove least recently used
+                    oldest_key = next(iter(self.lru_cache))
+                    del self.lru_cache[oldest_key]
+                self.lru_cache[key] = value
 
         def delete(self, key, cache_type="ttl"):
-            pass
+            if cache_type == "ttl":
+                self.ttl_cache.pop(key, None)
+                self.cache_times.pop(key, None)
+            elif cache_type == "lru":
+                self.lru_cache.pop(key, None)
 
     class PerformanceMiddleware:
         def __init__(self, app, metrics):
@@ -97,19 +299,71 @@ except ImportError:
             self.metrics = metrics
 
         async def __call__(self, request, call_next):
-            return await call_next(request)
+            start_time = time.time()
+            response = await call_next(request)
+            duration = time.time() - start_time
+
+            # Record metrics
+            endpoint = f"{request.method} {request.url.path}"
+            self.metrics.record_request(endpoint, duration, response.status_code)
+
+            return response
 
     def cached(cache_type="ttl", ttl=300, key_prefix=""):
         def decorator(func):
-            return func
+            async def wrapper(*args, **kwargs):
+                # Simple caching decorator
+                cache_key = (
+                    f"{key_prefix}:{func.__name__}:{hash(str(args) + str(kwargs))}"
+                )
+
+                if hasattr(func, "_cache_manager"):
+                    cached_result = func._cache_manager.get(cache_key, cache_type)
+                    if cached_result is not None:
+                        return cached_result
+
+                result = (
+                    await func(*args, **kwargs)
+                    if asyncio.iscoroutinefunction(func)
+                    else func(*args, **kwargs)
+                )
+
+                if hasattr(func, "_cache_manager"):
+                    func._cache_manager.set(cache_key, result, cache_type, ttl)
+
+                return result
+
+            return wrapper
 
         return decorator
 
     def get_performance_summary():
-        return {}
+        if hasattr(get_performance_summary, "_metrics"):
+            return {
+                "system": get_performance_summary._metrics.get_system_metrics(),
+                "endpoints": get_performance_summary._metrics.get_endpoint_metrics(),
+                "recent": get_performance_summary._metrics.get_recent_performance(),
+            }
+        return {"status": "metrics not initialized"}
 
     async def background_performance_monitor():
-        pass
+        """Basic background monitoring"""
+        while True:
+            try:
+                await asyncio.sleep(60)  # Run every minute
+                if hasattr(background_performance_monitor, "_metrics"):
+                    metrics = (
+                        background_performance_monitor._metrics.get_system_metrics()
+                    )
+                    if (
+                        metrics.get("cpu_percent", 0) > 80
+                        or metrics.get("memory_percent", 0) > 90
+                    ):
+                        logging.warning(
+                            f"High resource usage detected: CPU={metrics.get('cpu_percent')}%, Memory={metrics.get('memory_percent')}%"
+                        )
+            except Exception as e:
+                logging.error(f"Background monitoring error: {e}")
 
 
 # Database setup
@@ -187,13 +441,13 @@ def init_database():
     )
 
     # Create default admin user with secure password hashing
-    password_hash = hash_password("admin123")
+    password_hash = hash_password(config.DEFAULT_PASSWORD)
     cursor.execute(
         """
         INSERT OR IGNORE INTO users (username, email, password_hash, role)
         VALUES (?, ?, ?, ?)
     """,
-        ("admin", "admin@scraper.local", password_hash, "admin"),
+        (config.DEFAULT_USERNAME, "admin@scraper.local", password_hash, "admin"),
     )
 
     conn.commit()
@@ -223,12 +477,104 @@ else:
 # Rate limiter setup
 limiter = get_limiter(security_config.API_RATE_LIMIT_PER_MINUTE)
 
+# Global configuration storage
+app_config = None
+
 # FastAPI app setup
 app = FastAPI(
     title="Business Intelligence Scraper API",
     description="Backend API for the BI Scraper Platform",
-    version="1.0.0",
+    version="2.0.0",
 )
+
+
+# Configuration startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    """Initialize application configuration and dependencies"""
+    global app_config
+
+    if ADVANCED_CONFIG_AVAILABLE:
+        try:
+            # Initialize advanced configuration management
+            environment = os.getenv("ENVIRONMENT", "development")
+            config_file = f"config/{environment}.yaml"
+
+            if not os.path.exists(config_file):
+                config_file = "config/development.yaml"  # Fallback
+
+            app_config = await init_config(config_file, environment)
+            if config_manager and app_config:
+                await config_manager.start_watching()
+
+                logging.info(
+                    f"✅ Advanced configuration loaded (environment: {environment})"
+                )
+                logging.info(f"   Database: {app_config.database.url}")
+                logging.info(
+                    f"   Redis: {app_config.redis.host}:{app_config.redis.port}"
+                )
+                logging.info(f"   Log Level: {app_config.monitoring.log_level}")
+
+                # Configure logging based on config
+                logging.getLogger().setLevel(
+                    getattr(logging, app_config.monitoring.log_level)
+                )
+
+        except Exception as e:
+            logging.error(f"❌ Failed to load advanced configuration: {e}")
+            logging.info("Falling back to legacy configuration")
+            app_config = None
+
+    # Initialize database
+    init_database()
+
+    # Initialize enhanced monitoring if available
+    if ENHANCED_MONITORING_AVAILABLE:
+        try:
+            monitor = init_simple_monitoring(DATABASE_PATH)
+            asyncio.create_task(background_health_monitoring())
+            logging.info("✅ Enhanced health monitoring initialized")
+        except Exception as e:
+            logging.error(f"❌ Failed to initialize enhanced monitoring: {e}")
+
+    # Initialize enhanced error handling if available
+    if ENHANCED_ERROR_HANDLING_AVAILABLE:
+        try:
+            error_handler = init_error_handling()
+            logging.info("✅ Enhanced error handling initialized")
+        except Exception as e:
+            logging.error(f"❌ Failed to initialize enhanced error handling: {e}")
+
+    # Initialize legacy performance monitoring if available
+    if PERFORMANCE_ENABLED:
+        try:
+            await init_performance_system(DATABASE_PATH)
+            asyncio.create_task(background_performance_monitor())
+            logging.info("✅ Legacy performance monitoring initialized")
+        except Exception as e:
+            logging.error(f"❌ Failed to initialize legacy performance monitoring: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup resources on shutdown"""
+    if ADVANCED_CONFIG_AVAILABLE and config_manager:
+        try:
+            await config_manager.stop_watching()
+            logging.info("✅ Configuration manager stopped")
+        except Exception as e:
+            logging.error(f"Error stopping config manager: {e}")
+
+
+# Helper function to get current configuration
+def get_current_config():
+    """Get current application configuration"""
+    if app_config:
+        return app_config
+    # Fallback to legacy config
+    return None
+
 
 # Add security middleware
 app.add_middleware(
@@ -436,20 +782,34 @@ def get_current_user(token: str = Depends(get_bearer_token)):
 
 @app.get("/api/health")
 async def health_check():
-    """Health check endpoint with performance metrics"""
+    """Enhanced health check endpoint with comprehensive monitoring"""
     health_data = {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "environment": os.getenv("ENVIRONMENT", "development"),
     }
 
-    if PERFORMANCE_ENABLED:
-        health_data.update(
-            {
-                "performance": performance_metrics.get_recent_performance(1),
-                "system": performance_metrics.get_system_metrics(),
-            }
-        )
+    # Enhanced monitoring if available
+    if ENHANCED_MONITORING_AVAILABLE:
+        try:
+            monitor = get_health_monitor()
+            if monitor:
+                comprehensive_health = await monitor.comprehensive_health_check()
+                health_data.update(comprehensive_health)
+                logging.debug("Enhanced health check completed")
+        except Exception as e:
+            logging.error(f"Enhanced health check failed: {e}")
+            health_data["enhanced_monitoring_error"] = str(e)
+
+    # Legacy performance monitoring fallback
+    elif PERFORMANCE_ENABLED:
+        try:
+            health_data["performance"] = performance_metrics.get_recent_performance()
+            health_data["system"] = performance_metrics.get_system_metrics()
+        except Exception as e:
+            logging.error(f"Legacy performance check failed: {e}")
+            health_data["performance_error"] = str(e)
 
     return health_data
 
@@ -514,7 +874,7 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
     for job in jobs:
         job_config = json.loads(job[6]) if job[6] else {}
         summary = job_config.get("summary", {})
-        
+
         job_response = JobResponse(
             id=job[0],
             name=job[1],
@@ -523,11 +883,11 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
             created_at=job[4],
             results_count=job[5] or 0,
         )
-        
+
         # Add summary data as additional attribute
         if summary:
             job_response.__dict__["summary"] = summary
-            
+
         job_list.append(job_response)
 
     return job_list
@@ -604,35 +964,37 @@ async def create_batch_jobs(
     current_user: dict = Depends(get_current_user),
 ):
     """Create multiple scraping jobs from a list of URLs"""
-    
+
     if not batch_data.urls:
         raise HTTPException(status_code=400, detail="No URLs provided")
-    
+
     if len(batch_data.urls) > 100:  # Safety limit
         raise HTTPException(status_code=400, detail="Too many URLs (max 100)")
-    
+
     created_jobs = []
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
-    
+
     try:
         for i, url in enumerate(batch_data.urls):
             # Create job name with index
             job_name = f"{batch_data.base_name} - Job {i + 1}"
-            
+
             # Build job configuration
             job_config = {
                 "url": url,
                 "scraper_type": batch_data.scraper_type or "basic",
                 "config": batch_data.config or {},
             }
-            
+
             # Validate job configuration for security
             try:
                 validated_config = validate_job_config(job_config)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=f"Invalid config for URL {url}: {str(e)}")
-            
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid config for URL {url}: {str(e)}"
+                )
+
             # Insert job into database
             cursor.execute(
                 """
@@ -647,17 +1009,19 @@ async def create_batch_jobs(
                 ),
             )
             job_id = cursor.lastrowid
-            
-            created_jobs.append({
-                "id": job_id,
-                "name": job_name,
-                "url": url,
-                "scraper_type": batch_data.scraper_type,
-                "status": "pending"
-            })
-        
+
+            created_jobs.append(
+                {
+                    "id": job_id,
+                    "name": job_name,
+                    "url": url,
+                    "scraper_type": batch_data.scraper_type,
+                    "status": "pending",
+                }
+            )
+
         conn.commit()
-        
+
         # Broadcast batch job creation to WebSocket clients
         await manager.broadcast(
             json.dumps(
@@ -671,17 +1035,19 @@ async def create_batch_jobs(
                 }
             )
         )
-        
+
         return {
             "message": f"Successfully created {len(created_jobs)} batch jobs",
             "batch_name": batch_data.base_name,
             "jobs_created": len(created_jobs),
-            "jobs": created_jobs
+            "jobs": created_jobs,
         }
-        
+
     except Exception as e:
         conn.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create batch jobs: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create batch jobs: {str(e)}"
+        )
     finally:
         conn.close()
 
@@ -737,7 +1103,7 @@ async def start_job(job_id: int, current_user: dict = Depends(get_current_user))
 
     job_config = json.loads(job_row[0]) if job_row[0] else {}
     job_type = job_row[1]
-    
+
     # Include the job type in the config so the scraping engine knows what to do
     job_config["type"] = job_type
 
@@ -1159,8 +1525,7 @@ class CentralizeDataRequest(BaseModel):
 
 @app.post("/api/data/centralize")
 async def centralize_data(
-    request: CentralizeDataRequest,
-    current_user: dict = Depends(get_current_user)
+    request: CentralizeDataRequest, current_user: dict = Depends(get_current_user)
 ):
     """
     Centralize scraped data for analytics and storage
@@ -1169,9 +1534,10 @@ async def centralize_data(
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        
+
         # Create centralized data table if it doesn't exist
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS centralized_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source_job_id INTEGER,
@@ -1192,40 +1558,43 @@ async def centralize_data(
                 image_count INTEGER,
                 crawl_metadata TEXT
             )
-        """)
-        
+        """
+        )
+
         # Create index for efficient lookups
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_content_hash 
             ON centralized_data(content_hash)
-        """)
-        
+        """
+        )
+
         centralized_count = 0
         duplicate_count = 0
-        
+
         for item in request.data:
             # Calculate content hash for deduplication
             content_str = json.dumps(item, sort_keys=True)
             content_hash = hashlib.md5(content_str.encode()).hexdigest()
-            
+
             # Check for duplicates
             cursor.execute(
                 "SELECT id FROM centralized_data WHERE content_hash = ?",
-                (content_hash,)
+                (content_hash,),
             )
             existing = cursor.fetchone()
-            
+
             if existing:
                 duplicate_count += 1
                 continue
-            
+
             # Calculate quality metrics
             quality_score = 0
             completeness_score = 0
             word_count = 0
             link_count = 0
             image_count = 0
-            
+
             # Quality assessment
             if item.get("title"):
                 quality_score += 20
@@ -1251,24 +1620,34 @@ async def centralize_data(
                 if image_count > 0:
                     quality_score += 15
                     completeness_score += 15
-            
+
             # Determine data type
             data_type = "general"
             content_lower = str(item).lower()
-            if any(keyword in content_lower for keyword in ["product", "price", "buy", "cart"]):
+            if any(
+                keyword in content_lower
+                for keyword in ["product", "price", "buy", "cart"]
+            ):
                 data_type = "ecommerce"
-            elif any(keyword in content_lower for keyword in ["article", "news", "headline", "author"]):
+            elif any(
+                keyword in content_lower
+                for keyword in ["article", "news", "headline", "author"]
+            ):
                 data_type = "news"
-            elif any(keyword in content_lower for keyword in ["post", "tweet", "comment", "like"]):
+            elif any(
+                keyword in content_lower
+                for keyword in ["post", "tweet", "comment", "like"]
+            ):
                 data_type = "social_media"
-            
+
             # Process crawl metadata if available
             crawl_metadata = ""
             if item.get("crawl_metadata"):
                 crawl_metadata = json.dumps(item["crawl_metadata"])
-            
+
             # Insert centralized record
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO centralized_data (
                     source_job_id, source_job_name, source_job_type, source_url,
                     raw_data, processed_data, data_type, content_hash,
@@ -1276,44 +1655,43 @@ async def centralize_data(
                     validation_status, word_count, link_count, image_count,
                     crawl_metadata
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                request.job_id,
-                request.job_name,
-                request.metadata.get("job_type", "unknown"),
-                item.get("url", ""),
-                json.dumps(item),
-                json.dumps(item),  # Could be enhanced processing
-                data_type,
-                content_hash,
-                item.get("timestamp", datetime.utcnow().isoformat()),
-                quality_score,
-                completeness_score,
-                "valid" if quality_score >= 70 else "pending",
-                word_count,
-                link_count,
-                image_count,
-                crawl_metadata
-            ))
-            
+            """,
+                (
+                    request.job_id,
+                    request.job_name,
+                    request.metadata.get("job_type", "unknown"),
+                    item.get("url", ""),
+                    json.dumps(item),
+                    json.dumps(item),  # Could be enhanced processing
+                    data_type,
+                    content_hash,
+                    item.get("timestamp", datetime.utcnow().isoformat()),
+                    quality_score,
+                    completeness_score,
+                    "valid" if quality_score >= 70 else "pending",
+                    word_count,
+                    link_count,
+                    image_count,
+                    crawl_metadata,
+                ),
+            )
+
             centralized_count += 1
-        
+
         conn.commit()
         conn.close()
-        
+
         return {
             "status": "success",
             "message": f"Successfully centralized {centralized_count} records",
             "centralized_records": centralized_count,
             "duplicates_found": duplicate_count,
-            "total_processed": len(request.data)
+            "total_processed": len(request.data),
         }
-        
+
     except Exception as e:
         print(f"Error centralizing data: {e}")
-        return {
-            "status": "error",
-            "message": f"Failed to centralize data: {str(e)}"
-        }
+        return {"status": "error", "message": f"Failed to centralize data: {str(e)}"}
 
 
 @app.get("/api/data/consolidate")
@@ -1325,19 +1703,16 @@ async def consolidate_all_data(current_user: dict = Depends(get_current_user)):
         # This could be enhanced to automatically process all completed jobs
         return {
             "status": "success",
-            "message": "Data consolidation completed successfully"
+            "message": "Data consolidation completed successfully",
         }
     except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Failed to consolidate data: {str(e)}"
-        }
+        return {"status": "error", "message": f"Failed to consolidate data: {str(e)}"}
 
 
 if __name__ == "__main__":
     print("🚀 Starting Business Intelligence Scraper API Server...")
-    print("📊 Dashboard: http://localhost:5173")
-    print("🔗 API Docs: http://localhost:8000/docs")
+    print(f"📊 Dashboard: {config.FRONTEND_URL}")
+    print(f"🔗 API Docs: {config.API_DOCS_URL}")
     print("💾 Database: SQLite at", DATABASE_PATH)
     print("🔐 Security Features:")
     print(f"   ✅ Rate Limiting: {security_config.API_RATE_LIMIT_PER_MINUTE}/min")
@@ -1350,6 +1725,458 @@ if __name__ == "__main__":
     print(f"   ✅ Database Optimization: {PERFORMANCE_ENABLED}")
     print(f"   ✅ Real-time Metrics: {PERFORMANCE_ENABLED}")
 
+
+# ==========================================
+# DATABASE MANAGEMENT ENDPOINTS
+# ==========================================
+
+
+@app.get("/api/database/tables")
+@limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+async def get_database_tables(
+    request: Request, current_user: dict = Depends(get_current_user)
+):
+    """Get list of all database tables and their info"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+
+        # Get table names
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        )
+        tables = []
+
+        for (table_name,) in cursor.fetchall():
+            # Get table info
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = cursor.fetchall()
+
+            # Get row count
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            row_count = cursor.fetchone()[0]
+
+            tables.append(
+                {
+                    "name": table_name,
+                    "columns": [
+                        {
+                            "name": col[1],
+                            "type": col[2],
+                            "nullable": not col[3],
+                            "primary_key": bool(col[5]),
+                        }
+                        for col in columns
+                    ],
+                    "row_count": row_count,
+                }
+            )
+
+        conn.close()
+        return {"tables": tables}
+
+    except Exception as e:
+        logger.error(f"Error getting database tables: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.get("/api/database/table/{table_name}")
+@limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+async def get_table_data(
+    table_name: str,
+    request: Request,
+    limit: int = 100,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user),
+):
+    """Get data from a specific table with pagination"""
+    try:
+        # Validate table name to prevent SQL injection
+        valid_tables = ["users", "jobs", "job_results", "analytics"]
+        if table_name not in valid_tables:
+            raise HTTPException(status_code=400, detail="Invalid table name")
+
+        conn = sqlite3.connect(DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Get total count
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        total_count = cursor.fetchone()[0]
+
+        # Get paginated data
+        cursor.execute(
+            f"SELECT * FROM {table_name} ORDER BY id DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        return {
+            "table_name": table_name,
+            "total_count": total_count,
+            "limit": limit,
+            "offset": offset,
+            "data": rows,
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting table data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.post("/api/database/query")
+@limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+async def execute_database_query(
+    request: Request, query_data: dict, current_user: dict = Depends(get_current_user)
+):
+    """Execute a custom SQL query (read-only for safety)"""
+    try:
+        query = query_data.get("query", "").strip()
+        if not query:
+            raise HTTPException(status_code=400, detail="Query is required")
+
+        # Only allow SELECT queries for safety
+        if not query.upper().startswith("SELECT"):
+            raise HTTPException(
+                status_code=400, detail="Only SELECT queries are allowed"
+            )
+
+        conn = sqlite3.connect(DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        cursor.execute(query)
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        return {"query": query, "result_count": len(rows), "data": rows}
+
+    except sqlite3.Error as e:
+        logger.error(f"SQL error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"SQL error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error executing query: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.delete("/api/database/table/{table_name}/record/{record_id}")
+@limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+async def delete_record(
+    table_name: str,
+    record_id: int,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete a specific record from a table"""
+    try:
+        # Validate table name
+        valid_tables = [
+            "jobs",
+            "job_results",
+            "analytics",
+        ]  # Don't allow deleting users
+        if table_name not in valid_tables:
+            raise HTTPException(status_code=400, detail="Cannot delete from this table")
+
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+
+        # Check if record exists
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name} WHERE id = ?", (record_id,))
+        if cursor.fetchone()[0] == 0:
+            raise HTTPException(status_code=404, detail="Record not found")
+
+        # Delete the record
+        cursor.execute(f"DELETE FROM {table_name} WHERE id = ?", (record_id,))
+        conn.commit()
+        conn.close()
+
+        return {"message": f"Record {record_id} deleted from {table_name}"}
+
+    except Exception as e:
+        logger.error(f"Error deleting record: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@app.post("/api/database/cleanup")
+@limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+async def cleanup_database(
+    request: Request, cleanup_data: dict, current_user: dict = Depends(get_current_user)
+):
+    """Clean up database by removing old or incomplete records"""
+    try:
+        cleanup_type = cleanup_data.get("type", "")
+
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+
+        deleted_count = 0
+
+        if cleanup_type == "failed_jobs":
+            # Delete failed jobs and their results
+            cursor.execute(
+                "DELETE FROM job_results WHERE job_id IN (SELECT id FROM jobs WHERE status = 'failed')"
+            )
+            cursor.execute("DELETE FROM jobs WHERE status = 'failed'")
+            deleted_count = cursor.rowcount
+
+        elif cleanup_type == "old_analytics":
+            # Delete analytics older than 30 days
+            cursor.execute(
+                "DELETE FROM analytics WHERE timestamp < datetime('now', '-30 days')"
+            )
+            deleted_count = cursor.rowcount
+
+        elif cleanup_type == "empty_results":
+            # Delete job results with no data
+            cursor.execute("DELETE FROM job_results WHERE data IS NULL OR data = ''")
+            deleted_count = cursor.rowcount
+
+        else:
+            raise HTTPException(status_code=400, detail="Invalid cleanup type")
+
+        conn.commit()
+        conn.close()
+
+        return {"message": f"Cleanup completed", "deleted_count": deleted_count}
+
+    except Exception as e:
+        logger.error(f"Error cleaning up database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+# ========================
+# AI INTEGRATION ENDPOINTS (Phase 4)
+# ========================
+
+if AI_INTEGRATION_AVAILABLE:
+
+    @app.post("/api/ai/analyze")
+    @limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+    async def analyze_data_with_ai(
+        request_data: dict,
+        request: Request,
+        current_user: dict = Depends(get_current_user),
+    ):
+        """Analyze scraped data with AI insights"""
+        try:
+            data = request_data.get("data", [])
+            analysis_type = request_data.get("analysis_type", "full")
+            options = request_data.get("options", {})
+
+            if not data:
+                raise HTTPException(
+                    status_code=400, detail="No data provided for analysis"
+                )
+
+            logging.info(f"🤖 Starting AI analysis for {len(data)} data points")
+
+            # Perform AI analysis
+            result = await ai_service.analyze_scraped_data(data, analysis_type, options)
+
+            return {
+                "analysis_id": result.request_id,
+                "insights": result.insights,
+                "visualizations": result.visualizations,
+                "recommendations": result.recommendations,
+                "processing_time": result.processing_time,
+                "timestamp": result.timestamp.isoformat(),
+                "data_count": len(data),
+            }
+
+        except Exception as e:
+            logging.error(f"❌ AI analysis error: {e}")
+            raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
+    @app.get("/api/ai/realtime-dashboard")
+    @limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+    async def get_realtime_ai_dashboard(
+        request: Request, current_user: dict = Depends(get_current_user)
+    ):
+        """Get real-time AI analytics dashboard data"""
+        try:
+            dashboard_data = ai_service.get_realtime_dashboard_data()
+
+            return {
+                "dashboard": dashboard_data,
+                "ai_service_stats": ai_service.get_service_statistics(),
+                "timestamp": datetime.now().isoformat(),
+            }
+
+        except Exception as e:
+            logging.error(f"❌ Real-time dashboard error: {e}")
+            raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
+
+    @app.post("/api/ai/recommendations")
+    @limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+    async def get_ai_recommendations(
+        request_data: dict,
+        request: Request,
+        current_user: dict = Depends(get_current_user),
+    ):
+        """Get AI-powered recommendations for data improvement"""
+        try:
+            data = request_data.get("data", [])
+
+            if not data:
+                raise HTTPException(
+                    status_code=400, detail="No data provided for recommendations"
+                )
+
+            recommendations = await ai_service.generate_ai_recommendations(data)
+
+            return {
+                "recommendations": recommendations,
+                "data_analyzed": len(data),
+                "timestamp": datetime.now().isoformat(),
+            }
+
+        except Exception as e:
+            logging.error(f"❌ AI recommendations error: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Recommendations failed: {str(e)}"
+            )
+
+    @app.post("/api/ai/optimize-strategy")
+    @limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+    async def optimize_scraping_strategy(
+        request_data: dict,
+        request: Request,
+        current_user: dict = Depends(get_current_user),
+    ):
+        """Get AI-powered scraping strategy optimization"""
+        try:
+            data = request_data.get("data", [])
+
+            if not data:
+                raise HTTPException(
+                    status_code=400, detail="No data provided for optimization"
+                )
+
+            optimization = await ai_service.optimize_scraping_strategy(data)
+
+            return {
+                "optimization_strategy": optimization,
+                "data_analyzed": len(data),
+                "timestamp": datetime.now().isoformat(),
+            }
+
+        except Exception as e:
+            logging.error(f"❌ Strategy optimization error: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Optimization failed: {str(e)}"
+            )
+
+    @app.get("/api/ai/analysis/{analysis_id}")
+    @limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+    async def get_analysis_result(
+        analysis_id: str,
+        request: Request,
+        current_user: dict = Depends(get_current_user),
+    ):
+        """Get analysis result by ID"""
+        try:
+            result = ai_service.get_analysis_result(analysis_id)
+
+            if not result:
+                raise HTTPException(status_code=404, detail="Analysis result not found")
+
+            return {
+                "analysis_id": result.request_id,
+                "insights": result.insights,
+                "visualizations": result.visualizations,
+                "recommendations": result.recommendations,
+                "processing_time": result.processing_time,
+                "timestamp": result.timestamp.isoformat(),
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logging.error(f"❌ Get analysis result error: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to get analysis: {str(e)}"
+            )
+
+    @app.post("/api/ai/queue-analysis")
+    @limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+    async def queue_ai_analysis(
+        request_data: dict,
+        request: Request,
+        current_user: dict = Depends(get_current_user),
+    ):
+        """Queue AI analysis for background processing"""
+        try:
+            data = request_data.get("data", [])
+            analysis_type = request_data.get("analysis_type", "full")
+            options = request_data.get("options", {})
+
+            if not data:
+                raise HTTPException(
+                    status_code=400, detail="No data provided for analysis"
+                )
+
+            analysis_id = await ai_service.queue_analysis(data, analysis_type, options)
+
+            return {
+                "analysis_id": analysis_id,
+                "status": "queued",
+                "message": "Analysis queued for background processing",
+                "data_count": len(data),
+                "timestamp": datetime.now().isoformat(),
+            }
+
+        except Exception as e:
+            logging.error(f"❌ Queue analysis error: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to queue analysis: {str(e)}"
+            )
+
+    @app.get("/api/ai/service/status")
+    @limiter.limit(f"{security_config.API_RATE_LIMIT_PER_MINUTE}/minute")
+    async def get_ai_service_status(
+        request: Request, current_user: dict = Depends(get_current_user)
+    ):
+        """Get AI service status and statistics"""
+        try:
+            return {
+                "ai_service_available": True,
+                "service_statistics": ai_service.get_service_statistics(),
+                "capabilities": {
+                    "content_clustering": True,
+                    "predictive_analytics": True,
+                    "real_time_monitoring": True,
+                    "visualization_generation": True,
+                    "ai_recommendations": True,
+                    "strategy_optimization": True,
+                },
+                "timestamp": datetime.now().isoformat(),
+            }
+
+        except Exception as e:
+            logging.error(f"❌ AI service status error: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Service status error: {str(e)}"
+            )
+
+else:
+
+    @app.get("/api/ai/service/status")
+    async def ai_service_unavailable(
+        request: Request, current_user: dict = Depends(get_current_user)
+    ):
+        """AI service unavailable response"""
+        return {
+            "ai_service_available": False,
+            "message": "AI Integration Service is not available",
+            "timestamp": datetime.now().isoformat(),
+        }
+
+
+if __name__ == "__main__":
     uvicorn.run(
         "backend_server:app",
         host=server_config.HOST,

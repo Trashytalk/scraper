@@ -8,8 +8,10 @@ A `docker-compose.yml` is provided for local development.
 Build the images and start the stack:
 
 ```bash
+
 cd business_intel_scraper/infra/docker
 docker compose up --build
+
 ```
 
 The API will be available on `http://localhost:8000`.

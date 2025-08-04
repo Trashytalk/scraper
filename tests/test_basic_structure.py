@@ -25,11 +25,11 @@ def test_basic_imports():
 
         # Test individual module imports with graceful fallbacks
         from business_intel_scraper.backend.crawling.advanced_crawler import (
-            SeedSource,
+            CrawlMetrics,
             CrawlTarget,
             DiscoveredPage,
             DomainRule,
-            CrawlMetrics,
+            SeedSource,
         )
 
         print("  ✅ Basic data classes imported successfully")

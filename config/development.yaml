@@ -1,0 +1,94 @@
+# Business Intelligence Scraper Configuration
+# Environment: Development
+# Version: 2.0.0
+# Last Updated: 2025-01-31
+
+# Application Settings
+app_name: "Business Intelligence Scraper"
+version: "2.0.0"
+debug: true
+environment: "development"
+
+# Database Configuration
+database:
+  url: "sqlite:///./data.db"
+  pool_size: 5
+  pool_timeout: 30
+  echo: false
+  retry_attempts: 3
+
+# Redis Configuration
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null
+  ssl: false
+  connection_pool_size: 10
+  socket_timeout: 5
+
+# Security Configuration
+security:
+  jwt_secret_key: "your-super-secret-jwt-key-change-this-in-production"
+  jwt_algorithm: "HS256"
+  jwt_expire_minutes: 30
+  password_min_length: 8
+  max_login_attempts: 5
+  session_timeout_minutes: 60
+
+# Rate Limiting Configuration
+rate_limit:
+  default_rate: "100/hour"
+  burst_rate: "10/minute"
+  authenticated_multiplier: 2.0
+  premium_multiplier: 5.0
+
+# Monitoring Configuration
+monitoring:
+  enable_metrics: true
+  metrics_port: 9090
+  log_level: "DEBUG"
+  log_format: "json"
+  trace_sampling_rate: 1.0
+  health_check_interval: 30
+
+# Scraping Configuration
+scraping:
+  max_concurrent_jobs: 3
+  default_timeout: 30
+  max_retries: 3
+  user_agent: "BusinessIntelScraper/2.0 (Development)"
+  respect_robots_txt: false  # Disabled for development testing
+  crawl_delay: 0.5
+  max_pages_per_job: 100
+
+# Performance Configuration
+performance:
+  cache_ttl: 1800  # 30 minutes
+  cache_max_size: 500
+  worker_processes: 2
+  async_timeout: 60
+  batch_size: 50
+  memory_limit_mb: 256
+
+# Custom Development Settings
+custom:
+  enable_cors: true
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:3001"
+  enable_swagger_ui: true
+  enable_redoc: true
+  auto_reload: true
+  
+  # Development database settings
+  dev_features:
+    auto_create_tables: true
+    seed_sample_data: true
+    enable_sql_profiling: true
+    
+  # Development logging
+  dev_logging:
+    log_sql_queries: true
+    log_request_response: true
+    log_cache_operations: true

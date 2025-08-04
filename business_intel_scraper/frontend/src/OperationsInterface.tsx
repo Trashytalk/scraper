@@ -49,18 +49,27 @@ const OperationsInterface: React.FC<OperationsProps> = ({
 
   const handleGetResults = async (jobId: number) => {
     try {
-      // Show loading state
+      // Show loading state briefly
       setJobResults({...jobResults, [jobId]: "loading"});
       setShowResults({...showResults, [jobId]: true});
       
-      // Get results from parent component function
-      const results = await getJobResults(jobId);
-      console.log("OperationsInterface received results:", results);
+      console.log("OperationsInterface: Calling getJobResults for job", jobId);
       
-      // Update state with results
-      setJobResults({...jobResults, [jobId]: results});
+      // Call the parent function and wait for it to complete
+      await getJobResults(jobId);
+      
+      console.log("OperationsInterface: getJobResults completed, main modal should be open");
+      
+      // Clean up local loading state after a brief delay to allow main modal to open
+      setTimeout(() => {
+        const newJobResults = {...jobResults};
+        delete newJobResults[jobId];
+        setJobResults(newJobResults);
+        setShowResults({...showResults, [jobId]: false});
+      }, 100);
+      
     } catch (error) {
-      console.error('Failed to fetch results:', error);
+      console.error('OperationsInterface: Failed to fetch results:', error);
       setJobResults({...jobResults, [jobId]: { error: "Failed to load results" }});
     }
   };
@@ -71,12 +80,11 @@ const OperationsInterface: React.FC<OperationsProps> = ({
 
   const handleJobDetails = async (jobId: number) => {
     try {
-      console.log("Fetching details for job:", jobId);
+      console.log("OperationsInterface: Fetching details for job:", jobId);
       await getJobDetails(jobId);
-      // You could add more functionality here, like showing a modal
-      alert(`Details for job ${jobId} have been loaded. Check the console for more information.`);
+      console.log("OperationsInterface: Job details loaded, main modal should be open");
     } catch (error) {
-      console.error('Failed to fetch job details:', error);
+      console.error('OperationsInterface: Failed to fetch job details:', error);
       alert("Failed to fetch job details");
     }
   };
@@ -871,7 +879,7 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                                   fontSize: "13px"
                                 }}>
                                   <div style={{ fontWeight: "bold", marginBottom: "5px" }}>
-                                    {item.title || item.name || `Page ${index + 1}`}
+                                    {item.title || item.name || item.page_title || item.heading || `Page ${index + 1}`}
                                   </div>
                                   {item.url && (
                                     <div style={{ color: "#007bff", marginBottom: "3px" }}>
@@ -910,7 +918,7 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                                   fontSize: "13px"
                                 }}>
                                   <div style={{ fontWeight: "bold", marginBottom: "5px" }}>
-                                    {item.title || item.name || `Item ${index + 1}`}
+                                    {item.title || item.name || item.page_title || item.heading || `Item ${index + 1}`}
                                   </div>
                                   {item.url && (
                                     <div style={{ color: "#007bff", marginBottom: "3px" }}>

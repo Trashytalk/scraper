@@ -7,13 +7,17 @@ retrieving results. The examples below assume the API is running locally on
 ## Health Check
 
 ```bash
+
 curl http://localhost:8000/
+
 ```
 
 ## Start a Scraping Job
 
 ```bash
+
 curl -X POST http://localhost:8000/scrape
+
 ```
 
 The response contains a `task_id` which can be polled for status.
@@ -21,13 +25,17 @@ The response contains a `task_id` which can be polled for status.
 ## Check Task Status
 
 ```bash
+
 curl http://localhost:8000/tasks/<task_id>
+
 ```
 
 ## View Scraped Data
 
 ```bash
+
 curl http://localhost:8000/data
+
 ```
 
 ## Export Scraped Data
@@ -35,7 +43,9 @@ curl http://localhost:8000/data
 Request a different format using the `/export` route:
 
 ```bash
+
 curl "http://localhost:8000/export?format=csv"
+
 ```
 
 ## Job Information
@@ -43,13 +53,17 @@ curl "http://localhost:8000/export?format=csv"
 List all known jobs:
 
 ```bash
+
 curl http://localhost:8000/jobs
+
 ```
 
 Query a single job:
 
 ```bash
+
 curl http://localhost:8000/jobs/<task_id>
+
 ```
 
 ## GraphQL Endpoint
@@ -58,20 +72,26 @@ The API also exposes a GraphQL schema at `/graphql` for flexible queries.
 Fetch the current scraped data:
 
 ```bash
+
 curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"query": "{ scrapedData }"}' \
+
   http://localhost:8000/graphql
+
 ```
 
 You can optionally filter results using the `search` argument or limit the
 number returned:
 
 ```bash
+
 curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"query": "{ scrapedData(search: \"foo\", limit: 10) }"}' \
+
   http://localhost:8000/graphql
+
 ```
 
 ## Real-Time Notifications
@@ -85,7 +105,9 @@ another client.
 Logs can be streamed with Server-Sent Events:
 
 ```bash
+
 curl http://localhost:8000/logs/stream
+
 ```
 
 ## OSINT Tool Examples
@@ -95,17 +117,23 @@ Celery tasks. The snippets below show how to invoke the Sherlock, Subfinder,
 Shodan and Nmap tools using the Python API:
 
 ```python
+
 from business_intel_scraper.backend.workers import tasks
 
 # Check a username across social media sites
+
 task_id = tasks.queue_sherlock_scan("alice")
 
 # Enumerate subdomains for a target
+
 task_id = tasks.queue_subfinder_scan("example.com")
 
 # Query Shodan for an IP address
+
 task_id = tasks.queue_shodan_scan("1.2.3.4")
 
 # Run an Nmap service scan
+
 task_id = tasks.queue_nmap_scan("example.com")
+
 ```

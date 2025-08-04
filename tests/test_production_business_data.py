@@ -4,8 +4,8 @@ Production Business Data Testing
 Tests the platform with real-world business intelligence scenarios
 """
 
-import time
 import sqlite3
+import time
 
 
 class ProductionDataTester:

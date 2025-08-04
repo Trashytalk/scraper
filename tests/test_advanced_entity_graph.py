@@ -5,24 +5,25 @@ Comprehensive tests covering all components of the entity graph system
 including core functionality, analytics, visualization, and integration.
 """
 
+from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock
 
 # Import the system components
 try:
     from gui.components.advanced_entity_graph import (
         AdvancedEntityGraphSystem,
-        NodeType,
-        RelationshipType,
-        GraphDatabase,
         EntityNode,
         EntityRelationship,
         GraphAnalytics,
-        NetworkXConnector,
         GraphAnalyticsEngine,
+        GraphDatabase,
         GraphQueryEngine,
         GraphVisualizationEngine,
+        NetworkXConnector,
+        NodeType,
+        RelationshipType,
     )
     from gui.components.data_integration_bridge import (
         DataIntegrationBridge,

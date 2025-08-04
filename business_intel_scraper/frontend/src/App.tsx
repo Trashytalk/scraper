@@ -1,22 +1,42 @@
 import React, { useState, useEffect, useRef } from "react";
 import OperationsInterface from "./OperationsInterface";
+import DatabaseManagement from "./DatabaseManagement";
 
 interface ScrapingJob {
   name: string;
   type: string;
   url: string;
-  scraper_type: "basic" | "e_commerce" | "news" | "social_media" | "api";
+  scraper_type: "basic" | "e_commerce" | "news" | "social_media" | "api" | "intelligent";
   custom_selectors?: { [key: string]: string };
   config?: {
     max_pages?: number;
+    max_depth?: number;
+    max_links?: number;
     delay?: number;
     follow_links?: boolean;
-    max_depth?: number;
+    follow_internal_links?: boolean;
+    follow_external_links?: boolean;
+    crawl_links?: boolean;
     link_patterns?: string[];
     ignore_patterns?: string[];
+    include_patterns?: string[];
+    exclude_patterns?: string[];
     source_crawler_job_id?: number;
     batch_mode?: boolean;
     url_extraction_field?: string;
+    // Content options
+    extract_full_html?: boolean;
+    crawl_entire_domain?: boolean;
+    include_images?: boolean;
+    include_forms?: boolean;
+    include_scripts?: boolean;
+    extract_metadata?: boolean;
+    save_to_database?: boolean;
+    // Advanced options
+    respect_robots_txt?: boolean;
+    use_proxy?: boolean;
+    enable_javascript?: boolean;
+    mobile_mode?: boolean;
     [key: string]: any;
   };
 }
@@ -95,6 +115,8 @@ const App = () => {
     | "data-parsing"
     | "browser"
     | "visualization"
+    | "database"
+    | "ai-analytics"
   >("operations");
   const [loginData, setLoginData] = useState<LoginData>({
     username: "admin",
@@ -109,13 +131,27 @@ const App = () => {
     config: {
       max_depth: 3,
       max_pages: 15,
+      max_links: 100,
+      delay: 1000,
       follow_internal_links: true,
       follow_external_links: false,
-      // NEW: Enhanced crawling options
+      crawl_links: true,
+      // Content options
       extract_full_html: false,
       crawl_entire_domain: false,
       include_images: false,
+      include_forms: false,
+      include_scripts: false,
+      extract_metadata: false,
       save_to_database: true,
+      // Pattern filtering
+      include_patterns: [],
+      exclude_patterns: [],
+      // Advanced options
+      respect_robots_txt: false,
+      use_proxy: false,
+      enable_javascript: false,
+      mobile_mode: false,
     },
   });
   const [selectedJob, setSelectedJob] = useState<JobDetails | null>(null);
@@ -133,6 +169,14 @@ const App = () => {
     null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // AI Analytics state
+  const [aiServiceStatus, setAiServiceStatus] = useState<any>(null);
+  const [aiAnalysisResults, setAiAnalysisResults] = useState<any>(null);
+  const [aiDashboardData, setAiDashboardData] = useState<any>(null);
+  const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
+  const [selectedDataForAI, setSelectedDataForAI] = useState<any[]>([]);
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
 
   // Operations configuration state
   const [operationsConfig, setOperationsConfig] = useState(() => {
@@ -282,6 +326,13 @@ const App = () => {
   // Get job details
   const getJobDetails = async (jobId: number) => {
     console.log("getJobDetails called for job:", jobId);
+    
+    // Clear any existing modal state first
+    setSelectedJob(null);
+    
+    // Small delay to ensure state clears properly
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     try {
       const response = await fetch(`http://localhost:8000/api/jobs/${jobId}`, {
         headers: {
@@ -325,6 +376,14 @@ const App = () => {
   // Get job results
   const getJobResults = async (jobId: number) => {
     console.log("getJobResults called for job:", jobId);
+    
+    // Clear any existing modal state first
+    setJobResults(null);
+    console.log("Cleared previous modal state");
+    
+    // Small delay to ensure state clears properly
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     try {
       const response = await fetch(
         `http://localhost:8000/api/jobs/${jobId}/results`,
@@ -523,6 +582,7 @@ const App = () => {
       console.log("Transformed data:", transformedData);
       console.log("Setting jobResults state, modal should show now");
       setJobResults(transformedData);
+      console.log("State set complete, jobResults should now be:", transformedData);
       setResultsSearchTerm("");
       setCurrentPage(1); // Reset to first page
       
@@ -610,13 +670,27 @@ const App = () => {
           config: {
             max_depth: 3,
             max_pages: 15,
+            max_links: 100,
+            delay: 1000,
             follow_internal_links: true,
             follow_external_links: false,
-            // NEW: Enhanced crawling options
+            crawl_links: true,
+            // Content options
             extract_full_html: false,
             crawl_entire_domain: false,
             include_images: false,
+            include_forms: false,
+            include_scripts: false,
+            extract_metadata: false,
             save_to_database: true,
+            // Pattern filtering
+            include_patterns: [],
+            exclude_patterns: [],
+            // Advanced options
+            respect_robots_txt: false,
+            use_proxy: false,
+            enable_javascript: false,
+            mobile_mode: false,
           },
         });
         fetchJobs();
@@ -906,8 +980,27 @@ const App = () => {
           config: {
             max_depth: 3,
             max_pages: 15,
+            max_links: 100,
+            delay: 1000,
             follow_internal_links: true,
             follow_external_links: false,
+            crawl_links: true,
+            // Content options
+            extract_full_html: false,
+            crawl_entire_domain: false,
+            include_images: false,
+            include_forms: false,
+            include_scripts: false,
+            extract_metadata: false,
+            save_to_database: true,
+            // Pattern filtering
+            include_patterns: [],
+            exclude_patterns: [],
+            // Advanced options
+            respect_robots_txt: false,
+            use_proxy: false,
+            enable_javascript: false,
+            mobile_mode: false,
           },
         });
         setSelectedCrawlerJob(null);
@@ -1080,6 +1173,107 @@ const App = () => {
     localStorage.setItem("operationsConfig", JSON.stringify(defaultConfig));
   };
 
+  // AI Analytics Functions
+  const fetchAiServiceStatus = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/ai/service/status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAiServiceStatus(data);
+      }
+    } catch (error) {
+      console.error("Error fetching AI service status:", error);
+    }
+  };
+
+  const fetchAiDashboard = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/ai/realtime-dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAiDashboardData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching AI dashboard:", error);
+    }
+  };
+
+  const analyzeDataWithAI = async (data: any[], analysisType: string = "full") => {
+    setIsAiAnalyzing(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/ai/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          data: data,
+          analysis_type: analysisType,
+          options: { include_visualizations: true }
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAiAnalysisResults(result);
+        return result;
+      }
+    } catch (error) {
+      console.error("Error analyzing data with AI:", error);
+    } finally {
+      setIsAiAnalyzing(false);
+    }
+  };
+
+  const fetchAiRecommendations = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/ai/recommendations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAiRecommendations(data.recommendations || []);
+      }
+    } catch (error) {
+      console.error("Error fetching AI recommendations:", error);
+    }
+  };
+
+  const generateAiInsights = async (jobId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/ai/insights/${jobId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+    }
+  };
+
+  // Auto-fetch AI data when on AI tab
+  useEffect(() => {
+    if (isAuthenticated && token && currentTab === "ai-analytics") {
+      fetchAiServiceStatus();
+      fetchAiDashboard();
+      fetchAiRecommendations();
+      
+      const interval = setInterval(() => {
+        fetchAiDashboard();
+        fetchAiServiceStatus();
+      }, 10000); // Update every 10 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, token, currentTab]);
+
   const tabStyle = (tabName: string) => ({
     padding: "10px 20px",
     margin: "0 5px",
@@ -1209,6 +1403,18 @@ const App = () => {
             onClick={() => setCurrentTab("performance")}
           >
             ⚡ Performance
+          </button>
+          <button
+            style={tabStyle("database")}
+            onClick={() => setCurrentTab("database")}
+          >
+            🗄️ Database
+          </button>
+          <button
+            style={tabStyle("ai-analytics")}
+            onClick={() => setCurrentTab("ai-analytics")}
+          >
+            🤖 AI Analytics
           </button>
         </div>
       </nav>
@@ -1577,73 +1783,417 @@ const App = () => {
             {/* Enhanced Crawling Options */}
             <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
               <h4 style={{ margin: "0 0 15px 0", color: "#1976d2" }}>
-                🚀 Enhanced Crawling Options
+                🚀 Advanced Configuration Options
               </h4>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={newJob.config?.extract_full_html || false}
-                    onChange={(e) =>
-                      setNewJob({
-                        ...newJob,
-                        config: {
-                          ...newJob.config,
-                          extract_full_html: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span style={{ fontWeight: "500" }}>Extract Full HTML</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={newJob.config?.crawl_entire_domain || false}
-                    onChange={(e) =>
-                      setNewJob({
-                        ...newJob,
-                        config: {
-                          ...newJob.config,
-                          crawl_entire_domain: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span style={{ fontWeight: "500" }}>Crawl Entire Domain</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={newJob.config?.include_images || false}
-                    onChange={(e) =>
-                      setNewJob({
-                        ...newJob,
-                        config: {
-                          ...newJob.config,
-                          include_images: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span style={{ fontWeight: "500" }}>Include Images</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={newJob.config?.save_to_database !== false}
-                    onChange={(e) =>
-                      setNewJob({
-                        ...newJob,
-                        config: {
-                          ...newJob.config,
-                          save_to_database: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span style={{ fontWeight: "500" }}>Save to Database</span>
-                </label>
+              
+              {/* Basic Options */}
+              <div style={{ marginBottom: "20px" }}>
+                <h5 style={{ margin: "0 0 10px 0", color: "#495057" }}>Basic Settings</h5>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.extract_full_html || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            extract_full_html: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Extract Full HTML</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.save_to_database !== false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            save_to_database: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Save to Database</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Crawling Options */}
+              <div style={{ marginBottom: "20px" }}>
+                <h5 style={{ margin: "0 0 10px 0", color: "#495057" }}>Crawling Options</h5>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.crawl_links || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            crawl_links: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Enable Link Crawling</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.follow_internal_links !== false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            follow_internal_links: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Follow Internal Links</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.follow_external_links || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            follow_external_links: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Follow External Links</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.crawl_entire_domain || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            crawl_entire_domain: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Crawl Entire Domain</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Content Options */}
+              <div style={{ marginBottom: "20px" }}>
+                <h5 style={{ margin: "0 0 10px 0", color: "#495057" }}>Content Options</h5>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.include_images || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            include_images: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Include Images</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.include_forms || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            include_forms: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Include Forms</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.include_scripts || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            include_scripts: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Include Scripts</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.extract_metadata || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            extract_metadata: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Extract Metadata</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Limits and Controls */}
+              <div style={{ marginBottom: "20px" }}>
+                <h5 style={{ margin: "0 0 10px 0", color: "#495057" }}>Limits and Performance</h5>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Max Depth:</label>
+                    <input
+                      type="number"
+                      value={newJob.config?.max_depth || 3}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            max_depth: parseInt(e.target.value) || 3,
+                          },
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                      }}
+                      min="1"
+                      max="10"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Max Links:</label>
+                    <input
+                      type="number"
+                      value={newJob.config?.max_links || 100}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            max_links: parseInt(e.target.value) || 100,
+                          },
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                      }}
+                      min="1"
+                      max="10000"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Max Pages:</label>
+                    <input
+                      type="number"
+                      value={newJob.config?.max_pages || 15}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            max_pages: parseInt(e.target.value) || 15,
+                          },
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                      }}
+                      min="1"
+                      max="10000"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Delay (ms):</label>
+                    <input
+                      type="number"
+                      value={newJob.config?.delay || 1000}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            delay: parseInt(e.target.value) || 1000,
+                          },
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                      }}
+                      min="0"
+                      max="10000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pattern Filtering */}
+              <div style={{ marginBottom: "20px" }}>
+                <h5 style={{ margin: "0 0 10px 0", color: "#495057" }}>Pattern Filtering</h5>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Include Patterns:</label>
+                    <textarea
+                      value={newJob.config?.include_patterns?.join('\n') || ''}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            include_patterns: e.target.value.split('\n').filter(p => p.trim()),
+                          },
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                        height: "80px",
+                        resize: "vertical",
+                      }}
+                      placeholder="Enter patterns, one per line"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Exclude Patterns:</label>
+                    <textarea
+                      value={newJob.config?.exclude_patterns?.join('\n') || ''}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            exclude_patterns: e.target.value.split('\n').filter(p => p.trim()),
+                          },
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                        height: "80px",
+                        resize: "vertical",
+                      }}
+                      placeholder="Enter patterns to exclude, one per line"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Advanced Options */}
+              <div>
+                <h5 style={{ margin: "0 0 10px 0", color: "#495057" }}>Advanced Options</h5>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.respect_robots_txt || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            respect_robots_txt: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Respect robots.txt</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.use_proxy || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            use_proxy: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Use Proxy</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.enable_javascript || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            enable_javascript: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Enable JavaScript</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={newJob.config?.mobile_mode || false}
+                      onChange={(e) =>
+                        setNewJob({
+                          ...newJob,
+                          config: {
+                            ...newJob.config,
+                            mobile_mode: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span style={{ fontWeight: "500" }}>Mobile Mode</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -2095,13 +2645,14 @@ const App = () => {
                                   const summary = typeof selectedJob.config.summary === 'string' 
                                     ? JSON.parse(selectedJob.config.summary)
                                     : selectedJob.config.summary;
+                                  console.log("Job Details Summary Debug:", summary);
                                   return (
                                     <div style={{ display: "grid", gap: "4px" }}>
                                       {summary.pages_processed && <div>📄 Pages Processed: {summary.pages_processed}</div>}
                                       {summary.urls_discovered && <div>🔗 URLs Discovered: {summary.urls_discovered}</div>}
                                       {summary.data_extracted && <div>📊 Data Extracted: {summary.data_extracted}</div>}
                                       {summary.total_crawl_time && <div>⏱️ Crawl Time: {summary.total_crawl_time}s</div>}
-                                      {summary.images_extracted !== undefined && <div>🖼️ Images Extracted: {summary.images_extracted}</div>}
+                                      {summary.images_extracted !== undefined && summary.images_extracted !== null && <div>🖼️ Images Extracted: {summary.images_extracted}</div>}
                                       {summary.domains_crawled && <div>🌐 Domains: {summary.domains_crawled.join(', ')}</div>}
                                     </div>
                                   );
@@ -2185,7 +2736,19 @@ const App = () => {
 
           {/* Results Viewer Modal */}
           {(() => {
-            console.log("Checking if results modal should show. jobResults:", !!jobResults, jobResults ? "data length: " + (jobResults.data?.length || 0) : "no data");
+            console.log("=== MODAL DEBUG START ===");
+            console.log("Current jobResults state:", jobResults);
+            console.log("jobResults type:", typeof jobResults);
+            console.log("jobResults truthy check:", !!jobResults);
+            if (jobResults) {
+              console.log("jobResults data length:", jobResults.data?.length || 0);
+              console.log("jobResults job_id:", jobResults.job_id);
+              console.log("jobResults job_name:", jobResults.job_name);
+            }
+            console.log("Should show modal:", !!jobResults);
+            console.error("🚨🚨🚨 MODAL DECISION: Will show modal =", !!jobResults);
+            console.log("=== MODAL DEBUG END ===");
+            console.log("🔍 RENDERING MODAL NOW - jobResults exists:", !!jobResults);
             return jobResults;
           })() && (
             <div
@@ -2195,11 +2758,14 @@ const App = () => {
                 left: "0",
                 right: "0",
                 bottom: "0",
-                backgroundColor: "rgba(0,0,0,0.8)",
+                backgroundColor: "rgba(255,0,0,0.9)", // Changed to red for debugging
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                zIndex: 1001,
+                zIndex: 9999, // Increased z-index
+              }}
+              onClick={() => {
+                console.log("🚨 MODAL BACKGROUND CLICKED!");
               }}
             >
               <div
@@ -2231,8 +2797,8 @@ const App = () => {
                     }}
                   >
                     <div>
-                      <h2 style={{ margin: "0 0 5px 0", color: "#1976d2" }}>
-                        📊 Results: {jobResults.job_name}
+                      <h2 style={{ margin: "0 0 5px 0", color: "#1976d2", fontSize: "24px", fontWeight: "bold" }}>
+                        �🚨🚨 DEBUG MODAL WORKING: {jobResults.job_name} 🚨🚨🚨
                       </h2>
                       <div style={{ fontSize: "14px", color: "#666" }}>
                         Job ID: {jobResults.job_id} • Total Records:{" "}
@@ -2924,6 +3490,53 @@ const App = () => {
                                                         : value
                                                       : JSON.stringify(value)}
                                                   </a>
+                                                ) : key === "images" && Array.isArray(value) ? (
+                                                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                                    {value.slice(0, 5).map((img: any, imgIndex: number) => (
+                                                      <div key={imgIndex} style={{ 
+                                                        display: "flex", 
+                                                        alignItems: "center", 
+                                                        gap: "10px",
+                                                        padding: "8px",
+                                                        backgroundColor: "white",
+                                                        borderRadius: "4px",
+                                                        border: "1px solid #ddd"
+                                                      }}>
+                                                        <img 
+                                                          src={img.src || img.url} 
+                                                          alt={img.alt || `Image ${imgIndex + 1}`}
+                                                          style={{ 
+                                                            width: "60px", 
+                                                            height: "60px", 
+                                                            objectFit: "cover",
+                                                            borderRadius: "4px",
+                                                            border: "1px solid #ddd"
+                                                          }}
+                                                          onError={(e) => {
+                                                            (e.target as HTMLImageElement).style.display = 'none';
+                                                          }}
+                                                        />
+                                                        <div style={{ flex: 1, fontSize: "12px" }}>
+                                                          <div style={{ fontWeight: "bold", marginBottom: "2px" }}>
+                                                            {img.alt || img.title || `Image ${imgIndex + 1}`}
+                                                          </div>
+                                                          <a 
+                                                            href={img.src || img.url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            style={{ color: "#007bff", fontSize: "11px" }}
+                                                          >
+                                                            🔗 View Full Size
+                                                          </a>
+                                                        </div>
+                                                      </div>
+                                                    ))}
+                                                    {value.length > 5 && (
+                                                      <div style={{ fontSize: "12px", color: "#666", fontStyle: "italic" }}>
+                                                        ... and {value.length - 5} more images
+                                                      </div>
+                                                    )}
+                                                  </div>
                                                 ) : typeof value ===
                                                   "string" ? (
                                                   value.length > 200 ? (
@@ -5719,6 +6332,335 @@ const App = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Database Tab */}
+      {currentTab === "database" && (
+        <DatabaseManagement token={token} />
+      )}
+
+      {/* AI Analytics Tab - Phase 4 Implementation */}
+      {currentTab === "ai-analytics" && (
+        <div>
+          <h2 style={{ color: "#1976d2", marginBottom: "20px" }}>
+            🤖 AI Analytics Dashboard - Phase 4
+          </h2>
+
+          {/* AI Service Status */}
+          <div
+            style={{
+              backgroundColor: "#e8f5e8",
+              padding: "20px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+            }}
+          >
+            <h3>🔋 AI Service Status</h3>
+            {aiServiceStatus ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px" }}>
+                <div style={{ padding: "10px", backgroundColor: "white", borderRadius: "5px" }}>
+                  <strong>Service Available:</strong> {aiServiceStatus.ai_service_available ? "✅ Yes" : "❌ No"}
+                </div>
+                <div style={{ padding: "10px", backgroundColor: "white", borderRadius: "5px" }}>
+                  <strong>Content Clustering:</strong> {aiServiceStatus.capabilities?.content_clustering ? "✅ Available" : "❌ Not Available"}
+                </div>
+                <div style={{ padding: "10px", backgroundColor: "white", borderRadius: "5px" }}>
+                  <strong>Predictive Analytics:</strong> {aiServiceStatus.capabilities?.predictive_analytics ? "✅ Available" : "❌ Not Available"}
+                </div>
+                <div style={{ padding: "10px", backgroundColor: "white", borderRadius: "5px" }}>
+                  <strong>Real-time Monitoring:</strong> {aiServiceStatus.capabilities?.real_time_monitoring ? "✅ Available" : "❌ Not Available"}
+                </div>
+              </div>
+            ) : (
+              <div>Loading AI service status...</div>
+            )}
+          </div>
+
+          {/* AI Analysis Tools */}
+          <div
+            style={{
+              backgroundColor: "#fff3cd",
+              padding: "20px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+            }}
+          >
+            <h3>🧠 AI Analysis Tools</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+              <div>
+                <h4>📊 Content Clustering</h4>
+                <p>Automatically group similar content using K-means clustering and NLP techniques.</p>
+                <button
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#17a2b8",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    if (jobResults?.data) {
+                      analyzeDataWithAI(jobResults.data.slice(0, 100), "clustering");
+                    } else {
+                      alert("Please select a job with results first from the Operations tab");
+                    }
+                  }}
+                  disabled={isAiAnalyzing}
+                >
+                  {isAiAnalyzing ? "Analyzing..." : "Analyze Content"}
+                </button>
+              </div>
+              <div>
+                <h4>🔮 Predictive Analytics</h4>
+                <p>Predict patterns and trends in scraped data using machine learning.</p>
+                <button
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#28a745",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    if (jobResults?.data) {
+                      analyzeDataWithAI(jobResults.data.slice(0, 100), "predictive");
+                    } else {
+                      alert("Please select a job with results first from the Operations tab");
+                    }
+                  }}
+                  disabled={isAiAnalyzing}
+                >
+                  {isAiAnalyzing ? "Predicting..." : "Run Predictions"}
+                </button>
+              </div>
+            </div>
+            <div>
+              <h4>🔍 Anomaly Detection</h4>
+              <p>Identify unusual patterns or outliers in your scraped data.</p>
+              <button
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#dc3545",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  if (jobResults?.data) {
+                    analyzeDataWithAI(jobResults.data.slice(0, 100), "anomaly");
+                  } else {
+                    alert("Please select a job with results first from the Operations tab");
+                  }
+                }}
+                disabled={isAiAnalyzing}
+              >
+                {isAiAnalyzing ? "Detecting..." : "Detect Anomalies"}
+              </button>
+            </div>
+          </div>
+
+          {/* AI Analysis Results */}
+          {aiAnalysisResults && (
+            <div
+              style={{
+                backgroundColor: "#d1ecf1",
+                padding: "20px",
+                borderRadius: "8px",
+                marginBottom: "20px",
+              }}
+            >
+              <h3>📋 Analysis Results</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                <div>
+                  <h4>Analysis Summary</h4>
+                  <p><strong>Analysis ID:</strong> {aiAnalysisResults.analysis_id}</p>
+                  <p><strong>Processing Time:</strong> {aiAnalysisResults.processing_time}s</p>
+                  <p><strong>Data Points Analyzed:</strong> {aiAnalysisResults.summary?.total_records || 0}</p>
+                </div>
+                <div>
+                  <h4>Key Insights</h4>
+                  {aiAnalysisResults.insights && (
+                    <div style={{ backgroundColor: "white", padding: "10px", borderRadius: "5px" }}>
+                      <p><strong>Content Categories:</strong> {aiAnalysisResults.insights.content_categories?.length || 0}</p>
+                      <p><strong>Quality Score:</strong> {aiAnalysisResults.insights.overall_quality_score?.toFixed(2) || "N/A"}</p>
+                      <p><strong>Data Completeness:</strong> {aiAnalysisResults.insights.data_completeness?.toFixed(1) || "N/A"}%</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {aiAnalysisResults.recommendations && aiAnalysisResults.recommendations.length > 0 && (
+                <div style={{ marginTop: "15px" }}>
+                  <h4>🎯 AI Recommendations</h4>
+                  <ul>
+                    {aiAnalysisResults.recommendations.map((rec: any, index: number) => (
+                      <li key={index} style={{ marginBottom: "10px" }}>
+                        <strong>{rec.type}:</strong> {rec.description}
+                        {rec.priority && <span style={{ color: "#dc3545" }}> (Priority: {rec.priority})</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Real-time AI Dashboard */}
+          <div
+            style={{
+              backgroundColor: "#f8d7da",
+              padding: "20px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+            }}
+          >
+            <h3>📊 Real-time AI Monitoring</h3>
+            {aiDashboardData ? (
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px", marginBottom: "20px" }}>
+                  <div style={{ padding: "15px", backgroundColor: "white", borderRadius: "5px", textAlign: "center" }}>
+                    <div style={{ fontSize: "2em", fontWeight: "bold", color: "#1976d2" }}>
+                      {aiDashboardData.ai_service_stats?.analyses_completed || 0}
+                    </div>
+                    <div>Analyses Completed</div>
+                  </div>
+                  <div style={{ padding: "15px", backgroundColor: "white", borderRadius: "5px", textAlign: "center" }}>
+                    <div style={{ fontSize: "2em", fontWeight: "bold", color: "#28a745" }}>
+                      {aiDashboardData.ai_service_stats?.avg_processing_time?.toFixed(2) || 0}s
+                    </div>
+                    <div>Avg Processing Time</div>
+                  </div>
+                  <div style={{ padding: "15px", backgroundColor: "white", borderRadius: "5px", textAlign: "center" }}>
+                    <div style={{ fontSize: "2em", fontWeight: "bold", color: "#ffc107" }}>
+                      {aiDashboardData.ai_service_stats?.recommendations_generated || 0}
+                    </div>
+                    <div>Recommendations Generated</div>
+                  </div>
+                </div>
+                
+                {aiDashboardData.dashboard?.active_monitors && (
+                  <div style={{ backgroundColor: "white", padding: "15px", borderRadius: "5px" }}>
+                    <h4>🔔 Active Monitoring Alerts</h4>
+                    <p>Active Monitors: {aiDashboardData.dashboard.active_monitors}</p>
+                    <p>Last Update: {new Date().toLocaleTimeString()}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>Loading real-time AI dashboard...</div>
+            )}
+          </div>
+
+          {/* AI Recommendations */}
+          {aiRecommendations.length > 0 && (
+            <div
+              style={{
+                backgroundColor: "#d4edda",
+                padding: "20px",
+                borderRadius: "8px",
+                marginBottom: "20px",
+              }}
+            >
+              <h3>💡 AI Recommendations</h3>
+              <div style={{ display: "grid", gap: "10px" }}>
+                {aiRecommendations.map((rec: any, index: number) => (
+                  <div key={index} style={{ padding: "15px", backgroundColor: "white", borderRadius: "5px", border: "1px solid #c3e6cb" }}>
+                    <h4 style={{ margin: "0 0 10px 0", color: "#155724" }}>{rec.title}</h4>
+                    <p style={{ margin: "0 0 10px 0" }}>{rec.description}</p>
+                    <div style={{ fontSize: "14px", color: "#666" }}>
+                      <span style={{ marginRight: "15px" }}><strong>Priority:</strong> {rec.priority}</span>
+                      <span style={{ marginRight: "15px" }}><strong>Type:</strong> {rec.type}</span>
+                      {rec.impact && <span><strong>Impact:</strong> {rec.impact}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick AI Actions */}
+          <div
+            style={{
+              backgroundColor: "#e2e3e5",
+              padding: "20px",
+              borderRadius: "8px",
+            }}
+          >
+            <h3>⚡ Quick AI Actions</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px" }}>
+              <button
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#6f42c1",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+                onClick={fetchAiRecommendations}
+              >
+                🔄 Refresh Recommendations
+              </button>
+              <button
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#fd7e14",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+                onClick={fetchAiDashboard}
+              >
+                📊 Update Dashboard
+              </button>
+              <button
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#20c997",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  if (jobs.length > 0) {
+                    const latestJob = jobs[0];
+                    generateAiInsights(latestJob.id).then((insights) => {
+                      if (insights) {
+                        alert(`Generated insights for job ${latestJob.name}`);
+                      }
+                    });
+                  } else {
+                    alert("No jobs available for insights generation");
+                  }
+                }}
+              >
+                🧠 Generate Insights
+              </button>
+              <button
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#dc3545",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  setAiAnalysisResults(null);
+                  setAiRecommendations([]);
+                  alert("AI analytics data cleared");
+                }}
+              >
+                🗑️ Clear Results
+              </button>
             </div>
           </div>
         </div>

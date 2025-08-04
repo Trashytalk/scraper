@@ -19,8 +19,8 @@ def test_dataclass_imports():
 
     try:
         from business_intel_scraper.backend.crawling.advanced_crawler import (
-            SeedSource,
             DiscoveredPage,
+            SeedSource,
         )
 
         print("  ✅ Basic data classes imported successfully")

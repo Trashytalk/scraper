@@ -11,11 +11,10 @@ Tests the complete analytics dashboard functionality including:
 
 import asyncio
 import json
-import random
-import time
-
-import sys
 import os
+import random
+import sys
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
@@ -64,8 +63,8 @@ def test_insights_generator():
     print("\n🤖 Testing AI Insights Generator...")
 
     try:
-        from business_intel_scraper.backend.analytics.insights import insights_generator
         from business_intel_scraper.backend.analytics.core import PerformanceMetrics
+        from business_intel_scraper.backend.analytics.insights import insights_generator
 
         async def test_insights():
             # Create test performance metrics

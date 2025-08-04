@@ -1,0 +1,117 @@
+# Business Intelligence Scraper Configuration - Production v3.0
+# Environment: Production
+# Version: 3.0.0
+# Last Updated: 2025-08-02
+
+# Application Settings
+app_name: "Business Intelligence Scraper"
+version: "3.0.0"
+debug: false
+environment: "production"
+
+# Database Configuration
+database:
+  url: "${DATABASE_URL}"  # Set via environment variable
+  pool_size: 20
+  pool_timeout: 30
+  echo: false
+  retry_attempts: 5
+
+# Redis Configuration
+redis:
+  host: "${REDIS_HOST:redis}"
+  port: ${REDIS_PORT:6379}
+  db: ${REDIS_DB:0}
+  password: "${REDIS_PASSWORD}"
+  ssl: ${REDIS_SSL:true}
+  connection_pool_size: 20
+  socket_timeout: 10
+
+# Security Configuration
+security:
+  jwt_secret_key: "${JWT_SECRET_KEY}"  # Must be set via environment
+  jwt_algorithm: "HS256"
+  jwt_expire_minutes: 15  # Shorter expiration for production
+  password_min_length: 12  # Stronger passwords
+  max_login_attempts: 3
+  session_timeout_minutes: 30
+
+# Rate Limiting Configuration
+rate_limit:
+  default_rate: "1000/hour"
+  burst_rate: "50/minute"
+  authenticated_multiplier: 3.0
+  premium_multiplier: 10.0
+
+# Monitoring Configuration
+monitoring:
+  enable_metrics: true
+  metrics_port: 9090
+  log_level: "INFO"
+  log_format: "json"
+  trace_sampling_rate: 0.1  # 10% sampling for production
+  health_check_interval: 15
+
+# Scraping Configuration
+scraping:
+  max_concurrent_jobs: 20
+  default_timeout: 60
+  max_retries: 5
+  user_agent: "BusinessIntelScraper/2.0 (+https://business-intel-scraper.com/bot)"
+  respect_robots_txt: true
+  crawl_delay: 1.0
+  max_pages_per_job: 10000
+
+# Performance Configuration
+performance:
+  cache_ttl: 3600  # 1 hour
+  cache_max_size: 10000
+  worker_processes: 8
+  async_timeout: 120
+  batch_size: 500
+  memory_limit_mb: 1024
+
+# Custom Production Settings
+custom:
+  enable_cors: true
+  cors_origins:
+    - "https://business-intel-scraper.com"
+    - "https://app.business-intel-scraper.com"
+    - "https://dashboard.business-intel-scraper.com"
+  
+  enable_swagger_ui: false  # Disabled in production
+  enable_redoc: false       # Disabled in production
+  auto_reload: false
+  
+  # Production security
+  security_headers:
+    enable_hsts: true
+    enable_csp: true
+    enable_frame_options: true
+    enable_content_type_options: true
+    
+  # Production monitoring
+  monitoring:
+    enable_apm: true
+    apm_service_name: "business-intel-scraper"
+    enable_distributed_tracing: true
+    
+  # Production backup
+  backup:
+    enable_auto_backup: true
+    backup_interval_hours: 6
+    backup_retention_days: 30
+    backup_location: "${BACKUP_LOCATION:/backups}"
+    
+  # Production alerts
+  alerts:
+    enable_email_alerts: true
+    alert_email: "${ALERT_EMAIL}"
+    slack_webhook: "${SLACK_WEBHOOK}"
+    
+    thresholds:
+      cpu_usage: 80
+      memory_usage: 85
+      disk_usage: 90
+      error_rate: 5.0
+      response_time_ms: 1000

@@ -5,6 +5,7 @@ Performance optimization test script.
 
 import asyncio
 import time
+
 from business_intel_scraper.backend.performance.optimizer import (
     get_performance_optimizer,
 )

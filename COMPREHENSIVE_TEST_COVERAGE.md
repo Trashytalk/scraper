@@ -1,4 +1,5 @@
 # Complete Repository Test Coverage Documentation
+
 ==============================================
 
 ## Overview
@@ -10,8 +11,9 @@ This document provides comprehensive documentation for the complete test coverag
 ### 1. Test Categories
 
 #### **Root-Level Modules Testing (`test_root_modules.py`)**
+
 - **Purpose**: Tests core modules in the repository root
-- **Coverage**: 
+- **Coverage**:
   - `scraping_engine.py` - Web scraping functionality
   - `backend_server.py` - Flask backend server
   - `bis.py` - CLI interface
@@ -28,6 +30,7 @@ This document provides comprehensive documentation for the complete test coverag
   - Configuration management testing
 
 #### **GUI Components Testing (`test_gui_components.py`)**
+
 - **Purpose**: Tests all GUI modules and components
 - **Coverage**:
   - Main GUI application (`gui/main.py`, `gui/enhanced_app.py`)
@@ -44,6 +47,7 @@ This document provides comprehensive documentation for the complete test coverag
   - Error handling in GUI components
 
 #### **Scripts and Utilities Testing (`test_scripts_utilities.py`)**
+
 - **Purpose**: Tests utility scripts and configuration modules
 - **Coverage**:
   - Utility scripts (`scripts/` directory)
@@ -60,6 +64,7 @@ This document provides comprehensive documentation for the complete test coverag
   - Command-line execution testing
 
 #### **Business Intelligence Modules Testing (`test_business_intelligence.py`)**
+
 - **Purpose**: Tests advanced BI modules and features
 - **Coverage**:
   - Backend modules (`business_intel_scraper/backend/`)
@@ -79,26 +84,31 @@ This document provides comprehensive documentation for the complete test coverag
 ### 2. Existing Comprehensive Test Suites
 
 #### **Centralized Data Testing (`test_centralized_data.py`)**
+
 - **Lines of Code**: 28,491
 - **Purpose**: Unit and integration testing for data models
 - **Coverage**: Data models, repositories, quality calculations
 
 #### **Integration Testing (`test_comprehensive_integration.py`)**
+
 - **Lines of Code**: 15,062
 - **Purpose**: End-to-end workflow testing
 - **Coverage**: Component integration, data flows, system workflows
 
 #### **Performance Testing (`test_performance_load.py`)**
+
 - **Lines of Code**: 9,245
 - **Purpose**: Performance and scalability testing
 - **Coverage**: Load testing, performance metrics, optimization
 
 #### **Security Testing (`test_security.py`)**
+
 - **Lines of Code**: 25,564
 - **Purpose**: Security and vulnerability testing
 - **Coverage**: Authentication, encryption, input validation
 
 #### **API Testing (`test_api.py`)**
+
 - **Lines of Code**: 22,017
 - **Purpose**: API endpoints and WebSocket testing
 - **Coverage**: REST APIs, WebSocket connections, error handling
@@ -132,17 +142,23 @@ The comprehensive test runner provides:
 ### **Usage Examples**
 
 ```bash
+
 # Run all tests in parallel
+
 python tests/run_full_coverage.py --parallel --workers 4
 
 # Run specific test suites
+
 python tests/run_full_coverage.py --suites root_modules gui_components
 
 # Generate coverage reports
+
 python tests/run_full_coverage.py --coverage --save-reports
 
 # Sequential execution with detailed output
+
 python tests/run_full_coverage.py --coverage
+
 ```
 
 ## Test Configuration
@@ -169,18 +185,18 @@ Test environment variables:
 
 ### **Current Coverage Statistics**
 
-| Test Suite | Test Files | Test Methods | Lines of Code | Coverage |
-|------------|------------|--------------|---------------|----------|
-| Root Modules | 1 | 150+ | 15,000+ | 95%+ |
-| GUI Components | 1 | 120+ | 12,000+ | 90%+ |
-| Scripts/Utilities | 1 | 100+ | 10,000+ | 88%+ |
-| Business Intelligence | 1 | 130+ | 13,000+ | 92%+ |
-| Centralized Data | 1 | 280+ | 28,491 | 98%+ |
-| Integration | 1 | 150+ | 15,062 | 95%+ |
-| Performance | 1 | 90+ | 9,245 | 85%+ |
-| Security | 1 | 250+ | 25,564 | 97%+ |
-| API | 1 | 200+ | 22,017 | 96%+ |
-| **TOTAL** | **9** | **1,470+** | **150,379+** | **94%+** |
+|   Test Suite | Test Files | Test Methods | Lines of Code | Coverage   |
+|  ------------|------------|--------------|---------------|----------  |
+|   Root Modules | 1 | 150+ | 15,000+ | 95%+   |
+|   GUI Components | 1 | 120+ | 12,000+ | 90%+   |
+|   Scripts/Utilities | 1 | 100+ | 10,000+ | 88%+   |
+|   Business Intelligence | 1 | 130+ | 13,000+ | 92%+   |
+|   Centralized Data | 1 | 280+ | 28,491 | 98%+   |
+|   Integration | 1 | 150+ | 15,062 | 95%+   |
+|   Performance | 1 | 90+ | 9,245 | 85%+   |
+|   Security | 1 | 250+ | 25,564 | 97%+   |
+|   API | 1 | 200+ | 22,017 | 96%+   |
+|   **TOTAL** | **9** | **1,470+** | **150,379+** | **94%+**   |
 
 ### **Coverage Goals**
 
@@ -195,20 +211,27 @@ Test environment variables:
 ### **Marker Usage**
 
 ```bash
+
 # Run only unit tests
+
 pytest -m unit
 
 # Run integration and performance tests
+
 pytest -m "integration or performance"
 
 # Skip slow tests
+
 pytest -m "not slow"
 
 # Run security tests only
+
 pytest -m security
 
 # Run tests requiring network
+
 pytest -m network
+
 ```
 
 ### **Available Markers**
@@ -235,6 +258,7 @@ The test suite integrates with:
 1. **GitHub Actions**
    ```yaml
    - name: Run Comprehensive Tests
+
      run: python tests/run_full_coverage.py --parallel --coverage
    ```
 
@@ -359,19 +383,25 @@ The testing framework ensures the Business Intelligence Scraper maintains high q
 ## Quick Start
 
 ```bash
+
 # Clone repository and install dependencies
+
 git clone <repository>
 cd scraper
 pip install -r requirements.txt
 
 # Run comprehensive test coverage
+
 python tests/run_full_coverage.py --parallel --coverage --save-reports
 
 # View coverage report
+
 open htmlcov/index.html
 
 # Run specific test categories
+
 python tests/run_full_coverage.py --suites root_modules security
+
 ```
 
 For detailed usage and configuration options, see the individual test files and configuration documentation.

@@ -4,11 +4,13 @@ Automated Modal Testing Script
 Tests the backend API and creates test data for frontend modal testing
 """
 
-import requests
 import json
 import time
 
+import requests
+
 BASE_URL = "http://localhost:8000"
+
 
 def test_backend_connection():
     """Test if backend is responding"""
@@ -32,6 +34,7 @@ def test_backend_connection():
         print(f"❌ Backend connection failed: {e}")
         return False
 
+
 def create_test_user():
     """Use the default admin user for testing"""
     print("👤 Using default admin user...")
@@ -39,7 +42,7 @@ def create_test_user():
         # Login with default admin credentials
         login_data = {"username": "admin", "password": "admin123"}
         response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
-        
+
         if response.status_code == 200:
             token = response.json()["access_token"]
             print("✅ Login successful, token obtained")
@@ -48,10 +51,11 @@ def create_test_user():
             print(f"❌ Login failed: {response.status_code}")
             print(f"Response: {response.text}")
             return None
-            
+
     except Exception as e:
         print(f"❌ Login failed: {e}")
         return None
+
 
 def create_test_job(token):
     """Create a test job for modal testing"""
@@ -62,15 +66,11 @@ def create_test_job(token):
             "name": "BBC Business Test Job",
             "url": "https://www.bbc.com/business",
             "type": "news_scraper",
-            "config": {
-                "extract_links": True,
-                "max_pages": 3,
-                "extract_content": True
-            }
+            "config": {"extract_links": True, "max_pages": 3, "extract_content": True},
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/jobs", json=job_data, headers=headers)
-        
+
         if response.status_code in [200, 201]:
             job = response.json()
             job_id = job.get("id")
@@ -84,24 +84,25 @@ def create_test_job(token):
             print(f"❌ Job creation failed: {response.status_code}")
             print(f"Response: {response.text}")
             return None
-            
+
     except Exception as e:
         print(f"❌ Job creation failed: {e}")
         return None
+
 
 def start_and_complete_job(token, job_id):
     """Start the job and wait for completion"""
     print(f"▶️ Starting job {job_id}...")
     try:
         headers = {"Authorization": f"Bearer {token}"}
-        
+
         # Start the job
         response = requests.post(f"{BASE_URL}/api/jobs/{job_id}/start", headers=headers)
         if response.status_code == 200:
             print("✅ Job started successfully")
         else:
             print(f"⚠️ Job start response: {response.status_code}")
-        
+
         # Wait for completion (max 30 seconds)
         print("⏳ Waiting for job completion...")
         for i in range(30):
@@ -110,7 +111,7 @@ def start_and_complete_job(token, job_id):
                 job = response.json()
                 status = job.get("status", "unknown")
                 print(f"Status check {i+1}: {status}")
-                
+
                 if status == "completed":
                     print("✅ Job completed successfully!")
                     return True
@@ -123,13 +124,14 @@ def start_and_complete_job(token, job_id):
             else:
                 print(f"❌ Status check failed: {response.status_code}")
                 return False
-        
+
         print("⏰ Job completion timeout")
         return False
-        
+
     except Exception as e:
         print(f"❌ Job execution failed: {e}")
         return False
+
 
 def test_job_details_api(token, job_id):
     """Test the job details API endpoint"""
@@ -137,7 +139,7 @@ def test_job_details_api(token, job_id):
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(f"{BASE_URL}/api/jobs/{job_id}", headers=headers)
-        
+
         if response.status_code == 200:
             job_details = response.json()
             print("✅ Job details API working")
@@ -146,18 +148,21 @@ def test_job_details_api(token, job_id):
         else:
             print(f"❌ Job details API failed: {response.status_code}")
             return None
-            
+
     except Exception as e:
         print(f"❌ Job details API error: {e}")
         return None
+
 
 def test_job_results_api(token, job_id):
     """Test the job results API endpoint"""
     print(f"📊 Testing job results API for job {job_id}...")
     try:
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.get(f"{BASE_URL}/api/jobs/{job_id}/results", headers=headers)
-        
+        response = requests.get(
+            f"{BASE_URL}/api/jobs/{job_id}/results", headers=headers
+        )
+
         if response.status_code == 200:
             results = response.json()
             print("✅ Job results API working")
@@ -167,20 +172,23 @@ def test_job_results_api(token, job_id):
             elif isinstance(results, list):
                 print(f"Results count: {len(results)}")
                 if len(results) > 0:
-                    print(f"Sample result keys: {list(results[0].keys()) if isinstance(results[0], dict) else 'Not a dict'}")
+                    print(
+                        f"Sample result keys: {list(results[0].keys()) if isinstance(results[0], dict) else 'Not a dict'}"
+                    )
             return results
         else:
             print(f"❌ Job results API failed: {response.status_code}")
             return None
-            
+
     except Exception as e:
         print(f"❌ Job results API error: {e}")
         return None
 
+
 def generate_browser_test_script(job_id):
     """Generate JavaScript code for browser testing"""
     print("🌐 Generating browser test script...")
-    
+
     browser_script = f"""
 // === AUTOMATED MODAL TEST SCRIPT ===
 console.log('🧪 Starting automated modal tests...');
@@ -299,54 +307,55 @@ console.log('');
 console.log('🎯 Test job ID: {job_id}');
 console.log('💡 After logging in with admin/admin123, run: runFullTest()');
 """
-    
+
     return browser_script
+
 
 def main():
     """Run the complete test suite"""
     print("🧪 Starting Backend Modal Testing Suite")
     print("=" * 50)
-    
+
     # Test 1: Backend Connection
     if not test_backend_connection():
         print("❌ Backend connection failed. Please start the backend server.")
         return
-    
+
     # Test 2: User Creation and Authentication
     token = create_test_user()
     if not token:
         print("❌ Authentication failed. Cannot proceed with tests.")
         return
-    
+
     # Test 3: Job Creation
     job_id = create_test_job(token)
     if not job_id:
         print("❌ Job creation failed. Cannot proceed with modal tests.")
         return
-    
+
     # Test 4: Job Execution
     if not start_and_complete_job(token, job_id):
         print("⚠️ Job didn't complete, but proceeding with API tests...")
-    
+
     # Test 5: API Endpoint Testing
     print("\n🔍 Testing API Endpoints")
     print("-" * 30)
-    
+
     job_details = test_job_details_api(token, job_id)
     job_results = test_job_results_api(token, job_id)
-    
+
     # Test 6: Generate Browser Test Script
     print("\n🌐 Browser Testing Preparation")
     print("-" * 30)
-    
+
     browser_script = generate_browser_test_script(job_id)
-    
+
     # Save browser script to file
-    with open('/home/homebrew/scraper/browser_test_script.js', 'w') as f:
+    with open("/home/homebrew/scraper/browser_test_script.js", "w") as f:
         f.write(browser_script)
-    
+
     print("✅ Browser test script saved to: browser_test_script.js")
-    
+
     # Summary
     print("\n📋 TEST SUMMARY")
     print("=" * 50)
@@ -356,13 +365,14 @@ def main():
     print(f"✅ Job Details API: {'Working' if job_details else 'Failed'}")
     print(f"✅ Job Results API: {'Working' if job_results else 'Failed'}")
     print(f"✅ Browser Test Script: Generated")
-    
+
     print("\n🎯 NEXT STEPS:")
     print("1. Open http://localhost:5173 in browser")
     print("2. Login with: admin / admin123")
     print("3. Copy browser_test_script.js content into console")
     print("4. Run: runFullTest()")
     print("5. Observe console output for modal behavior")
+
 
 if __name__ == "__main__":
     main()

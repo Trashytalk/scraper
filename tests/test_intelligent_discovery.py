@@ -6,9 +6,9 @@ This script tests the core components of our advanced implementation
 without requiring all external dependencies.
 """
 
-import sys
 import asyncio
 import json
+import sys
 from pathlib import Path
 
 # Add the project root to the path
@@ -21,9 +21,9 @@ def test_basic_imports():
 
     try:
         from business_intel_scraper.backend.discovery.scheduler import (
-            IntelligentCrawlScheduler,
-            CrawlRequest,
             CrawlPriority,
+            CrawlRequest,
+            IntelligentCrawlScheduler,
         )
 
         print("✅ IntelligentCrawlScheduler imported successfully")
@@ -34,8 +34,8 @@ def test_basic_imports():
     try:
         from business_intel_scraper.backend.discovery.classifier import (
             AdaptiveLinkClassifier,
-            LinkInfo,
             LinkCategory,
+            LinkInfo,
         )
 
         print("✅ AdaptiveLinkClassifier imported successfully")
@@ -55,8 +55,8 @@ def test_basic_imports():
 
     try:
         from business_intel_scraper.backend.extraction.schema_detector import (
-            SchemaDetector,
             DetectedSchema,
+            SchemaDetector,
         )
 
         print("✅ SchemaDetector imported successfully")
@@ -82,9 +82,9 @@ def test_scheduler():
     print("\n📅 Testing IntelligentCrawlScheduler...")
 
     from business_intel_scraper.backend.discovery.scheduler import (
-        IntelligentCrawlScheduler,
-        CrawlRequest,
         CrawlPriority,
+        CrawlRequest,
+        IntelligentCrawlScheduler,
     )
 
     # Initialize scheduler
@@ -268,15 +268,15 @@ def test_integration():
     """Test integration between components"""
     print("\n🔄 Testing component integration...")
 
-    from business_intel_scraper.backend.discovery.scheduler import (
-        IntelligentCrawlScheduler,
-        CrawlRequest,
-    )
     from business_intel_scraper.backend.discovery.classifier import (
         AdaptiveLinkClassifier,
     )
     from business_intel_scraper.backend.discovery.graph_analyzer import (
         CrawlGraphAnalyzer,
+    )
+    from business_intel_scraper.backend.discovery.scheduler import (
+        CrawlRequest,
+        IntelligentCrawlScheduler,
     )
 
     # Initialize components

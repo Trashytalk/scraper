@@ -3,16 +3,17 @@ Security Middleware for Business Intelligence Scraper
 Implements rate limiting, security headers, input validation, and other security measures
 """
 
+import json
+import logging
 import re
 import time
-import json
-from typing import Dict, Any, Optional
-from fastapi import Request, HTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
+from typing import Any, Dict, Optional
+
+from fastapi import HTTPException, Request
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
-import logging
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -305,15 +306,26 @@ def validate_job_config(config: Dict[str, Any]) -> Dict[str, Any]:
     # Validate scraper type
     if "scraper_type" in config:
         scraper_type = config["scraper_type"]
-        allowed_types = ["basic", "e_commerce", "news", "social_media", "api", "intelligent"]
+        allowed_types = [
+            "basic",
+            "e_commerce",
+            "news",
+            "social_media",
+            "api",
+            "intelligent",
+        ]
         if scraper_type not in allowed_types:
             raise ValueError(f"Invalid scraper type. Allowed: {allowed_types}")
         validated_config["scraper_type"] = scraper_type
 
-    # Validate custom selectors
+    # Validate and preserve config section
     if "config" in config and isinstance(config["config"], dict):
-        if "custom_selectors" in config["config"]:
-            selectors = config["config"]["custom_selectors"]
+        config_section = config["config"]
+        validated_config_section = {}
+
+        # Validate custom selectors
+        if "custom_selectors" in config_section:
+            selectors = config_section["custom_selectors"]
             if isinstance(selectors, dict):
                 # Validate CSS selectors
                 validated_selectors = {}
@@ -326,7 +338,56 @@ def validate_job_config(config: Dict[str, Any]) -> Dict[str, Any]:
                             validated_selectors[sanitize_string(key, 50)] = (
                                 sanitize_string(selector, 200)
                             )
-                validated_config["config"] = {"custom_selectors": validated_selectors}
+                validated_config_section["custom_selectors"] = validated_selectors
+
+        # Preserve safe crawling configuration parameters
+        safe_config_params = {
+            "max_pages": {"type": int, "min": 1, "max": 10000, "default": 50},
+            "max_depth": {"type": int, "min": 1, "max": 20, "default": 3},
+            "max_links": {"type": int, "min": 1, "max": 1000, "default": 10},
+            "delay": {"type": (int, float), "min": 0, "max": 60, "default": 1},
+            "crawl_links": {"type": bool, "default": True},
+            "follow_links": {"type": bool, "default": True},
+            "follow_internal_links": {"type": bool, "default": True},
+            "follow_external_links": {"type": bool, "default": False},
+            "include_images": {"type": bool, "default": False},
+            "extract_full_html": {"type": bool, "default": False},
+            "crawl_entire_domain": {"type": bool, "default": False},
+            "save_to_database": {"type": bool, "default": True},
+            "batch_mode": {"type": bool, "default": False},
+            "include_patterns": {"type": str, "default": ""},
+            "exclude_patterns": {"type": str, "default": ""},
+            "url_extraction_field": {"type": str, "default": ""},
+        }
+
+        for param, validation in safe_config_params.items():
+            if param in config_section:
+                value = config_section[param]
+                param_type = validation["type"]
+
+                # Type validation
+                if isinstance(param_type, tuple):
+                    if not isinstance(value, param_type):
+                        continue  # Skip invalid type
+                else:
+                    if not isinstance(value, param_type):
+                        continue  # Skip invalid type
+
+                # Range validation for numeric types
+                if isinstance(value, (int, float)):
+                    if "min" in validation and value < validation["min"]:
+                        value = validation["min"]
+                    if "max" in validation and value > validation["max"]:
+                        value = validation["max"]
+
+                # String length validation
+                if isinstance(value, str) and len(value) > 500:
+                    value = value[:500]  # Truncate long strings
+
+                validated_config_section[param] = value
+
+        if validated_config_section:
+            validated_config["config"] = validated_config_section
 
     return validated_config
 

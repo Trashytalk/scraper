@@ -6,8 +6,8 @@ This script tests all 8 advanced features to ensure they load correctly
 and basic functionality works as expected.
 """
 
-import sys
 import logging
+import sys
 import traceback
 from pathlib import Path
 
@@ -102,8 +102,8 @@ def test_gui_components():
 
     # We need to create a QApplication for Qt widgets
     try:
-        from PyQt6.QtWidgets import QApplication
         from PyQt6.QtCore import Qt
+        from PyQt6.QtWidgets import QApplication
 
         # Set WebEngine attributes before creating QApplication
         if not QApplication.instance():

@@ -3,41 +3,47 @@
 Frontend debugging script to check what's happening when buttons are clicked
 """
 
-import requests
 import json
+
+import requests
+
 
 def test_frontend_api_calls():
     """Test the exact API calls that frontend should be making"""
-    
+
     print("🔍 Testing Frontend API Calls")
     print("=" * 40)
-    
+
     # Get auth token
-    login_response = requests.post("http://localhost:8000/api/auth/login", 
-                                 json={"username": "admin", "password": "admin123"})
+    login_response = requests.post(
+        "http://localhost:8000/api/auth/login",
+        json={"username": "admin", "password": "admin123"},
+    )
     token = login_response.json().get("access_token")
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     # Get list of jobs first
     jobs_response = requests.get("http://localhost:8000/api/jobs", headers=headers)
     jobs = jobs_response.json()
-    
+
     if not jobs:
         print("❌ No jobs found")
         return False
-    
+
     # Test with the latest job
     latest_job = jobs[0]
-    job_id = latest_job['id']
-    
+    job_id = latest_job["id"]
+
     print(f"Testing with Job ID: {job_id}")
     print(f"Job Name: {latest_job['name']}")
     print(f"Job Status: {latest_job['status']}")
     print()
-    
+
     # Test 1: Job Details
     print("1. 🔍 Testing Job Details API call...")
-    details_response = requests.get(f"http://localhost:8000/api/jobs/{job_id}", headers=headers)
+    details_response = requests.get(
+        f"http://localhost:8000/api/jobs/{job_id}", headers=headers
+    )
     print(f"   Status: {details_response.status_code}")
     if details_response.status_code == 200:
         details = details_response.json()
@@ -47,10 +53,12 @@ def test_frontend_api_calls():
     else:
         print(f"   ❌ Error: {details_response.text}")
     print()
-    
-    # Test 2: Job Results  
+
+    # Test 2: Job Results
     print("2. 📊 Testing Job Results API call...")
-    results_response = requests.get(f"http://localhost:8000/api/jobs/{job_id}/results", headers=headers)
+    results_response = requests.get(
+        f"http://localhost:8000/api/jobs/{job_id}/results", headers=headers
+    )
     print(f"   Status: {results_response.status_code}")
     if results_response.status_code == 200:
         results_data = results_response.json()
@@ -58,37 +66,46 @@ def test_frontend_api_calls():
         if isinstance(results_data, list):
             print(f"   Results count: {len(results_data)}")
             if results_data:
-                print(f"   Sample result keys: {list(results_data[0].keys()) if isinstance(results_data[0], dict) else 'Not a dict'}")
+                print(
+                    f"   Sample result keys: {list(results_data[0].keys()) if isinstance(results_data[0], dict) else 'Not a dict'}"
+                )
         elif isinstance(results_data, dict):
             print(f"   Results keys: {list(results_data.keys())}")
-            if 'data' in results_data:
-                print(f"   Data count: {len(results_data['data']) if isinstance(results_data['data'], list) else 'Not a list'}")
+            if "data" in results_data:
+                print(
+                    f"   Data count: {len(results_data['data']) if isinstance(results_data['data'], list) else 'Not a list'}"
+                )
     else:
         print(f"   ❌ Error: {results_response.text}")
     print()
-    
+
     # Test 3: Check CORS for frontend origin
     print("3. 🌐 Testing CORS with frontend origin...")
     cors_headers = {
         "Origin": "http://localhost:5173",
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
     }
-    
-    details_cors = requests.get(f"http://localhost:8000/api/jobs/{job_id}", headers=cors_headers)
+
+    details_cors = requests.get(
+        f"http://localhost:8000/api/jobs/{job_id}", headers=cors_headers
+    )
     print(f"   Details with CORS: {details_cors.status_code}")
-    
-    results_cors = requests.get(f"http://localhost:8000/api/jobs/{job_id}/results", headers=cors_headers)
+
+    results_cors = requests.get(
+        f"http://localhost:8000/api/jobs/{job_id}/results", headers=cors_headers
+    )
     print(f"   Results with CORS: {results_cors.status_code}")
     print()
-    
+
     return True
+
 
 def test_frontend_debugging():
     """Create JavaScript debugging code for the frontend"""
-    
+
     print("4. 🐛 Frontend Debugging Code")
     print("=" * 40)
-    
+
     js_debug_code = """
 // Add this to the browser console to debug the frontend
 console.log('=== Frontend Debugging ===');
@@ -168,27 +185,28 @@ window.getJobResults = async function(jobId) {
 
 console.log('✅ Debug functions installed. Click Details/View Results buttons to see debug output.');
 """
-    
+
     print("Copy and paste this into your browser console:")
     print("=" * 60)
     print(js_debug_code)
     print("=" * 60)
-    
+
     return js_debug_code
+
 
 if __name__ == "__main__":
     print("🐛 Frontend Button Click Debugging")
     print("=" * 50)
-    
+
     # Test API calls
     if test_frontend_api_calls():
         print("✅ API calls are working correctly")
     else:
         print("❌ API calls failed")
-    
+
     # Provide debugging code
     test_frontend_debugging()
-    
+
     print("\n📋 DEBUGGING STEPS:")
     print("1. Open http://localhost:5173 in browser")
     print("2. Open browser developer tools (F12)")

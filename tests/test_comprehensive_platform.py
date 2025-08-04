@@ -3,47 +3,48 @@ Comprehensive Integration Test for Complete Platform
 Tests all implemented features: Database, Performance, Security, Compliance, etc.
 """
 
-import pytest
 import asyncio
-from datetime import datetime
-import sys
 import os
+import sys
+from datetime import datetime
+
+import pytest
 
 # Add path to import our modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from business_intel_scraper.database.models import Entity, Connection, Event, Location
-from business_intel_scraper.database.config import get_async_session, init_database
-from business_intel_scraper.backend.utils.performance import (
-    cache_manager,
-    query_optimizer,
-    performance_monitor,
-    initialize_performance_optimization,
-)
-from business_intel_scraper.backend.utils.security import (
-    encryption_manager,
-    two_factor_auth,
-    audit_logger,
-    InputValidator,
-    SecurityEvent,
-    ThreatType,
-    SecurityLevel,
-)
 from business_intel_scraper.backend.utils.advanced_features import (
-    advanced_filters,
-    dashboard_builder,
-    FilterCriteria,
     CollaborationEvent,
     EventType,
+    FilterCriteria,
+    advanced_filters,
+    dashboard_builder,
 )
 from business_intel_scraper.backend.utils.compliance import (
-    gdpr_manager,
-    cookie_consent_manager,
-    DataSubject,
     ConsentRecord,
-    DataCategory,
     ConsentType,
+    DataCategory,
+    DataSubject,
+    cookie_consent_manager,
+    gdpr_manager,
 )
+from business_intel_scraper.backend.utils.performance import (
+    cache_manager,
+    initialize_performance_optimization,
+    performance_monitor,
+    query_optimizer,
+)
+from business_intel_scraper.backend.utils.security import (
+    InputValidator,
+    SecurityEvent,
+    SecurityLevel,
+    ThreatType,
+    audit_logger,
+    encryption_manager,
+    two_factor_auth,
+)
+from business_intel_scraper.database.config import get_async_session, init_database
+from business_intel_scraper.database.models import Connection, Entity, Event, Location
 
 
 class TestComprehensiveIntegration:

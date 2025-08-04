@@ -29,18 +29,21 @@ The frontend will be available at `http://localhost:3000` with automatic proxy t
 ## Features
 
 ### 🎛️ Real-time Dashboard
+
 - Live job monitoring with WebSocket updates
 - Interactive charts showing scraping metrics
 - Status indicators for system health
 - Real-time notifications
 
 ### 📊 Data Visualization
+
 - Job success rate tracking
 - Activity timeline charts
 - Performance metrics
 - Export capabilities (CSV/JSON)
 
 ### 🎨 Modern UI/UX
+
 - Responsive design with Tailwind CSS
 - Professional component library
 - Loading states and animations
@@ -51,7 +54,7 @@ The frontend will be available at `http://localhost:3000` with automatic proxy t
 The `frontend.sh` script provides convenient commands:
 
 - `./frontend.sh install` - Install dependencies
-- `./frontend.sh dev` - Start development server  
+- `./frontend.sh dev` - Start development server
 - `./frontend.sh build` - Build for production
 - `./frontend.sh preview` - Preview production build
 - `./frontend.sh help` - Show all commands
@@ -71,8 +74,10 @@ No build step is required. The development server simply serves the files from
 the `public` directory. Install dependencies once and then start the server:
 
 ```bash
+
 npm install
 npm start
+
 ```
 
 During development the frontend expects the FastAPI backend to be running on the

@@ -28,26 +28,35 @@ The performance system provides REST API endpoints for monitoring and control:
 Use the performance CLI for command-line monitoring and control:
 
 ```bash
+
 # Check system status
+
 bi-performance status
 
 # View detailed metrics
+
 bi-performance metrics --json-output
 
 # Apply optimization profile
+
 bi-performance optimize balanced
 
 # Clear cache
+
 bi-performance clear-cache --pattern analytics
 
 # Run performance benchmark
+
 bi-performance benchmark --iterations 100
 
 # Get recommendations
+
 bi-performance recommendations
 
 # Real-time monitoring
+
 bi-performance monitor
+
 ```
 
 ### ⚙️ Optimization Profiles
@@ -55,18 +64,21 @@ bi-performance monitor
 Choose from three optimization profiles based on your needs:
 
 #### Balanced (Default)
+
 - Moderate caching with 1-hour TTL
 - Standard connection pooling
 - Balanced memory management
 - General-purpose optimization
 
 #### Memory Focused
+
 - Aggressive garbage collection
 - Reduced cache size
 - Memory usage monitoring
 - Lower memory footprint
 
-#### Performance Focused  
+#### Performance Focused
+
 - Extended cache TTL (4 hours)
 - Larger connection pools
 - Background task optimization
@@ -77,13 +89,17 @@ Choose from three optimization profiles based on your needs:
 ### Basic Installation
 
 ```bash
+
 pip install -e .
+
 ```
 
 ### With Performance Dependencies
 
 ```bash
+
 pip install -e .[performance]
+
 ```
 
 This includes:
@@ -96,19 +112,24 @@ This includes:
 ### Environment Variables
 
 ```bash
+
 # Redis configuration (optional)
+
 REDIS_URL=redis://localhost:6379/0
 REDIS_ENABLED=true
 
 # Performance settings
+
 PERFORMANCE_CACHE_TTL=3600
 PERFORMANCE_CACHE_MAX_SIZE=10000
 PERFORMANCE_MONITORING_ENABLED=true
 
 # Database optimization
+
 DB_POOL_SIZE=20
 DB_MAX_OVERFLOW=30
 DB_POOL_TIMEOUT=30
+
 ```
 
 ### Configuration File
@@ -116,6 +137,7 @@ DB_POOL_TIMEOUT=30
 Create `config/performance.yaml`:
 
 ```yaml
+
 performance:
   cache:
     enabled: true
@@ -123,17 +145,18 @@ performance:
     default_ttl: 3600
     max_size: 10000
     compression: true
-  
+
   database:
     pool_size: 20
     max_overflow: 30
     pool_timeout: 30
     enable_query_cache: true
-  
+
   monitoring:
     enabled: true
     metrics_interval: 60
     system_monitoring: true
+
 ```
 
 ## Usage Examples
@@ -141,22 +164,28 @@ performance:
 ### Python API
 
 ```python
+
 from business_intel_scraper.backend.performance.optimizer import get_performance_optimizer
 
 # Get optimizer instance
+
 optimizer = get_performance_optimizer()
 
 # Run performance analysis
+
 analysis = await optimizer.run_performance_analysis()
 print(f"Cache hit rate: {analysis['cache_performance']['hit_rate']:.1%}")
 
 # Apply optimization
+
 result = await optimizer.apply_optimizations('performance_focused')
 print(f"Applied {result['profile_applied']} profile")
 
 # Use performance cache
+
 await optimizer.cache.set("key", "value", ttl=3600)
 cached_value = await optimizer.cache.get("key")
+
 ```
 
 ### Analytics Integration
@@ -164,34 +193,45 @@ cached_value = await optimizer.cache.get("key")
 The performance system integrates with the analytics dashboard:
 
 ```python
+
 from business_intel_scraper.backend.analytics.core import AnalyticsCore
 from business_intel_scraper.backend.performance import AnalyticsPerformanceIntegration
 
 # Analytics with performance optimization
+
 analytics = AnalyticsCore()
 perf_integration = AnalyticsPerformanceIntegration(analytics)
 
 # Optimized dashboard data
+
 dashboard_data = await perf_integration.get_optimized_dashboard_data()
+
 ```
 
 ### REST API Usage
 
 ```bash
+
 # Get system status
+
 curl http://localhost:8000/performance/status
 
 # View metrics as JSON
+
 curl http://localhost:8000/performance/metrics
 
-# Apply optimization profile  
+# Apply optimization profile
+
 curl -X POST http://localhost:8000/performance/optimize/balanced
 
 # Clear specific cache pattern
+
 curl -X POST "http://localhost:8000/performance/cache/clear?pattern=dashboard"
 
 # Get recommendations
+
 curl http://localhost:8000/performance/recommendations
+
 ```
 
 ## Monitoring
@@ -199,21 +239,26 @@ curl http://localhost:8000/performance/recommendations
 ### Real-time Dashboard
 
 Access the performance monitoring dashboard at:
-- **API Status**: `http://localhost:8000/performance/status`  
+- **API Status**: `http://localhost:8000/performance/status`
 - **Metrics**: `http://localhost:8000/performance/metrics`
 - **Cache Stats**: `http://localhost:8000/performance/cache/stats`
 
 ### CLI Monitoring
 
 ```bash
+
 # Continuous monitoring
+
 bi-performance monitor
 
 # One-time status check
+
 bi-performance status
 
 # Detailed metrics
+
 bi-performance metrics --json-output
+
 ```
 
 ### Log Integration
@@ -221,10 +266,13 @@ bi-performance metrics --json-output
 Performance events are logged to the standard application logs:
 
 ```python
+
 import logging
 
 # Enable performance logging
+
 logging.getLogger('performance').setLevel(logging.INFO)
+
 ```
 
 ## Performance Testing
@@ -232,7 +280,9 @@ logging.getLogger('performance').setLevel(logging.INFO)
 Run the included performance test suite:
 
 ```bash
+
 python test_performance.py
+
 ```
 
 This tests:
@@ -256,7 +306,7 @@ This tests:
 - Monitor with: `bi-performance monitor`
 
 **Poor performance**
-- Check system resources: `bi-performance status`  
+- Check system resources: `bi-performance status`
 - Get recommendations: `bi-performance recommendations`
 - Apply performance profile: `bi-performance optimize performance_focused`
 
@@ -265,13 +315,17 @@ This tests:
 Enable debug logging:
 
 ```bash
+
 export LOG_LEVEL=DEBUG
+
 ```
 
 Check performance logs:
 
 ```bash
+
 tail -f logs/performance.log
+
 ```
 
 ## Integration
@@ -322,6 +376,7 @@ Performance System
 ├── TaskOptimizer (background processing)
 ├── MemoryOptimizer (GC management)
 └── SystemMonitor (resource tracking)
+
 ```
 
 The system is designed to:

@@ -5,8 +5,8 @@ This version uses the existing database structure for testing
 """
 
 import asyncio
-import sys
 import sqlite3
+import sys
 from pathlib import Path
 
 # Add project root to path
@@ -193,8 +193,9 @@ async def test_api_endpoints():
     print("🌐 Testing API Endpoints...")
 
     try:
-        import requests
         import time
+
+        import requests
 
         # Check if API is running
         try:

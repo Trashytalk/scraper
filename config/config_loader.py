@@ -2,10 +2,10 @@
 Configuration loader for API credentials and settings
 """
 
-import os
 import logging
-from typing import Dict, Any, Optional
+import os
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

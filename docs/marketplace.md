@@ -10,7 +10,7 @@ The Spider Marketplace transforms the Business Intelligence Scraper from a singl
 
 - **Discover** spiders created by the community
 - **Install** spiders with one click
-- **Share** their own spider implementations  
+- **Share** their own spider implementations
 - **Rate and review** spider effectiveness
 - **Validate** spider security and quality
 - **Manage** installed spiders through a web interface
@@ -18,24 +18,28 @@ The Spider Marketplace transforms the Business Intelligence Scraper from a singl
 ### Key Features
 
 #### 🔍 **Spider Discovery**
+
 - Search by keywords, categories, and tags
 - Featured and trending spiders
 - Detailed spider information and documentation
 - Community ratings and reviews
 
 #### 📦 **One-Click Installation**
+
 - Automatic dependency management
 - Validation and security scanning
 - Version management
 - Local installation tracking
 
 #### 🛡️ **Security & Quality**
+
 - Automated security scanning
 - Code validation
 - Signature verification
 - Sandboxed testing (planned)
 
 #### 🌐 **Community Features**
+
 - User ratings and reviews
 - Spider marketplace statistics
 - Author profiles and reputation
@@ -57,7 +61,7 @@ The Spider Marketplace transforms the Business Intelligence Scraper from a singl
    # Start the frontend (if not running)
    cd business_intel_scraper/frontend
    npm run dev
-   
+
    # Visit http://localhost:3000/marketplace
    ```
 
@@ -66,7 +70,7 @@ The Spider Marketplace transforms the Business Intelligence Scraper from a singl
    # Start the backend (if not running)
    cd business_intel_scraper
    uvicorn backend.api.main:app --reload
-   
+
    # API available at http://localhost:8000/marketplace/*
    ```
 
@@ -81,7 +85,9 @@ The Spider Marketplace transforms the Business Intelligence Scraper from a singl
 Run the marketplace demo to see it in action:
 
 ```bash
+
 python demo_marketplace.py
+
 ```
 
 ## 🎮 Usage Guide
@@ -114,27 +120,35 @@ python demo_marketplace.py
 #### Search Spiders
 
 ```bash
+
 curl "http://localhost:8000/marketplace/search?query=linkedin&category=business-intelligence&limit=10"
+
 ```
 
 #### Get Spider Information
 
 ```bash
+
 curl "http://localhost:8000/marketplace/spider/linkedin-company-scraper"
+
 ```
 
 #### Install a Spider
 
 ```bash
+
 curl -X POST "http://localhost:8000/marketplace/install" \
   -H "Content-Type: application/json" \
   -d '{"name": "linkedin-company-scraper", "version": "latest"}'
+
 ```
 
 #### List Installed Spiders
 
 ```bash
+
 curl "http://localhost:8000/marketplace/installed"
+
 ```
 
 ### CLI Usage
@@ -142,32 +156,42 @@ curl "http://localhost:8000/marketplace/installed"
 #### Search for Spiders
 
 ```bash
+
 # Basic search
+
 python -m business_intel_scraper.backend.marketplace.cli search
 
 # Search with filters
+
 python -m business_intel_scraper.backend.marketplace.cli search \
   --query "linkedin" \
   --category "business-intelligence" \
   --limit 5
+
 ```
 
 #### Install a Spider
 
 ```bash
+
 python -m business_intel_scraper.backend.marketplace.cli install linkedin-company-scraper
+
 ```
 
 #### List Installed Spiders
 
 ```bash
+
 python -m business_intel_scraper.backend.marketplace.cli list-installed
+
 ```
 
 #### Get Spider Information
 
 ```bash
+
 python -m business_intel_scraper.backend.marketplace.cli info linkedin-company-scraper
+
 ```
 
 ## 🛠️ Development Guide
@@ -177,22 +201,28 @@ python -m business_intel_scraper.backend.marketplace.cli info linkedin-company-s
 #### 1. Create Spider Template
 
 ```bash
+
 python -m business_intel_scraper.backend.marketplace.cli create-template my-spider ./my-spider
+
 ```
 
 This creates:
+
 ```
 my-spider/
 ├── spider.yaml          # Metadata
 ├── my_spider.py         # Main spider code
 ├── requirements.txt     # Dependencies
 └── README.md           # Documentation
+
 ```
 
 #### 2. Customize Your Spider
 
 **Edit `spider.yaml`**:
+
 ```yaml
+
 name: my-custom-spider
 version: 1.0.0
 author: Your Name
@@ -202,44 +232,54 @@ tags: [company-data, scraping]
 requirements: [scrapy, requests]
 entry_point: my_spider.MySpiderClass
 license: MIT
+
 ```
 
 **Edit `my_spider.py`**:
+
 ```python
+
 import scrapy
 
 class MySpiderClass(scrapy.Spider):
     name = "my-custom-spider"
-    
+
     def start_requests(self):
         # Your scraping logic here
         pass
-    
+
     def parse(self, response):
         # Your parsing logic here
         yield {"data": "extracted_data"}
+
 ```
 
 #### 3. Test Your Spider
 
 ```bash
+
 # Validate spider structure
+
 python -m business_intel_scraper.backend.marketplace.cli validate ./my-spider
 
 # Test locally
+
 cd my-spider
 scrapy crawl my-custom-spider
+
 ```
 
 #### 4. Publish Your Spider
 
 ```bash
+
 python -m business_intel_scraper.backend.marketplace.cli publish ./my-spider \
   --name "my-custom-spider" \
   --version "1.0.0" \
   --author "Your Name" \
   --description "My custom spider" \
   --category "business-intelligence"
+
 ```
 
 ### Spider Structure Requirements
@@ -254,7 +294,9 @@ python -m business_intel_scraper.backend.marketplace.cli publish ./my-spider \
 #### Metadata Schema
 
 ```yaml
+
 # Required fields
+
 name: string              # Unique spider name
 version: string           # Semantic version (1.0.0)
 author: string            # Author name
@@ -263,12 +305,14 @@ category: string          # From allowed categories
 entry_point: string       # module.ClassName
 
 # Optional fields
+
 tags: [string]            # Search tags
 requirements: [string]    # Python packages
 license: string           # License type
 homepage: string          # Project homepage
 repository: string        # Source code repo
 documentation: string     # Docs URL
+
 ```
 
 #### Spider Categories
@@ -326,28 +370,33 @@ Available categories:
 Edit `config/marketplace.yaml`:
 
 ```yaml
+
 marketplace:
   registry_url: "https://api.spider-registry.com"
   local_registry: true
   auto_update: true
-  
+
   validation:
     max_package_size: "10MB"
     scan_timeout: 30
     test_timeout: 60
-  
+
   security:
     scan_for_malware: true
     check_signatures: true
+
 ```
 
 ### Environment Variables
 
 ```bash
+
 # Optional marketplace configuration
+
 MARKETPLACE_REGISTRY_URL=https://api.spider-registry.com
 MARKETPLACE_LOCAL_REGISTRY=true
 MARKETPLACE_AUTO_UPDATE=true
+
 ```
 
 ## 📊 Marketplace Statistics
@@ -414,6 +463,7 @@ Every spider goes through validation:
 ## 🚀 Roadmap
 
 ### Current Features (v1.0)
+
 - ✅ Spider discovery and search
 - ✅ One-click installation
 - ✅ Web interface
@@ -423,6 +473,7 @@ Every spider goes through validation:
 - ✅ Local registry
 
 ### Upcoming Features (v2.0)
+
 - 🔄 Remote registry support
 - 🔄 User authentication
 - 🔄 Advanced security scanning
@@ -431,6 +482,7 @@ Every spider goes through validation:
 - 🔄 Community features
 
 ### Future Plans (v3.0)
+
 - 📋 Marketplace analytics
 - 📋 AI-powered recommendations
 - 📋 Collaboration tools
@@ -443,6 +495,7 @@ Every spider goes through validation:
 ### Example Spider: LinkedIn Company Scraper
 
 ```python
+
 """
 LinkedIn Company Scraper
 Extracts company information from LinkedIn company pages
@@ -454,22 +507,22 @@ from typing import Dict, Any, Generator
 class LinkedinCompanySpider(scrapy.Spider):
     name = "linkedin-company-scraper"
     allowed_domains = ["linkedin.com"]
-    
+
     custom_settings = {
         'DOWNLOAD_DELAY': 2,
         'RANDOMIZE_DOWNLOAD_DELAY': True,
         'USER_AGENT': 'BusinessIntelScraper/1.0 (+https://your-site.com)'
     }
-    
+
     def start_requests(self):
         # Company URLs to scrape
         companies = getattr(self, 'companies', '').split(',')
-        
+
         for company in companies:
             if company.strip():
                 url = f"https://www.linkedin.com/company/{company.strip()}"
                 yield scrapy.Request(url, self.parse)
-    
+
     def parse(self, response) -> Generator[Dict[str, Any], None, None]:
         yield {
             'company_name': response.css('h1.text-heading-xlarge::text').get(),
@@ -481,16 +534,21 @@ class LinkedinCompanySpider(scrapy.Spider):
             'url': response.url,
             'scraped_at': response.meta.get('download_time')
         }
+
 ```
 
 ### Example Usage
 
 ```bash
+
 # Install the spider
+
 python -m business_intel_scraper.backend.marketplace.cli install linkedin-company-scraper
 
 # Use the spider
+
 scrapy crawl linkedin-company-scraper -a companies="apple,microsoft,google"
+
 ```
 
 This comprehensive guide provides everything needed to understand, use, and contribute to the Spider Marketplace ecosystem.

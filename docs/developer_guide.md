@@ -8,9 +8,11 @@ This project follows a few simple conventions to keep the codebase consistent.
 - Lint the project with **ruff** and fix issues when possible.
 
 ```bash
+
 pip install black ruff
 black .
 ruff .
+
 ```
 
 Use `ruff --fix .` to automatically apply safe fixes.
@@ -20,8 +22,10 @@ Use `ruff --fix .` to automatically apply safe fixes.
 Install the development requirements and execute the test suite with pytest:
 
 ```bash
+
 pip install -r requirements.txt
 pytest
+
 ```
 
 ## Contribution Tips
