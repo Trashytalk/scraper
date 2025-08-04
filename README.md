@@ -3,9 +3,9 @@
 ## 🚀 Enterprise-Grade Business Intelligence Data Collection & Analytics Platform
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/Trashytalk/scraper)
-[![Security](https://img.shields.io/badge/security-enterprise--grade-blue)](./docs/security/security-overview.md)
+[![Security](https://img.shields.io/badge/security-enterprise--grade-blue)](./docs/security.md)
 [![Documentation](https://img.shields.io/badge/docs-comprehensive-green)](./docs/)
-[![Version](https://img.shields.io/badge/version-2.0.0-orange)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.0-orange)](./docs/archive/README.md)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/api-fastapi-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/frontend-react-61dafb.svg)](https://reactjs.org/)
