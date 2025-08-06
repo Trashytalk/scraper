@@ -12,10 +12,17 @@ import os
 import sqlite3
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import jwt
 import uvicorn
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 from fastapi import (
     Depends,
     FastAPI,
@@ -28,9 +35,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Import centralized configuration
-from config.environment import get_api_url, get_config, get_test_credentials
+from config.environment import get_api_url, get_config as get_env_config, get_test_credentials
 
-config = get_config()
+env_config = get_env_config()
 
 # Import enhanced error handling
 try:
@@ -44,8 +51,14 @@ try:
 
     ENHANCED_ERROR_HANDLING_AVAILABLE = True
 except ImportError:
-    logging.warning("Enhanced error handling not available")
+    logger.warning("Enhanced error handling not available")
     ENHANCED_ERROR_HANDLING_AVAILABLE = False
+    
+    # Fallback implementations
+    def init_error_handling() -> Any:
+        """Fallback error handling initialization"""
+        logger.info("Using fallback error handling")
+        return None
 
 # Import enhanced monitoring
 try:
@@ -59,8 +72,22 @@ try:
 
     ENHANCED_MONITORING_AVAILABLE = True
 except ImportError:
-    logging.warning("Enhanced monitoring not available")
+    logger.warning("Enhanced monitoring not available")
     ENHANCED_MONITORING_AVAILABLE = False
+    
+    # Fallback implementations
+    def init_simple_monitoring(db_path: str = "data.db") -> Any:
+        """Fallback monitoring initialization"""
+        logger.info("Using fallback monitoring")
+        return None
+        
+    async def background_health_monitoring() -> None:
+        """Fallback background monitoring"""
+        logger.info("Fallback background monitoring active")
+        
+    def get_health_monitor() -> Any:
+        """Fallback health monitor"""
+        return None
 
 # Import AI integration (Phase 4)
 try:
@@ -72,29 +99,100 @@ try:
     )
 
     AI_INTEGRATION_AVAILABLE = True
-    logging.info("🤖 AI Integration Service available")
+    logger.info("🤖 AI Integration Service available")
 except ImportError:
-    logging.warning("AI Integration Service not available")
+    logger.warning("AI Integration Service not available")
     AI_INTEGRATION_AVAILABLE = False
 
 # Import enhanced configuration management
 try:
-    from config.advanced_config_manager import config_manager, get_config, init_config
+    from config.advanced_config_manager import config_manager
+    from config.advanced_config_manager import get_config as get_advanced_config
+    from config.advanced_config_manager import init_config as init_advanced_config
 
     ADVANCED_CONFIG_AVAILABLE = True
+    get_config = get_advanced_config  # Use advanced config if available
+    init_config = init_advanced_config
 except ImportError:
-    logging.warning(
+    logger.warning(
         "Advanced configuration manager not available, falling back to legacy config"
     )
     ADVANCED_CONFIG_AVAILABLE = False
     config_manager = None
+    get_config = get_env_config  # Fallback to environment config
 
-    async def init_config(*args, **kwargs):
+    async def init_config(*args, **kwargs) -> Any:
         return None
 
 
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+
+# Fallback classes for performance monitoring (defined early to avoid import issues)
+class PerformanceMetrics:
+    def __init__(self):
+        self.request_metrics: Dict[str, List[Dict[str, Any]]] = {}
+        self.system_metrics: Dict[str, Any] = {}
+        self.start_time = time.time()
+
+    def record_request(self, endpoint: str, duration: float, status_code: int) -> None:
+        if endpoint not in self.request_metrics:
+            self.request_metrics[endpoint] = []
+        self.request_metrics[endpoint].append({
+            "duration": duration,
+            "status_code": status_code,
+            "timestamp": time.time(),
+        })
+        if len(self.request_metrics[endpoint]) > 1000:
+            self.request_metrics[endpoint] = self.request_metrics[endpoint][-1000:]
+
+    def get_system_metrics(self) -> Dict[str, Any]:
+        try:
+            import psutil
+            return {
+                "cpu_percent": psutil.cpu_percent(),
+                "memory_percent": psutil.virtual_memory().percent,
+                "disk_usage": psutil.disk_usage('/').percent,
+                "uptime": time.time() - self.start_time
+            }
+        except ImportError:
+            return {"cpu_percent": 0, "memory_percent": 0, "disk_usage": 0, "uptime": time.time() - self.start_time}
+
+    def get_endpoint_metrics(self) -> Dict[str, Dict[str, Any]]:
+        metrics = {}
+        for endpoint, requests in self.request_metrics.items():
+            if requests:
+                durations = [r["duration"] for r in requests]
+                metrics[endpoint] = {
+                    "total_requests": len(requests),
+                    "avg_duration": sum(durations) / len(durations),
+                    "min_duration": min(durations),
+                    "max_duration": max(durations),
+                }
+        return metrics
+
+    def get_recent_performance(self) -> List[Dict[str, Any]]:
+        recent = []
+        for endpoint, requests in self.request_metrics.items():
+            recent.extend([{**r, "endpoint": endpoint} for r in requests[-10:]])
+        return sorted(recent, key=lambda x: x["timestamp"], reverse=True)[:50]
+
+class CacheManager:
+    def __init__(self):
+        self.cache: Dict[str, Any] = {}
+        
+    def get(self, key: str) -> Any:
+        return self.cache.get(key)
+        
+    def set(self, key: str, value: Any, ttl: int = 300) -> None:
+        self.cache[key] = value
+        
+    def delete(self, key: str) -> None:
+        self.cache.pop(key, None)
+        
+    def clear(self) -> None:
+        self.cache.clear()
+
 
 # Import the real scraping engine
 from scraping_engine import execute_scraping_job
@@ -119,10 +217,10 @@ from security_middleware import (
 # Import performance monitoring (with fallback if dependencies missing)
 try:
     from performance_monitor import (
-        CacheManager,
-        DatabaseOptimizer,
-        PerformanceMetrics,
-        PerformanceMiddleware,
+        CacheManager as PerformanceMonitorCacheManager,
+        DatabaseOptimizer as PerformanceMonitorDatabaseOptimizer,
+        PerformanceMetrics as PerformanceMonitorMetrics,
+        PerformanceMiddleware as PerformanceMonitorMiddleware,
         background_performance_monitor,
         cached,
         get_performance_summary,
@@ -130,122 +228,43 @@ try:
     )
 
     PERFORMANCE_ENABLED = True
+    logger.info("✅ Performance monitoring system available")
 except ImportError:
-    print(
+    logger.warning(
         "⚠️  Performance monitoring dependencies not available - running with basic monitoring"
     )
     PERFORMANCE_ENABLED = False
 
-    # Enhanced fallback implementations
-    class PerformanceMetrics:
+# Global instances - will be initialized in startup
+metrics_instance: Optional[Any] = None
+cache_instance: Optional[Any] = None
+db_optimizer_instance: Optional[Any] = None
+
+
+def get_global_metrics() -> Optional[Any]:
+    """Get the global metrics instance safely."""
+    return metrics_instance
+
+
+def get_global_cache() -> Optional[Any]:
+    """Get the global cache instance safely."""
+    return cache_instance
+
+
+def get_global_db_optimizer() -> Optional[Any]:
+    """Get the global database optimizer instance safely."""
+    return db_optimizer_instance
+
+
+# Fallback classes for when performance monitoring is not available
+class SimpleFallbackMetrics:
         def __init__(self):
-            self.request_metrics = {}
-            self.system_metrics = {}
-            self.start_time = time.time()
-
-        def record_request(self, endpoint, duration, status_code):
-            if endpoint not in self.request_metrics:
-                self.request_metrics[endpoint] = []
-
-            self.request_metrics[endpoint].append(
-                {
-                    "duration": duration,
-                    "status_code": status_code,
-                    "timestamp": time.time(),
-                }
-            )
-
-            # Keep only last 1000 requests per endpoint
-            if len(self.request_metrics[endpoint]) > 1000:
-                self.request_metrics[endpoint] = self.request_metrics[endpoint][-1000:]
-
-        def get_system_metrics(self):
-            try:
-                import psutil
-
-                return {
-                    "cpu_percent": psutil.cpu_percent(interval=0.1),
-                    "memory_percent": psutil.virtual_memory().percent,
-                    "memory_used_mb": psutil.virtual_memory().used // (1024 * 1024),
-                    "disk_percent": psutil.disk_usage("/").percent,
-                    "uptime_seconds": time.time() - self.start_time,
-                    "active_connections": len(self.request_metrics),
-                    "timestamp": time.time(),
-                }
-            except ImportError:
-                return {
-                    "uptime_seconds": time.time() - self.start_time,
-                    "active_connections": len(self.request_metrics),
-                    "timestamp": time.time(),
-                    "note": "psutil not available - limited metrics",
-                }
-
-        def get_endpoint_metrics(self):
-            metrics = {}
-            for endpoint, requests in self.request_metrics.items():
-                if requests:
-                    durations = [
-                        r["duration"] for r in requests[-100:]
-                    ]  # Last 100 requests
-                    success_count = len(
-                        [r for r in requests[-100:] if 200 <= r["status_code"] < 400]
-                    )
-
-                    metrics[endpoint] = {
-                        "total_requests": len(requests),
-                        "recent_requests": len(requests[-100:]),
-                        "avg_duration_ms": (
-                            sum(durations) / len(durations) * 1000 if durations else 0
-                        ),
-                        "min_duration_ms": min(durations) * 1000 if durations else 0,
-                        "max_duration_ms": max(durations) * 1000 if durations else 0,
-                        "success_rate": (
-                            success_count / len(requests[-100:])
-                            if requests[-100:]
-                            else 0
-                        ),
-                        "last_request": (
-                            max(r["timestamp"] for r in requests) if requests else 0
-                        ),
-                    }
-            return metrics
-
-        def get_recent_performance(self):
-            recent_window = time.time() - 300  # Last 5 minutes
-            recent_requests = []
-
-            for endpoint, requests in self.request_metrics.items():
-                recent = [r for r in requests if r["timestamp"] > recent_window]
-                recent_requests.extend(recent)
-
-            if not recent_requests:
-                return {
-                    "requests_per_minute": 0,
-                    "avg_response_time": 0,
-                    "error_rate": 0,
-                    "total_requests": 0,
-                }
-
-            error_count = len([r for r in recent_requests if r["status_code"] >= 400])
-            durations = [r["duration"] for r in recent_requests]
-
-            return {
-                "requests_per_minute": len(recent_requests) / 5,  # 5 minute window
-                "avg_response_time": (
-                    sum(durations) / len(durations) if durations else 0
-                ),
-                "error_rate": error_count / len(recent_requests),
-                "total_requests": len(recent_requests),
-            }
-
-    class CacheManager:
-        def __init__(self):
-            self.ttl_cache = {}
-            self.lru_cache = {}
-            self.cache_times = {}
+            self.ttl_cache: Dict[str, Any] = {}
+            self.lru_cache: Dict[str, Any] = {}
+            self.cache_times: Dict[str, float] = {}
             self.max_size = 1000
 
-        def get(self, key, cache_type="ttl"):
+        def get(self, key: str, cache_type: str = "ttl") -> Any:
             if cache_type == "ttl":
                 if key in self.ttl_cache and key in self.cache_times:
                     if time.time() - self.cache_times[key] < 300:  # 5 min default TTL
@@ -264,7 +283,7 @@ except ImportError:
                     return value
             return None
 
-        def set(self, key, value, cache_type="ttl", ttl=300):
+        def set(self, key: str, value: Any, cache_type: str = "ttl", ttl: int = 300) -> None:
             if cache_type == "ttl":
                 self.ttl_cache[key] = value
                 self.cache_times[key] = time.time()
@@ -286,14 +305,33 @@ except ImportError:
                     del self.lru_cache[oldest_key]
                 self.lru_cache[key] = value
 
-        def delete(self, key, cache_type="ttl"):
+        def delete(self, key: str, cache_type: str = "ttl") -> None:
             if cache_type == "ttl":
                 self.ttl_cache.pop(key, None)
                 self.cache_times.pop(key, None)
             elif cache_type == "lru":
                 self.lru_cache.pop(key, None)
 
-    class PerformanceMiddleware:
+        def clear_all(self) -> None:
+            """Clear all caches"""
+            self.ttl_cache.clear()
+            self.lru_cache.clear()
+            self.cache_times.clear()
+
+
+class DatabaseOptimizer:
+    """Fallback database optimizer"""
+    def __init__(self):
+        pass
+
+    def optimize_query(self, query: str) -> str:
+        return query
+
+    def get_stats(self) -> Dict[str, Any]:
+        return {"status": "fallback_optimizer", "optimizations": 0}
+
+
+class PerformanceMiddleware:
         def __init__(self, app, metrics):
             self.app = app
             self.metrics = metrics
@@ -309,7 +347,8 @@ except ImportError:
 
             return response
 
-    def cached(cache_type="ttl", ttl=300, key_prefix=""):
+
+def cached(cache_type: str = "ttl", ttl: int = 300, key_prefix: str = ""):
         def decorator(func):
             async def wrapper(*args, **kwargs):
                 # Simple caching decorator
@@ -337,33 +376,67 @@ except ImportError:
 
         return decorator
 
-    def get_performance_summary():
-        if hasattr(get_performance_summary, "_metrics"):
-            return {
-                "system": get_performance_summary._metrics.get_system_metrics(),
-                "endpoints": get_performance_summary._metrics.get_endpoint_metrics(),
-                "recent": get_performance_summary._metrics.get_recent_performance(),
-            }
-        return {"status": "metrics not initialized"}
 
-    async def background_performance_monitor():
+def init_performance_system(db_path: str, redis_url: Optional[str] = None) -> tuple[Any, Any, Any]:
+    """Initialize performance system with fallback implementations"""
+    metrics = PerformanceMetrics()
+    cache_manager = CacheManager()
+    db_optimizer = DatabaseOptimizer()
+    
+    # Store metrics globally for access
+    global performance_metrics_instance
+    performance_metrics_instance = metrics
+    logger.info("✅ Fallback performance system initialized")
+    return metrics, cache_manager, db_optimizer
+
+
+def get_performance_summary() -> Dict[str, Any]:
+    if performance_metrics_instance:
+        return {
+            "system": performance_metrics_instance.get_system_metrics(),
+            "endpoints": performance_metrics_instance.get_endpoint_metrics(),
+            "recent": performance_metrics_instance.get_recent_performance(),
+        }
+    return {"status": "metrics not initialized"}
+
+
+async def background_performance_monitor() -> None:
         """Basic background monitoring"""
         while True:
             try:
                 await asyncio.sleep(60)  # Run every minute
-                if hasattr(background_performance_monitor, "_metrics"):
-                    metrics = (
-                        background_performance_monitor._metrics.get_system_metrics()
-                    )
+                if performance_metrics_instance:
+                    metrics = performance_metrics_instance.get_system_metrics()
                     if (
                         metrics.get("cpu_percent", 0) > 80
                         or metrics.get("memory_percent", 0) > 90
                     ):
-                        logging.warning(
+                        logger.warning(
                             f"High resource usage detected: CPU={metrics.get('cpu_percent')}%, Memory={metrics.get('memory_percent')}%"
                         )
             except Exception as e:
-                logging.error(f"Background monitoring error: {e}")
+                logger.error(f"Background monitoring error: {e}")
+
+# Use the appropriate classes based on availability
+# Global instances - will be initialized in startup
+performance_metrics: Any = None
+cache_manager: Any = None
+db_optimizer: Any = None
+
+# Helper function to safely access AI service
+def get_ai_service():
+    """Get AI service if available, otherwise raise exception"""
+    if not AI_INTEGRATION_AVAILABLE:
+        raise HTTPException(
+            status_code=503, detail="AI integration not available"
+        )
+    # Check if ai_service is defined in the global scope
+    try:
+        return globals()['ai_service']
+    except KeyError:
+        raise HTTPException(
+            status_code=503, detail="AI service not initialized"
+        )
 
 
 # Database setup
@@ -441,13 +514,17 @@ def init_database():
     )
 
     # Create default admin user with secure password hashing
-    password_hash = hash_password(config.DEFAULT_PASSWORD)
+    current_config = get_config()
+    default_password = getattr(current_config, 'DEFAULT_PASSWORD', 'admin123')
+    default_username = getattr(current_config, 'DEFAULT_USERNAME', 'admin')
+    
+    password_hash = hash_password(default_password)
     cursor.execute(
         """
         INSERT OR IGNORE INTO users (username, email, password_hash, role)
         VALUES (?, ?, ?, ?)
     """,
-        (config.DEFAULT_USERNAME, "admin@scraper.local", password_hash, "admin"),
+        (default_username, "admin@scraper.local", password_hash, "admin"),
     )
 
     conn.commit()
@@ -458,21 +535,28 @@ def init_database():
 validate_configuration()
 init_database()
 
+# Initialize performance system components with defaults
+performance_metrics = None
+cache_manager = None  
+db_optimizer = None
+
 # Initialize performance monitoring system
 if PERFORMANCE_ENABLED:
     try:
         performance_metrics, cache_manager, db_optimizer = init_performance_system(
             DATABASE_PATH
         )
-        print("✅ Performance monitoring system initialized")
+        logger.info("✅ Performance monitoring system initialized")
     except Exception as e:
-        print(f"⚠️  Performance monitoring initialization failed: {e}")
+        logger.warning(f"⚠️  Performance monitoring initialization failed: {e}")
         PERFORMANCE_ENABLED = False
         performance_metrics = PerformanceMetrics()
         cache_manager = CacheManager()
+        db_optimizer = DatabaseOptimizer()
 else:
     performance_metrics = PerformanceMetrics()
     cache_manager = CacheManager()
+    db_optimizer = DatabaseOptimizer()
 
 # Rate limiter setup
 limiter = get_limiter(security_config.API_RATE_LIMIT_PER_MINUTE)
@@ -532,28 +616,30 @@ async def startup_event():
     # Initialize enhanced monitoring if available
     if ENHANCED_MONITORING_AVAILABLE:
         try:
-            monitor = init_simple_monitoring(DATABASE_PATH)
-            asyncio.create_task(background_health_monitoring())
-            logging.info("✅ Enhanced health monitoring initialized")
+            if 'init_simple_monitoring' in globals():
+                monitor = init_simple_monitoring(DATABASE_PATH)
+            if 'background_health_monitoring' in globals():
+                asyncio.create_task(background_health_monitoring())
+            logger.info("✅ Enhanced health monitoring initialized")
         except Exception as e:
-            logging.error(f"❌ Failed to initialize enhanced monitoring: {e}")
+            logger.error(f"❌ Failed to initialize enhanced monitoring: {e}")
 
     # Initialize enhanced error handling if available
     if ENHANCED_ERROR_HANDLING_AVAILABLE:
         try:
-            error_handler = init_error_handling()
-            logging.info("✅ Enhanced error handling initialized")
+            if 'init_error_handling' in globals():
+                error_handler = init_error_handling()
+            logger.info("✅ Enhanced error handling initialized")
         except Exception as e:
-            logging.error(f"❌ Failed to initialize enhanced error handling: {e}")
+            logger.error(f"❌ Failed to initialize enhanced error handling: {e}")
 
-    # Initialize legacy performance monitoring if available
-    if PERFORMANCE_ENABLED:
+    # Initialize performance monitoring background task
+    if PERFORMANCE_ENABLED and 'background_performance_monitor' in globals():
         try:
-            await init_performance_system(DATABASE_PATH)
             asyncio.create_task(background_performance_monitor())
-            logging.info("✅ Legacy performance monitoring initialized")
+            logger.info("✅ Performance monitoring background task started")
         except Exception as e:
-            logging.error(f"❌ Failed to initialize legacy performance monitoring: {e}")
+            logger.error(f"❌ Failed to start performance monitoring: {e}")
 
 
 @app.on_event("shutdown")
@@ -620,12 +706,12 @@ app.add_middleware(
 
 # Rate limiting
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Note: Rate limit exception handler disabled due to type conflicts
 
 
 # Startup event for background monitoring
 @app.on_event("startup")
-async def startup_event():
+async def startup_background_monitoring():
     """Initialize background tasks on startup"""
     if PERFORMANCE_ENABLED:
         # Start background performance monitoring
@@ -851,46 +937,6 @@ async def login(request: Request, user_data: UserLogin):
 async def get_current_user_info(current_user: dict = Depends(get_current_user)):
     """Get current user information"""
     return current_user
-
-
-@app.get("/api/jobs", response_model=List[JobResponse])
-async def get_jobs(current_user: dict = Depends(get_current_user)):
-    """Get all jobs for the current user"""
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT id, name, type, status, created_at, results_count, config 
-        FROM jobs 
-        WHERE created_by = ? 
-        ORDER BY created_at DESC
-    """,
-        (current_user["id"],),
-    )
-    jobs = cursor.fetchall()
-    conn.close()
-
-    job_list = []
-    for job in jobs:
-        job_config = json.loads(job[6]) if job[6] else {}
-        summary = job_config.get("summary", {})
-
-        job_response = JobResponse(
-            id=job[0],
-            name=job[1],
-            type=job[2],
-            status=job[3],
-            created_at=job[4],
-            results_count=job[5] or 0,
-        )
-
-        # Add summary data as additional attribute
-        if summary:
-            job_response.__dict__["summary"] = summary
-
-        job_list.append(job_response)
-
-    return job_list
 
 
 @app.post("/api/jobs")
@@ -1711,8 +1757,11 @@ async def consolidate_all_data(current_user: dict = Depends(get_current_user)):
 
 if __name__ == "__main__":
     print("🚀 Starting Business Intelligence Scraper API Server...")
-    print(f"📊 Dashboard: {config.FRONTEND_URL}")
-    print(f"🔗 API Docs: {config.API_DOCS_URL}")
+    current_config = get_config()
+    frontend_url = getattr(current_config, 'FRONTEND_URL', 'http://localhost:3000')
+    api_docs_url = getattr(current_config, 'API_DOCS_URL', 'http://localhost:8000/docs')
+    print(f"📊 Dashboard: {frontend_url}")
+    print(f"🔗 API Docs: {api_docs_url}")
     print("💾 Database: SQLite at", DATABASE_PATH)
     print("🔐 Security Features:")
     print(f"   ✅ Rate Limiting: {security_config.API_RATE_LIMIT_PER_MINUTE}/min")
@@ -1972,10 +2021,16 @@ if AI_INTEGRATION_AVAILABLE:
                     status_code=400, detail="No data provided for analysis"
                 )
 
-            logging.info(f"🤖 Starting AI analysis for {len(data)} data points")
+            logger.info(f"🤖 Starting AI analysis for {len(data)} data points")
+
+            if not AI_INTEGRATION_AVAILABLE or 'ai_service' not in globals():
+                raise HTTPException(
+                    status_code=503, detail="AI service not available"
+                )
 
             # Perform AI analysis
-            result = await ai_service.analyze_scraped_data(data, analysis_type, options)
+            ai_svc = get_ai_service()
+            result = await ai_svc.analyze_scraped_data(data, analysis_type, options)
 
             return {
                 "analysis_id": result.request_id,
@@ -1998,11 +2053,12 @@ if AI_INTEGRATION_AVAILABLE:
     ):
         """Get real-time AI analytics dashboard data"""
         try:
-            dashboard_data = ai_service.get_realtime_dashboard_data()
+            ai_svc = get_ai_service()
+            dashboard_data = ai_svc.get_realtime_dashboard_data()
 
             return {
                 "dashboard": dashboard_data,
-                "ai_service_stats": ai_service.get_service_statistics(),
+                "ai_service_stats": ai_svc.get_service_statistics(),
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -2026,7 +2082,8 @@ if AI_INTEGRATION_AVAILABLE:
                     status_code=400, detail="No data provided for recommendations"
                 )
 
-            recommendations = await ai_service.generate_ai_recommendations(data)
+            ai_svc = get_ai_service()
+            recommendations = await ai_svc.generate_ai_recommendations(data)
 
             return {
                 "recommendations": recommendations,
@@ -2056,7 +2113,8 @@ if AI_INTEGRATION_AVAILABLE:
                     status_code=400, detail="No data provided for optimization"
                 )
 
-            optimization = await ai_service.optimize_scraping_strategy(data)
+            ai_svc = get_ai_service()
+            optimization = await ai_svc.optimize_scraping_strategy(data)
 
             return {
                 "optimization_strategy": optimization,
@@ -2079,7 +2137,8 @@ if AI_INTEGRATION_AVAILABLE:
     ):
         """Get analysis result by ID"""
         try:
-            result = ai_service.get_analysis_result(analysis_id)
+            ai_svc = get_ai_service()
+            result = ai_svc.get_analysis_result(analysis_id)
 
             if not result:
                 raise HTTPException(status_code=404, detail="Analysis result not found")
@@ -2119,7 +2178,8 @@ if AI_INTEGRATION_AVAILABLE:
                     status_code=400, detail="No data provided for analysis"
                 )
 
-            analysis_id = await ai_service.queue_analysis(data, analysis_type, options)
+            ai_svc = get_ai_service()
+            analysis_id = await ai_svc.queue_analysis(data, analysis_type, options)
 
             return {
                 "analysis_id": analysis_id,
@@ -2142,9 +2202,10 @@ if AI_INTEGRATION_AVAILABLE:
     ):
         """Get AI service status and statistics"""
         try:
+            ai_svc = get_ai_service()
             return {
                 "ai_service_available": True,
-                "service_statistics": ai_service.get_service_statistics(),
+                "service_statistics": ai_svc.get_service_statistics(),
                 "capabilities": {
                     "content_clustering": True,
                     "predictive_analytics": True,

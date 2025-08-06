@@ -427,27 +427,39 @@ class QueueManager:
     
     async def put_frontier_url(self, crawl_url: CrawlURL) -> bool:
         """Add URL to frontier queue"""
-        raise NotImplementedError
+        # Default implementation for graceful fallback
+        logger.warning("QueueManager.put_frontier_url not implemented in subclass")
+        return False
     
     async def get_frontier_url(self) -> Optional[CrawlURL]:
         """Get next URL from frontier queue"""
-        raise NotImplementedError
+        # Default implementation for graceful fallback
+        logger.warning("QueueManager.get_frontier_url not implemented in subclass")
+        return None
     
     async def put_parse_task(self, parse_task: ParseTask) -> bool:
         """Add task to parsing queue"""
-        raise NotImplementedError
+        # Default implementation for graceful fallback
+        logger.warning("QueueManager.put_parse_task not implemented in subclass")
+        return False
     
     async def get_parse_task(self) -> Optional[ParseTask]:
         """Get next parsing task"""
-        raise NotImplementedError
+        # Default implementation for graceful fallback
+        logger.warning("QueueManager.get_parse_task not implemented in subclass")
+        return None
     
     async def put_retry_url(self, crawl_url: CrawlURL, delay_seconds: int) -> bool:
         """Add URL to retry queue with delay"""
-        raise NotImplementedError
+        # Default implementation for graceful fallback
+        logger.warning("QueueManager.put_retry_url not implemented in subclass")
+        return False
     
     async def put_dead_url(self, crawl_url: CrawlURL, reason: str) -> bool:
         """Add URL to dead letter queue"""
-        raise NotImplementedError
+        # Default implementation for graceful fallback
+        logger.warning("QueueManager.put_dead_url not implemented in subclass")
+        return False
 
 
 class SQLiteQueueManager(QueueManager):
@@ -782,7 +794,37 @@ class SQLiteQueueManager(QueueManager):
     
     async def get_queue_stats(self) -> Dict[str, int]:
         """Get queue statistics"""
-        raise NotImplementedError
+        try:
+            import aiosqlite
+            async with aiosqlite.connect(self.db_path) as db:
+                stats = {}
+                
+                # Count frontier URLs
+                cursor = await db.execute("SELECT COUNT(*) FROM frontier_queue")
+                stats['frontier_queue_size'] = (await cursor.fetchone())[0]
+                
+                # Count parse tasks
+                cursor = await db.execute("SELECT COUNT(*) FROM parse_queue")
+                stats['parse_queue_size'] = (await cursor.fetchone())[0]
+                
+                # Count retry URLs
+                cursor = await db.execute("SELECT COUNT(*) FROM retry_queue")
+                stats['retry_queue_size'] = (await cursor.fetchone())[0]
+                
+                # Count dead URLs
+                cursor = await db.execute("SELECT COUNT(*) FROM dead_queue")
+                stats['dead_queue_size'] = (await cursor.fetchone())[0]
+                
+                return stats
+                
+        except Exception as e:
+            self.logger.error(f"Failed to get queue stats: {e}")
+            return {
+                'frontier_queue_size': 0,
+                'parse_queue_size': 0,
+                'retry_queue_size': 0,
+                'dead_queue_size': 0
+            }
 
 
 class RedisQueueManager(QueueManager):

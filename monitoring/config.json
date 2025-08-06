@@ -1,0 +1,172 @@
+{
+  "_comment": "Monitoring Configuration - Business Intelligence Scraper Platform v2.0.0",
+  "monitoring": {
+    "enabled": true,
+    "version": "1.0.0",
+    "platform": "Business Intelligence Scraper Platform v2.0.0"
+  },
+  
+  "services": {
+    "database_url": "postgresql://localhost:5432/business_intel_scraper_prod",
+    "redis_url": "redis://localhost:6379/0", 
+    "api_base_url": "http://localhost:8000",
+    "frontend_url": "http://localhost:3000"
+  },
+  
+  "intervals": {
+    "health_check_interval": 30,
+    "metrics_interval": 60,
+    "alert_check_interval": 10,
+    "report_generation_interval": 300
+  },
+  
+  "thresholds": {
+    "cpu_warning": 80,
+    "cpu_critical": 95,
+    "memory_warning": 85,
+    "memory_critical": 95,
+    "disk_warning": 80,
+    "disk_critical": 90,
+    "response_time_warning": 1000,
+    "response_time_critical": 5000
+  },
+  
+  "alerts": {
+    "enabled": true,
+    "email_enabled": false,
+    "webhook_enabled": false,
+    "console_enabled": true,
+    "file_enabled": true,
+    
+    "email": {
+      "smtp_host": "smtp.gmail.com",
+      "smtp_port": 587,
+      "smtp_username": "your-monitoring@gmail.com",
+      "smtp_password": "your-app-password",
+      "from_email": "monitoring@yourcompany.com",
+      "to_emails": ["admin@yourcompany.com", "devops@yourcompany.com"],
+      "subject_prefix": "[SCRAPER-MONITOR]"
+    },
+    
+    "webhook": {
+      "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "timeout": 5
+    },
+    
+    "severity_levels": {
+      "info": {
+        "enabled": true,
+        "notification_channels": ["console", "file"]
+      },
+      "warning": {
+        "enabled": true,
+        "notification_channels": ["console", "file", "email"]
+      },
+      "critical": {
+        "enabled": true,
+        "notification_channels": ["console", "file", "email", "webhook"]
+      }
+    }
+  },
+  
+  "metrics": {
+    "retention_days": 30,
+    "aggregation_intervals": ["1m", "5m", "15m", "1h", "1d"],
+    "storage": {
+      "type": "sqlite",
+      "path": "monitoring/metrics.db"
+    }
+  },
+  
+  "logging": {
+    "level": "INFO",
+    "file": "monitoring/monitoring.log",
+    "max_size_mb": 100,
+    "backup_count": 5,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  
+  "dashboard": {
+    "enabled": true,
+    "port": 8888,
+    "refresh_interval": 5,
+    "charts": {
+      "cpu_history": true,
+      "memory_history": true,
+      "response_times": true,
+      "error_rates": true,
+      "service_status": true
+    }
+  },
+  
+  "health_checks": {
+    "api_endpoints": [
+      {
+        "path": "/health",
+        "method": "GET",
+        "expected_status": 200,
+        "timeout": 5
+      },
+      {
+        "path": "/docs",
+        "method": "GET", 
+        "expected_status": 200,
+        "timeout": 5
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "expected_status": 422,
+        "timeout": 5,
+        "payload": {}
+      }
+    ],
+    
+    "database": {
+      "enabled": true,
+      "test_query": "SELECT 1",
+      "timeout": 10
+    },
+    
+    "redis": {
+      "enabled": true,
+      "test_command": "ping",
+      "timeout": 5
+    },
+    
+    "external_services": [
+      {
+        "name": "OpenAI API",
+        "url": "https://api.openai.com/v1/models",
+        "enabled": false,
+        "timeout": 10
+      }
+    ]
+  },
+  
+  "performance": {
+    "api_monitoring": {
+      "enabled": true,
+      "sample_rate": 1.0,
+      "track_user_agents": true,
+      "track_ip_addresses": false
+    },
+    
+    "system_monitoring": {
+      "enabled": true,
+      "detailed_process_info": false,
+      "network_monitoring": true,
+      "disk_io_monitoring": true
+    }
+  },
+  
+  "security": {
+    "monitor_failed_logins": true,
+    "rate_limit_monitoring": true,
+    "suspicious_activity_detection": false
+  }
+}

@@ -10,15 +10,44 @@ import re
 import sqlite3
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, cast
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
+from bs4.element import NavigableString
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def safe_get_attr(element: Any, attr: str, default: str = "") -> str:
+    """Safely get attribute from BeautifulSoup element"""
+    if hasattr(element, 'get') and callable(getattr(element, 'get')):
+        result = element.get(attr, default)
+        return str(result) if result is not None else default
+    return default
+
+
+def safe_get_text(element: Any) -> str:
+    """Safely get text from BeautifulSoup element"""
+    if hasattr(element, 'get_text') and callable(getattr(element, 'get_text')):
+        return element.get_text().strip()
+    elif hasattr(element, 'string') and element.string:
+        return str(element.string).strip()
+    return ""
+
+
+def safe_get_class_list(element: Any) -> List[str]:
+    """Safely get class list from BeautifulSoup element"""
+    if hasattr(element, 'get') and callable(getattr(element, 'get')):
+        class_val = element.get("class", [])
+        if isinstance(class_val, list):
+            return [str(c) for c in class_val]
+        elif isinstance(class_val, str):
+            return [class_val]
+    return []
 
 
 class ScrapingEngine:
@@ -33,7 +62,7 @@ class ScrapingEngine:
         )
 
     async def scrape_url(
-        self, url: str, scraper_type: str = "basic", config: Dict = None
+        self, url: str, scraper_type: str = "basic", config: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Main scraping method that dispatches to appropriate scraper
@@ -528,8 +557,10 @@ class ScrapingEngine:
         json_ld = []
         for script in scripts:
             try:
-                data = json.loads(script.string)
-                json_ld.append(data)
+                script_content = safe_get_text(script)
+                if script_content:
+                    data = json.loads(script_content)
+                    json_ld.append(data)
             except (json.JSONDecodeError, AttributeError):
                 continue
         structured["json_ld"] = json_ld
@@ -537,12 +568,19 @@ class ScrapingEngine:
         # Microdata
         microdata = []
         for item in soup.find_all(attrs={"itemscope": True}):
-            item_data = {"type": item.get("itemtype", "")}
-            props = {}
-            for prop in item.find_all(attrs={"itemprop": True}):
-                props[prop.get("itemprop")] = prop.get_text().strip()
-            item_data["properties"] = props
-            microdata.append(item_data)
+            if isinstance(item, Tag):
+                item_type = safe_get_attr(item, "itemtype")
+                item_data: Dict[str, Any] = {"type": item_type}
+                props: Dict[str, str] = {}
+                
+                for prop in item.find_all(attrs={"itemprop": True}):
+                    if isinstance(prop, Tag):
+                        prop_name = safe_get_attr(prop, "itemprop")
+                        if prop_name:
+                            props[prop_name] = safe_get_text(prop)
+                
+                item_data["properties"] = props
+                microdata.append(item_data)
         structured["microdata"] = microdata
 
         return structured
@@ -579,9 +617,10 @@ class ScrapingEngine:
 
         social_links = []
         for link in soup.find_all("a", href=True):
-            href = link["href"]
-            if any(domain in href for domain in social_domains):
-                social_links.append(href)
+            if isinstance(link, Tag):
+                href = safe_get_attr(link, "href")
+                if any(domain in href for domain in social_domains):
+                    social_links.append(href)
 
         return list(set(social_links))
 
@@ -770,6 +809,9 @@ class ScrapingEngine:
                 if attempt == 2:  # Last attempt
                     raise e
                 time.sleep(1)  # Wait before retry
+        
+        # This should never be reached due to the exception handling above
+        raise Exception("Failed to fetch URL after all retries")
 
     # Extraction helper methods
     def _extract_title(self, soup: BeautifulSoup) -> str:
@@ -778,7 +820,7 @@ class ScrapingEngine:
 
     def _extract_meta_description(self, soup: BeautifulSoup) -> str:
         meta_desc = soup.find("meta", attrs={"name": "description"})
-        return meta_desc.get("content", "") if meta_desc else ""
+        return safe_get_attr(meta_desc, "content") if meta_desc else ""
 
     def _extract_headings(self, soup: BeautifulSoup) -> Dict[str, List[str]]:
         headings = {}
@@ -792,10 +834,11 @@ class ScrapingEngine:
     ) -> List[Dict[str, str]]:
         links = []
         for a_tag in soup.find_all("a", href=True):
-            href = a_tag.get("href")
-            if href:
-                absolute_url = urljoin(base_url, href)
-                links.append({"text": a_tag.get_text().strip(), "url": absolute_url})
+            if isinstance(a_tag, Tag):
+                href = safe_get_attr(a_tag, "href")
+                if href:
+                    absolute_url = urljoin(base_url, href)
+                    links.append({"text": safe_get_text(a_tag), "url": absolute_url})
         return links[:50]  # Limit to first 50 links
 
     def _extract_text_content(self, soup: BeautifulSoup) -> str:
@@ -845,11 +888,11 @@ class ScrapingEngine:
                         break
 
                 if src:
-                    absolute_url = urljoin(base_url, src)
+                    absolute_url = urljoin(base_url, safe_get_attr(img_tag, "src"))
                     image_data = {
                         "src": absolute_url,
-                        "alt": img_tag.get("alt", ""),
-                        "title": img_tag.get("title", ""),
+                        "alt": safe_get_attr(img_tag, "alt"),
+                        "title": safe_get_attr(img_tag, "title"),
                         "type": "img_tag",
                     }
 
@@ -857,11 +900,11 @@ class ScrapingEngine:
                     if include_all_images:
                         image_data.update(
                             {
-                                "width": img_tag.get("width", ""),
-                                "height": img_tag.get("height", ""),
-                                "class": " ".join(img_tag.get("class", [])),
-                                "loading": img_tag.get("loading", ""),
-                                "srcset": img_tag.get("srcset", ""),
+                                "width": safe_get_attr(img_tag, "width"),
+                                "height": safe_get_attr(img_tag, "height"),
+                                "class": " ".join(safe_get_class_list(img_tag)),
+                                "loading": safe_get_attr(img_tag, "loading"),
+                                "srcset": safe_get_attr(img_tag, "srcset"),
                             }
                         )
 
@@ -872,22 +915,23 @@ class ScrapingEngine:
             import re
 
             for element in soup.select("[style*='background-image']"):
-                style = element.get("style", "")
-                bg_images = re.findall(
-                    r'background-image:\s*url\(["\']?([^"\']+)["\']?\)', style
-                )
-                for bg_img in bg_images:
-                    absolute_url = urljoin(base_url, bg_img)
-                    images.append(
-                        {
-                            "src": absolute_url,
-                            "alt": element.get("alt", ""),
-                            "title": element.get("title", ""),
-                            "type": "background_image",
-                            "element_tag": element.name,
-                            "element_class": " ".join(element.get("class", [])),
-                        }
+                if isinstance(element, Tag):
+                    style = safe_get_attr(element, "style")
+                    bg_images = re.findall(
+                        r'background-image:\s*url\(["\']?([^"\']+)["\']?\)', style
                     )
+                    for bg_img in bg_images:
+                        absolute_url = urljoin(base_url, bg_img)
+                        images.append(
+                            {
+                                "src": absolute_url,
+                                "alt": safe_get_attr(element, "alt"),
+                                "title": safe_get_attr(element, "title"),
+                                "type": "background_image",
+                                "element_tag": element.name,
+                                "element_class": " ".join(safe_get_class_list(element)),
+                            }
+                        )
 
         # Limit images based on mode
         limit = 100 if include_all_images else 20
@@ -1003,12 +1047,12 @@ class ScrapingEngine:
 
         for selector in selectors:
             element = soup.select_one(selector)
-            if element:
+            if element and isinstance(element, Tag):
                 # Try to get datetime attribute first
-                datetime_attr = element.get("datetime")
+                datetime_attr = safe_get_attr(element, "datetime")
                 if datetime_attr:
                     return datetime_attr
-                return element.get_text().strip()
+                return safe_get_text(element)
         return ""
 
     def _extract_article_content(self, soup: BeautifulSoup) -> str:
@@ -1034,27 +1078,27 @@ class ScrapingEngine:
     # Open Graph extractors
     def _extract_og_title(self, soup: BeautifulSoup) -> str:
         og_title = soup.find("meta", property="og:title")
-        return og_title.get("content", "") if og_title else self._extract_title(soup)
+        return safe_get_attr(og_title, "content") if og_title else self._extract_title(soup)
 
     def _extract_og_description(self, soup: BeautifulSoup) -> str:
         og_desc = soup.find("meta", property="og:description")
         return (
-            og_desc.get("content", "")
+            safe_get_attr(og_desc, "content")
             if og_desc
             else self._extract_meta_description(soup)
         )
 
     def _extract_og_image(self, soup: BeautifulSoup) -> str:
         og_image = soup.find("meta", property="og:image")
-        return og_image.get("content", "") if og_image else ""
+        return safe_get_attr(og_image, "content") if og_image else ""
 
     def _extract_og_site_name(self, soup: BeautifulSoup) -> str:
         og_site = soup.find("meta", property="og:site_name")
-        return og_site.get("content", "") if og_site else ""
+        return safe_get_attr(og_site, "content") if og_site else ""
 
     def _extract_og_type(self, soup: BeautifulSoup) -> str:
         og_type = soup.find("meta", property="og:type")
-        return og_type.get("content", "") if og_type else ""
+        return safe_get_attr(og_type, "content") if og_type else ""
 
     # Utility methods
     def _extract_tags(self, soup: BeautifulSoup) -> List[str]:
@@ -1062,9 +1106,9 @@ class ScrapingEngine:
         # Look for meta keywords
         meta_keywords = soup.find("meta", attrs={"name": "keywords"})
         if meta_keywords:
-            tags.extend(
-                [tag.strip() for tag in meta_keywords.get("content", "").split(",")]
-            )
+            content = safe_get_attr(meta_keywords, "content")
+            if content:
+                tags.extend([tag.strip() for tag in content.split(",")])
 
         # Look for tag elements
         for tag_element in soup.select(".tag, .tags, .category, .categories"):
@@ -1109,9 +1153,10 @@ class ScrapingEngine:
 
         for selector in selectors:
             for img in soup.select(selector):
-                src = img.get("src")
-                if src:
-                    images.append(urljoin(base_url, src))
+                if isinstance(img, Tag):
+                    src = safe_get_attr(img, "src")
+                    if src:
+                        images.append(urljoin(base_url, src))
 
         return list(set(images))[:10]  # Remove duplicates, limit to 10
 
