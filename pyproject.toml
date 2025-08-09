@@ -12,22 +12,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "business-intel-scraper"
-version = "0.1.0"
-description = "Modular framework for scraping and analyzing business intelligence data"
+version = "2.0.1-security"
+description = "Modular framework for scraping and analyzing business intelligence data - Security Hardened"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [{name = "Trashytalk"}]
-keywords = ["scraping", "business-intelligence", "osint", "data-collection"]
+keywords = ["scraping", "business-intelligence", "osint", "data-collection", "security-hardened"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
     "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Security",
 ]
 
 dependencies = [

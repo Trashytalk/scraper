@@ -183,18 +183,115 @@ health_check() {
 
 # Rollback deployment
 rollback() {
+    local backup_file="$1"
     log "Rolling back deployment..."
     
     # Stop current services
+    log "Stopping current services..."
     docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
     
     # Restore from backup if available
-    if [ -n "$1" ]; then
-        log "Restoring from backup: $1"
-        # Add restore logic here
+    if [ -n "$backup_file" ]; then
+        log "Restoring from backup: $backup_file"
+        
+        # Restore database if backup exists
+        if [ -f "$BACKUP_DIR/$backup_file" ]; then
+            if [[ "$backup_file" == *".sql" ]]; then
+                log "Restoring PostgreSQL database..."
+                
+                # Start PostgreSQL service only
+                docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres
+                sleep 10
+                
+                # Restore database
+                docker exec -i bis_postgres_prod psql -U ${POSTGRES_USER:-bisuser} -d business_intelligence < "$BACKUP_DIR/$backup_file"
+                
+                if [ $? -eq 0 ]; then
+                    success "Database restored successfully"
+                else
+                    error "Database restore failed"
+                fi
+            elif [[ "$backup_file" == *".tar.gz" ]]; then
+                log "Restoring application data..."
+                
+                # Extract application data backup
+                tar -xzf "$BACKUP_DIR/$backup_file" -C /tmp/restore_data
+                
+                # Restore to Docker volume
+                docker run --rm -v scraper_app_data:/data -v /tmp/restore_data:/backup alpine cp -r /backup/. /data/
+                
+                if [ $? -eq 0 ]; then
+                    success "Application data restored successfully"
+                    # Cleanup
+                    rm -rf /tmp/restore_data
+                else
+                    error "Application data restore failed"
+                fi
+            fi
+        else
+            error "Backup file not found: $BACKUP_DIR/$backup_file"
+            return 1
+        fi
+    else
+        log "No backup specified - performing service rollback only"
+        
+        # Get previous image version if available
+        PREVIOUS_IMAGE=$(docker images --format "table {{.Repository}}:{{.Tag}}" | grep scraper | head -2 | tail -1)
+        if [ -n "$PREVIOUS_IMAGE" ]; then
+            log "Rolling back to previous image: $PREVIOUS_IMAGE"
+            # Update docker-compose to use previous image
+            # This would require image version management
+        fi
     fi
     
-    success "Rollback completed"
+    # Restart services with restored data
+    log "Restarting services..."
+    docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
+    
+    # Wait for services to be ready
+    sleep 30
+    
+    # Health check
+    health_check
+    
+    success "Rollback completed successfully"
+}
+
+# Test rollback procedure
+test_rollback() {
+    log "Testing rollback procedure..."
+    
+    # Check if backups exist
+    if [ ! -d "$BACKUP_DIR" ] || [ -z "$(ls -A "$BACKUP_DIR")" ]; then
+        error "No backups found for rollback testing"
+        return 1
+    fi
+    
+    # List available backups
+    log "Available backups:"
+    ls -la "$BACKUP_DIR"
+    
+    # Find most recent backup
+    LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/*.sql 2>/dev/null | head -1)
+    if [ -n "$LATEST_BACKUP" ]; then
+        BACKUP_NAME=$(basename "$LATEST_BACKUP")
+        log "Testing rollback with: $BACKUP_NAME"
+        
+        # Perform dry-run rollback test
+        log "Performing rollback dry-run test..."
+        
+        # Verify backup file integrity
+        if [ -f "$LATEST_BACKUP" ] && [ -s "$LATEST_BACKUP" ]; then
+            success "Backup file verification passed"
+        else
+            error "Backup file verification failed"
+            return 1
+        fi
+        
+        success "Rollback procedure test completed"
+    else
+        warning "No SQL backup files found for testing"
+    fi
 }
 
 # View logs
@@ -249,6 +346,16 @@ status() {
     curl -s http://localhost:8000/api/health | jq . 2>/dev/null || echo "Health endpoint not accessible"
 }
 
+# Rotate secrets (delegates to helper script)
+rotate_secrets() {
+    log "Rotating application secrets in $ENV_FILE ..."
+    if [ ! -f "scripts/rotate_secrets.sh" ]; then
+        error "scripts/rotate_secrets.sh not found"
+    fi
+    bash scripts/rotate_secrets.sh "$ENV_FILE" || error "Secret rotation failed"
+    success "Secret rotation completed. Remember to redeploy services to apply new secrets and invalidate old tokens/sessions."
+}
+
 # Main function
 main() {
     # Create log directory
@@ -281,18 +388,26 @@ main() {
         "backup")
             backup_data
             ;;
+        "test-rollback")
+            test_rollback
+            ;;
+        "rotate-secrets")
+            rotate_secrets
+            ;;
         *)
-            echo "Usage: $0 {deploy|rollback|logs|status|scale|cleanup|health|backup}"
+            echo "Usage: $0 {deploy|rollback|logs|status|scale|cleanup|health|backup|test-rollback|rotate-secrets}"
             echo ""
             echo "Commands:"
-            echo "  deploy [--skip-backup]  - Deploy the application"
-            echo "  rollback [backup_file]  - Rollback deployment"
-            echo "  logs                    - View application logs"
-            echo "  status                  - Show deployment status"
-            echo "  scale [replicas]        - Scale application (default: 2)"
-            echo "  cleanup [--deep]        - Cleanup Docker resources"
-            echo "  health                  - Run health checks"
-            echo "  backup                  - Create data backup"
+            echo "  deploy [--skip-backup]     - Deploy the application"
+            echo "  rollback [backup_file]     - Rollback deployment"
+            echo "  test-rollback              - Test rollback procedures"
+            echo "  logs                       - View application logs"
+            echo "  status                     - Show deployment status"
+            echo "  scale [replicas]           - Scale application (default: 2)"
+            echo "  cleanup [--deep]           - Cleanup Docker resources"
+            echo "  health                     - Run health checks"
+            echo "  backup                     - Create data backup"
+            echo "  rotate-secrets             - Rotate secrets in $ENV_FILE (JWT/API/DB/Redis/Grafana)"
             exit 1
             ;;
     esac

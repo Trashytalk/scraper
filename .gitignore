@@ -18,7 +18,27 @@ coverage.xml
 venv/
 ENV/
 env/
+
+# Environment files and secrets (SECURITY CRITICAL)
 .env
+.env.*
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+known_hosts
+.secret
+.password
+.token
+
+# Security reports
+bandit-report.*
+safety-report.*
+security.log
+audit.log
+*.security
 
 # Database files
 *.db

@@ -1,5 +1,18 @@
 # Business Intelligence Scraping & OSINT Platform
 
+[![Security Hardened](https://img.shields.io/badge/security-hardened%20%E2%9C%85-green)](../SECURITY_ROTATION_PLAYBOOK.md)
+[![CI/CD Secured](https://img.shields.io/badge/cicd-security%20gated-blue)](../.github/workflows/production-cicd.yml)
+[![Version](https://img.shields.io/badge/version-2.0.1--security-orange)](../IMPLEMENTATION_SUMMARY_REPORT.md)
+
+## 🛡️ **Security Status (August 2025)**
+
+**CRITICAL SECURITY UPDATES COMPLETED:**
+- ✅ All exposed secrets eliminated and credentials rotated
+- ✅ CI/CD pipeline enhanced with vulnerability blocking
+- ✅ Pre-commit security scanning automated
+- ✅ Quarterly rotation reminders implemented
+- ✅ Comprehensive security documentation updated
+
 ## Mission
 
 A modular, scalable, and secure platform for gathering, enriching, and analyzing detailed business intelligence on small to medium-sized businesses in challenging and emerging markets, with a primary focus on defense, government, and high-compliance private sector clients.

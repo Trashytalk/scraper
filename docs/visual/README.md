@@ -5,17 +5,19 @@ This directory contains comprehensive visual documentation for the Business Inte
 ## 📊 Available Visual Documentation
 
 ### 🏗️ [System Architecture](./system_architecture.md)
+
 Complete system architecture diagrams showing the overall platform structure and component relationships.
 
 **Contents:**
 - High-Level System Architecture
-- Data Flow Architecture  
+- Data Flow Architecture
 - Component Interaction Diagram
 - Deployment Architecture
 - User Interface Architecture
 - Security Architecture
 
 ### 🌊 [Data Flow Diagrams](./data_flow.md)
+
 Comprehensive data flow documentation showing how information moves through the system.
 
 **Contents:**
@@ -27,6 +29,7 @@ Comprehensive data flow documentation showing how information moves through the 
 - Security Data Flow
 
 ### 🌐 [API Flow Documentation](./api_flow.md)
+
 Detailed API flow diagrams and interaction patterns for all system endpoints.
 
 **Contents:**
@@ -39,6 +42,7 @@ Detailed API flow diagrams and interaction patterns for all system endpoints.
 - Background Job API Flow
 
 ### 🚀 [Deployment Diagrams](./deployment_diagrams.md)
+
 Production deployment architecture and infrastructure documentation.
 
 **Contents:**
@@ -50,6 +54,7 @@ Production deployment architecture and infrastructure documentation.
 - Security Deployment Architecture
 
 ### 📈 [Performance & Monitoring](./performance_monitoring.md)
+
 Performance monitoring, alerting, and capacity planning visualizations.
 
 **Contents:**
@@ -63,6 +68,7 @@ Performance monitoring, alerting, and capacity planning visualizations.
 ## 🎯 How to Use These Diagrams
 
 ### 📖 For Documentation
+
 These diagrams provide comprehensive visual documentation of the system architecture, data flows, and deployment patterns. They can be used for:
 
 - **System Understanding**: Get a complete overview of how components interact
@@ -71,6 +77,7 @@ These diagrams provide comprehensive visual documentation of the system architec
 - **Performance Analysis**: Understand monitoring and alerting systems
 
 ### 🛠️ For Development
+
 Use these diagrams during development to:
 
 - **Architecture Decisions**: Understand component relationships before making changes
@@ -79,6 +86,7 @@ Use these diagrams during development to:
 - **Security Implementation**: Follow security architecture patterns
 
 ### 🚀 For Deployment
+
 Reference these diagrams for:
 
 - **Infrastructure Setup**: Follow deployment architecture patterns
@@ -87,6 +95,7 @@ Reference these diagrams for:
 - **Security Configuration**: Deploy with proper security measures
 
 ### 📊 For Operations
+
 Use for operational activities:
 
 - **System Monitoring**: Understand what to monitor and how
@@ -135,6 +144,7 @@ These visual diagrams complement other documentation:
 ## 🎯 Quick Navigation
 
 ### By Component
+
 - **Frontend**: [UI Architecture](./system_architecture.md#-user-interface-architecture)
 - **Backend**: [System Architecture](./system_architecture.md#️-high-level-system-architecture)
 - **Database**: [Database Flow](./data_flow.md#️-database-data-flow)
@@ -142,6 +152,7 @@ These visual diagrams complement other documentation:
 - **Security**: [Security Architecture](./system_architecture.md#-security-architecture)
 
 ### By Use Case
+
 - **Development**: [Component Interactions](./system_architecture.md#-component-interaction-diagram)
 - **Deployment**: [Production Architecture](./deployment_diagrams.md#-production-deployment-architecture)
 - **Monitoring**: [Performance Monitoring](./performance_monitoring.md#-performance-monitoring-architecture)
@@ -155,6 +166,8 @@ These visual diagrams complement other documentation:
 - **Diagram Types**: System diagrams, sequence diagrams, state diagrams, flow charts
 - **Technologies**: Mermaid.js, Markdown, Version controlled
 
+
 ---
+
 
 **🎯 These visual diagrams provide a complete understanding of the Business Intelligence Scraper platform's architecture, flows, and operational patterns. Use them as your guide for development, deployment, and operations.**

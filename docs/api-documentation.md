@@ -164,11 +164,11 @@ curl -X POST "http://localhost:8000/auth/mfa/verify" \
 
 ### Base URLs
 
-|   Environment | Base URL   |
-|  ------------|----------  |
-|   Production | `https://your-domain.com/api/v2`   |
-|   Staging | `https://staging.your-domain.com/api/v2`   |
-|   Development | `http://localhost:8000/api/v2`   |
+|     Environment | Base URL     |
+|    ------------|----------    |
+|     Production | `https://your-domain.com/api/v2`     |
+|     Staging | `https://staging.your-domain.com/api/v2`     |
+|     Development | `http://localhost:8000/api/v2`     |
 
 ### API Versioning
 
@@ -266,14 +266,14 @@ All requests should use `Content-Type: application/json` unless specified otherw
 
 ### Rate Limit Rules
 
-|   Endpoint Category | Rate Limit | Burst | Block Duration   |
-|  ------------------|------------|-------|----------------  |
-|   Authentication | 10 req/min | 2 | 15 minutes   |
-|   Data Retrieval | 100 req/min | 10 | 5 minutes   |
-|   Data Search | 50 req/min | 5 | 5 minutes   |
-|   Data Upload | 5 req/min | 1 | 10 minutes   |
-|   Analytics | 30 req/min | 5 | 5 minutes   |
-|   System Admin | 20 req/min | 3 | 10 minutes   |
+|     Endpoint Category | Rate Limit | Burst | Block Duration     |
+|    ------------------|------------|-------|----------------    |
+|     Authentication | 10 req/min | 2 | 15 minutes     |
+|     Data Retrieval | 100 req/min | 10 | 5 minutes     |
+|     Data Search | 50 req/min | 5 | 5 minutes     |
+|     Data Upload | 5 req/min | 1 | 10 minutes     |
+|     Analytics | 30 req/min | 5 | 5 minutes     |
+|     System Admin | 20 req/min | 3 | 10 minutes     |
 
 ### Rate Limit Headers
 
@@ -316,32 +316,32 @@ X-RateLimit-Burst-Remaining: 8
 
 ### HTTP Status Codes
 
-|   Status Code | Description | Example   |
-|  -------------|-------------|---------  |
-|   `200` | Success | Request completed successfully   |
-|   `201` | Created | Resource created successfully   |
-|   `400` | Bad Request | Invalid request parameters   |
-|   `401` | Unauthorized | Authentication required   |
-|   `403` | Forbidden | Insufficient permissions   |
-|   `404` | Not Found | Resource not found   |
-|   `422` | Validation Error | Request validation failed   |
-|   `429` | Rate Limited | Rate limit exceeded   |
-|   `500` | Server Error | Internal server error   |
-|   `503` | Service Unavailable | Service temporarily unavailable   |
+|     Status Code | Description | Example     |
+|    -------------|-------------|---------    |
+|     `200` | Success | Request completed successfully     |
+|     `201` | Created | Resource created successfully     |
+|     `400` | Bad Request | Invalid request parameters     |
+|     `401` | Unauthorized | Authentication required     |
+|     `403` | Forbidden | Insufficient permissions     |
+|     `404` | Not Found | Resource not found     |
+|     `422` | Validation Error | Request validation failed     |
+|     `429` | Rate Limited | Rate limit exceeded     |
+|     `500` | Server Error | Internal server error     |
+|     `503` | Service Unavailable | Service temporarily unavailable     |
 
 ### Error Codes
 
-|   Code | Description | HTTP Status   |
-|  ------|-------------|-------------  |
-|   `VALIDATION_ERROR` | Request validation failed | 422   |
-|   `AUTHENTICATION_REQUIRED` | Authentication token required | 401   |
-|   `INVALID_CREDENTIALS` | Invalid username/password | 401   |
-|   `TOKEN_EXPIRED` | Access token has expired | 401   |
-|   `INSUFFICIENT_PERMISSIONS` | User lacks required permissions | 403   |
-|   `RESOURCE_NOT_FOUND` | Requested resource not found | 404   |
-|   `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | 429   |
-|   `SERVER_ERROR` | Internal server error | 500   |
-|   `SERVICE_UNAVAILABLE` | Service temporarily unavailable | 503   |
+|     Code | Description | HTTP Status     |
+|    ------|-------------|-------------    |
+|     `VALIDATION_ERROR` | Request validation failed | 422     |
+|     `AUTHENTICATION_REQUIRED` | Authentication token required | 401     |
+|     `INVALID_CREDENTIALS` | Invalid username/password | 401     |
+|     `TOKEN_EXPIRED` | Access token has expired | 401     |
+|     `INSUFFICIENT_PERMISSIONS` | User lacks required permissions | 403     |
+|     `RESOURCE_NOT_FOUND` | Requested resource not found | 404     |
+|     `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | 429     |
+|     `SERVER_ERROR` | Internal server error | 500     |
+|     `SERVICE_UNAVAILABLE` | Service temporarily unavailable | 503     |
 
 ### Error Response Examples
 
@@ -552,18 +552,18 @@ Retrieve collected data with filtering and pagination.
 
 **Query Parameters:**
 
-|   Parameter | Type | Description | Default   |
-|  -----------|------|-------------|---------  |
-|   `page` | integer | Page number | 1   |
-|   `per_page` | integer | Items per page (max 1000) | 50   |
-|   `data_type` | string | Filter by data type | all   |
-|   `source_domain` | string | Filter by source domain | all   |
-|   `date_from` | string | Start date (ISO format) | 24h ago   |
-|   `date_to` | string | End date (ISO format) | now   |
-|   `quality_min` | float | Minimum quality score | 0.0   |
-|   `search` | string | Text search query | -   |
-|   `sort_by` | string | Sort field | scraped_at   |
-|   `sort_order` | string | Sort order (asc/desc) | desc   |
+|     Parameter | Type | Description | Default     |
+|    -----------|------|-------------|---------    |
+|     `page` | integer | Page number | 1     |
+|     `per_page` | integer | Items per page (max 1000) | 50     |
+|     `data_type` | string | Filter by data type | all     |
+|     `source_domain` | string | Filter by source domain | all     |
+|     `date_from` | string | Start date (ISO format) | 24h ago     |
+|     `date_to` | string | End date (ISO format) | now     |
+|     `quality_min` | float | Minimum quality score | 0.0     |
+|     `search` | string | Text search query | -     |
+|     `sort_by` | string | Sort field | scraped_at     |
+|     `sort_order` | string | Sort order (asc/desc) | desc     |
 
 **Example Request:**
 
@@ -798,11 +798,11 @@ Get dashboard analytics data.
 
 **Query Parameters:**
 
-|   Parameter | Type | Description | Default   |
-|  -----------|------|-------------|---------  |
-|   `time_range` | string | Time range (1h, 24h, 7d, 30d, 90d) | 24h   |
-|   `data_types` | string | Comma-separated data types | all   |
-|   `refresh` | boolean | Force refresh cached data | false   |
+|     Parameter | Type | Description | Default     |
+|    -----------|------|-------------|---------    |
+|     `time_range` | string | Time range (1h, 24h, 7d, 30d, 90d) | 24h     |
+|     `data_types` | string | Comma-separated data types | all     |
+|     `refresh` | boolean | Force refresh cached data | false     |
 
 **Response:**
 
@@ -859,12 +859,12 @@ Get specific analytics metrics.
 
 **Query Parameters:**
 
-|   Parameter | Type | Description   |
-|  -----------|------|-------------  |
-|   `metrics` | string | Comma-separated metric names   |
-|   `time_range` | string | Time range for metrics   |
-|   `aggregation` | string | Aggregation method (avg, sum, count)   |
-|   `group_by` | string | Group results by field   |
+|     Parameter | Type | Description     |
+|    -----------|------|-------------    |
+|     `metrics` | string | Comma-separated metric names     |
+|     `time_range` | string | Time range for metrics     |
+|     `aggregation` | string | Aggregation method (avg, sum, count)     |
+|     `group_by` | string | Group results by field     |
 
 **Available Metrics:**
 - `collection_rate` - Data collection rate per hour
@@ -1014,13 +1014,13 @@ List all scraping jobs with filtering and pagination.
 
 **Query Parameters:**
 
-|   Parameter | Type | Description | Default   |
-|  -----------|------|-------------|---------  |
-|   `status` | string | Filter by job status | all   |
-|   `type` | string | Filter by job type | all   |
-|   `page` | integer | Page number | 1   |
-|   `per_page` | integer | Items per page | 20   |
-|   `sort_by` | string | Sort field | created_at   |
+|     Parameter | Type | Description | Default     |
+|    -----------|------|-------------|---------    |
+|     `status` | string | Filter by job status | all     |
+|     `type` | string | Filter by job type | all     |
+|     `page` | integer | Page number | 1     |
+|     `per_page` | integer | Items per page | 20     |
+|     `sort_by` | string | Sort field | created_at     |
 
 **Response:**
 
@@ -1273,11 +1273,11 @@ Get job execution history.
 
 **Query Parameters:**
 
-|   Parameter | Type | Description | Default   |
-|  -----------|------|-------------|---------  |
-|   `status` | string | Filter by run status | all   |
-|   `limit` | integer | Number of runs to return | 50   |
-|   `offset` | integer | Offset for pagination | 0   |
+|     Parameter | Type | Description | Default     |
+|    -----------|------|-------------|---------    |
+|     `status` | string | Filter by run status | all     |
+|     `limit` | integer | Number of runs to return | 50     |
+|     `offset` | integer | Offset for pagination | 0     |
 
 **Response:**
 
@@ -1322,12 +1322,12 @@ List all users (Admin only).
 
 **Query Parameters:**
 
-|   Parameter | Type | Description | Default   |
-|  -----------|------|-------------|---------  |
-|   `role` | string | Filter by user role | all   |
-|   `status` | string | Filter by user status | all   |
-|   `page` | integer | Page number | 1   |
-|   `per_page` | integer | Items per page | 20   |
+|     Parameter | Type | Description | Default     |
+|    -----------|------|-------------|---------    |
+|     `role` | string | Filter by user role | all     |
+|     `status` | string | Filter by user status | all     |
+|     `page` | integer | Page number | 1     |
+|     `per_page` | integer | Items per page | 20     |
 
 **Response:**
 
@@ -1519,11 +1519,11 @@ Get detailed system performance metrics.
 
 **Query Parameters:**
 
-|   Parameter | Type | Description | Default   |
-|  -----------|------|-------------|---------  |
-|   `time_range` | string | Time range for metrics | 1h   |
-|   `metrics` | string | Specific metrics to include | all   |
-|   `aggregation` | string | Aggregation method | avg   |
+|     Parameter | Type | Description | Default     |
+|    -----------|------|-------------|---------    |
+|     `time_range` | string | Time range for metrics | 1h     |
+|     `metrics` | string | Specific metrics to include | all     |
+|     `aggregation` | string | Aggregation method | avg     |
 
 **Response:**
 
@@ -1597,12 +1597,12 @@ Get system logs with filtering.
 
 **Query Parameters:**
 
-|   Parameter | Type | Description | Default   |
-|  -----------|------|-------------|---------  |
-|   `level` | string | Log level (debug, info, warning, error) | info   |
-|   `component` | string | Filter by component | all   |
-|   `since` | string | Logs since timestamp | 1h ago   |
-|   `limit` | integer | Number of logs to return | 100   |
+|     Parameter | Type | Description | Default     |
+|    -----------|------|-------------|---------    |
+|     `level` | string | Log level (debug, info, warning, error) | info     |
+|     `component` | string | Filter by component | all     |
+|     `since` | string | Logs since timestamp | 1h ago     |
+|     `limit` | integer | Number of logs to return | 100     |
 
 **Response:**
 

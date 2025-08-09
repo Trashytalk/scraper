@@ -42,7 +42,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-consolidated.txt
-        pip install bandit safety flake8 black isort pytest-cov
+        pip install bandit safety flake8 black isort pytest-cov pip-audit
         
     - name: Code formatting check
       run: |
@@ -56,8 +56,26 @@ jobs:
         
     - name: Security scan
       run: |
-        bandit -r . -f json -o bandit-report.json || true
-        safety check --json --output safety-report.json || true
+        bandit -r . -f json -o bandit-report.json -ll
+        safety check --json --output safety-report.json
+
+    - name: Install jq (for parsing reports)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+
+    - name: Fail on high severity Bandit issues
+      run: |
+        COUNT=$(jq '[.results[] | select(.issue_severity=="HIGH")] | length' bandit-report.json 2>/dev/null || echo 0)
+        echo "High severity issues: $COUNT"
+        if [ "$COUNT" -gt 0 ]; then
+          echo "::error::Bandit found $COUNT high-severity issues"
+          exit 1
+        fi
+
+    - name: Pip Audit (fail on any vulnerability)
+      run: |
+        pip-audit --strict
         
     - name: Upload security reports
       uses: actions/upload-artifact@v3
@@ -122,7 +140,7 @@ jobs:
         
     - name: Run unit tests
       run: |
-        pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+        pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=80
         
     - name: Run integration tests
       run: |
@@ -190,6 +208,12 @@ jobs:
           VERSION=${{ github.ref_name }}
           VCS_REF=${{ github.sha }}
 
+    - name: Generate SBOM (SPDX JSON)
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        artifact-name: sbom.spdx.json
+
   # Staging Deployment
   deploy-staging:
     name: Deploy to Staging
@@ -201,23 +225,24 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Deploy to staging
+
+    - name: Build staging stack
       run: |
-        echo "🚀 Deploying to staging environment..."
-        # Add staging deployment commands here
-        
-    - name: Run smoke tests
+        docker compose -f docker-compose.production-v3.yml build --pull
+
+    - name: Start staging stack
       run: |
-        echo "🧪 Running smoke tests on staging..."
-        # Add smoke test commands here
-        
-    - name: Notify deployment
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#deployments'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        docker compose -f docker-compose.production-v3.yml up -d
+        sleep 25
+
+    - name: Run staging smoke tests
+      run: |
+        curl -f http://localhost:8000/api/health
+        pytest -q tests/test_environment.py
+
+    - name: Staging teardown
+      if: always()
+      run: docker compose -f docker-compose.production-v3.yml down -v
 
   # Production Deployment
   deploy-production:
@@ -230,17 +255,29 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Deploy to production
+
+    - name: Prepare environment file
       run: |
-        echo "🚀 Deploying to production environment..."
-        # Add production deployment commands here
-        
-    - name: Health check
+        cp .env.production.template .env.production || true
+
+    - name: Rotate secrets before deploy
       run: |
-        echo "🏥 Running production health checks..."
-        # Add health check commands here
-        
+        bash scripts/rotate_secrets.sh .env.production
+
+    - name: Deploy
+      run: |
+        bash scripts/deploy.sh deploy --skip-backup
+
+    - name: Post-deploy health check
+      run: |
+        bash scripts/deploy.sh health
+
+    - name: Rollback on failure
+      if: failure()
+      run: |
+        echo "Deployment failed, initiating rollback" >&2
+        bash scripts/deploy.sh rollback
+
     - name: Create release
       uses: actions/create-release@v1
       env:

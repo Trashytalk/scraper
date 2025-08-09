@@ -294,13 +294,6 @@ class GDPRComplianceManager:
         subject = self.data_subjects[subject_id]
 
         try:
-        """Delete all data for a subject (Right to be forgotten)"""
-        if subject_id not in self.data_subjects:
-            return
-
-        subject = self.data_subjects[subject_id]
-
-        try:
             # Implement comprehensive data deletion across all systems
             deletion_report = {
                 "subject_id": subject_id,

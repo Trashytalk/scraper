@@ -1,6 +1,24 @@
 # Contributing to Business Intelligence Scraper
 
+[![Security Hardened](https://img.shields.io/badge/security-hardened%20%E2%9C%85-green)](./SECURITY_ROTATION_PLAYBOOK.md)
+[![CI/CD Secured](https://img.shields.io/badge/cicd-security%20gated-blue)](./.github/workflows/production-cicd.yml)
+
 Thank you for your interest in contributing to the Business Intelligence Scraper! This document provides guidelines for contributing to the project.
+
+## 🛡️ **IMPORTANT: Security Guidelines (August 2025)**
+
+**Before contributing, please note our enhanced security requirements:**
+
+- ✅ **No Hardcoded Secrets**: Never commit credentials, API keys, or sensitive data
+- ✅ **Pre-commit Hooks**: Security scanning runs automatically on all commits
+- ✅ **Clean Security Scans**: All PRs must pass Bandit and detect-secrets validation
+- ✅ **CI/CD Security**: Production pipeline blocks on vulnerability detection
+- ✅ **Security Documentation**: Update security docs for any security-related changes
+
+**📋 Security Resources:**
+- [Security Rotation Playbook](SECURITY_ROTATION_PLAYBOOK.md)
+- [Security Status Summary](SECURITY_STATUS_SUMMARY.md) 
+- [Pre-commit Configuration](.pre-commit-config.yaml)
 
 ## 🚀 **Quick Start for Contributors**
 

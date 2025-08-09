@@ -249,14 +249,14 @@ The AI pipeline adds these fields to your scraped items:
 
 ### Available Models
 
-|   Model | Type | Purpose | Performance   |
-|  -------|------|---------|-------------  |
-|   `en_core_web_sm` | SpaCy | Entity extraction | Fast   |
-|   `twitter-roberta-base-sentiment` | Transformers | Sentiment analysis | Medium   |
-|   `bart-large-mnli` | Transformers | Text classification | Medium   |
-|   `bart-large-cnn` | Transformers | Summarization | Slow   |
-|   `all-MiniLM-L6-v2` | Sentence Transformers | Embeddings | Fast   |
-|   `gpt-3.5-turbo` | OpenAI | Advanced processing | API-based   |
+|     Model | Type | Purpose | Performance     |
+|    -------|------|---------|-------------    |
+|     `en_core_web_sm` | SpaCy | Entity extraction | Fast     |
+|     `twitter-roberta-base-sentiment` | Transformers | Sentiment analysis | Medium     |
+|     `bart-large-mnli` | Transformers | Text classification | Medium     |
+|     `bart-large-cnn` | Transformers | Summarization | Slow     |
+|     `all-MiniLM-L6-v2` | Sentence Transformers | Embeddings | Fast     |
+|     `gpt-3.5-turbo` | OpenAI | Advanced processing | API-based     |
 
 ### Model Management
 

@@ -3,16 +3,46 @@
 ## 🚀 Enterprise-Grade Business Intelligence Data Collection & Analytics Platform
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/Trashytalk/scraper)
-[![Security](https://img.shields.io/badge/security-enterprise--grade-blue)](./docs/security.md)
+[![Security Hardened](https://img.shields.io/badge/security-hardened%20%E2%9C%85-green)](./SECURITY_ROTATION_PLAYBOOK.md)
+[![CI/CD Secured](https://img.shields.io/badge/cicd-security%20gated-blue)](./github/workflows/production-cicd.yml)
 [![Documentation](https://img.shields.io/badge/docs-comprehensive-green)](./docs/)
-[![Version](https://img.shields.io/badge/version-2.0.0-orange)](./docs/archive/README.md)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Version](https://img.shields.io/badge/version-2.0.1--security-orange)](./IMPLEMENTATION_SUMMARY_REPORT.md)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/api-fastapi-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/frontend-react-61dafb.svg)](https://reactjs.org/)
 [![Docker](https://img.shields.io/badge/deployment-docker-2496ed.svg)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **🎯 A comprehensive, production-ready business intelligence platform that provides automated data collection, real-time analytics, advanced security, and intelligent insights for modern enterprises.**
+
+## 🎉 **NEW v2.0.1-security: Enhanced Security & CI/CD Hardening**
+
+**🛡️ CRITICAL: All exposed secrets eliminated, credentials rotated, CI/CD security gating enhanced!**
+
+### ✨ **Latest Security Features (August 2025)**
+
+- 🔐 **Complete Security Hardening**: Eliminated exposed secrets, full credential rotation, secure backup procedures
+- 🛡️ **Enhanced CI/CD Security**: Vulnerability blocking in production pipeline, automated security scanning
+- 🔄 **Automated Security Maintenance**: Quarterly rotation reminders, pre-commit security hooks, continuous monitoring
+- 📋 **Comprehensive Documentation**: Security playbooks, rotation procedures, incident response guides
+- ✅ **Validated Security Posture**: Security scan confirms clean state, no exposed secrets detected
+
+### 🔒 **Security Achievements**
+
+- ✅ **Secrets Management**: All exposed credentials removed and rotated with secure backup (`backup-20250809T143231Z`)
+- ✅ **CI/CD Enhancement**: Production pipeline now blocks on Safety vulnerability detection
+- ✅ **Pre-commit Security**: Automated Bandit scanning and detect-secrets baseline validation
+- ✅ **Automation Infrastructure**: Quarterly rotation workflows with Slack team notifications
+- ✅ **Compliance Ready**: Comprehensive audit trails and security documentation
+
+### 📊 **Security Scan Results**
+```
+🔍 Secrets Exposure: ✅ CLEAN (No hardcoded secrets detected)
+🛡️ Bandit Security: ✅ PASSED (No HIGH severity vulnerabilities)  
+🔒 CI/CD Security: ✅ ENHANCED (Vulnerability blocking active)
+⚡ Pre-commit: ✅ ACTIVE (Security scanning on every commit)
+🔄 Rotation: ✅ AUTOMATED (Quarterly reminders configured)
+```
 
 ## 🎉 **NEW v2.0.0: Complete Enterprise Platform**
 
@@ -157,12 +187,20 @@ python backend_server.py
 
 ### 📱 **Access Points**
 
-- **Frontend Dashboard**: http://localhost:5173
-- **API Documentation**: http://localhost:8000/docs
-- **API Endpoints**: http://localhost:8000/api/*
+- **Frontend Dashboard**: <http://localhost:5173>
+- **API Documentation**: <http://localhost:8000/docs>
+- **API Endpoints**: <http://localhost:8000/api/*>
 - **WebSocket**: ws://localhost:8000/ws
-- **Grafana Monitoring**: http://localhost:3000
-- **Prometheus Metrics**: http://localhost:9090
+- **Grafana Monitoring**: <http://localhost:3000>
+- **Prometheus Metrics**: <http://localhost:9090>
+
+### 📚 **Security & Documentation**
+
+- **Security Playbook**: [SECURITY_ROTATION_PLAYBOOK.md](SECURITY_ROTATION_PLAYBOOK.md)
+- **Implementation Summary**: [IMPLEMENTATION_SUMMARY_REPORT.md](IMPLEMENTATION_SUMMARY_REPORT.md)
+- **Security Scan Reports**: `/security-reports/` directory
+- **CI/CD Security**: [.github/workflows/production-cicd.yml](.github/workflows/production-cicd.yml)
+- **Pre-commit Hooks**: [.pre-commit-config.yaml](.pre-commit-config.yaml)
 
 ## 🏗️ **System Architecture**
 

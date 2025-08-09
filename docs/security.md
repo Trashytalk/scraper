@@ -147,14 +147,14 @@ The platform supports Time-based One-Time Password (TOTP) authentication using i
 
 #### User Roles
 
-|   Role | Description | Default Permissions   |
-|  ------|-------------|-------------------  |
-|   `super_admin` | System administrator | All permissions   |
-|   `admin` | Organization administrator | User management, system config   |
-|   `manager` | Team manager | Team data, reports, job management   |
-|   `analyst` | Data analyst | Data access, report creation   |
-|   `viewer` | Read-only user | Data viewing only   |
-|   `api_user` | API-only access | Programmatic access   |
+|     Role | Description | Default Permissions     |
+|    ------|-------------|-------------------    |
+|     `super_admin` | System administrator | All permissions     |
+|     `admin` | Organization administrator | User management, system config     |
+|     `manager` | Team manager | Team data, reports, job management     |
+|     `analyst` | Data analyst | Data access, report creation     |
+|     `viewer` | Read-only user | Data viewing only     |
+|     `api_user` | API-only access | Programmatic access     |
 
 #### Permission System
 
@@ -290,12 +290,12 @@ server {
 
 #### Classification Levels
 
-|   Level | Description | Examples | Protection   |
-|  -------|-------------|----------|------------  |
-|   **Public** | Non-sensitive data | Documentation, logs | Standard   |
-|   **Internal** | Business data | Analytics, reports | TLS, Access control   |
-|   **Confidential** | Sensitive data | User data, credentials | Encryption, Audit   |
-|   **Restricted** | Highly sensitive | Admin keys, secrets | HSM, MFA required   |
+|     Level | Description | Examples | Protection     |
+|    -------|-------------|----------|------------    |
+|     **Public** | Non-sensitive data | Documentation, logs | Standard     |
+|     **Internal** | Business data | Analytics, reports | TLS, Access control     |
+|     **Confidential** | Sensitive data | User data, credentials | Encryption, Audit     |
+|     **Restricted** | Highly sensitive | Admin keys, secrets | HSM, MFA required     |
 
 
 ---

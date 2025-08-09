@@ -1,6 +1,17 @@
 # Frontend Development Guide
 
+[![Security Hardened](https://img.shields.io/badge/security-hardened%20%E2%9C%85-green)](../../SECURITY_ROTATION_PLAYBOOK.md)
+[![Version](https://img.shields.io/badge/version-2.0.1--security-orange)](../../IMPLEMENTATION_SUMMARY_REPORT.md)
+
 The frontend is now a modern React application with real-time capabilities built with Vite and Tailwind CSS.
+
+## 🛡️ **Security Notice (August 2025)**
+
+**Security hardening completed:**
+- ✅ All exposed credentials eliminated and rotated
+- ✅ Pre-commit security scanning active
+- ✅ CI/CD vulnerability blocking enabled
+- ✅ Clean security validation passed
 
 ## Quick Start
 

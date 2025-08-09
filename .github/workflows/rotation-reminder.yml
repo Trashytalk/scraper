@@ -1,0 +1,148 @@
+name: Quarterly Security Rotation Reminder
+
+on:
+  schedule:
+    # Run on the 1st day of every quarter at 09:00 UTC (Q1: Jan 1, Q2: Apr 1, Q3: Jul 1, Q4: Oct 1)
+    - cron: '0 9 1 1,4,7,10 *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  rotation-reminder:
+    name: Security Rotation Reminder
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check last rotation date
+      id: check_rotation
+      run: |
+        # Check if .env.production has LastSecretRotation annotation
+        if [ -f ".env.production" ]; then
+          LAST_ROTATION=$(grep "# LastSecretRotation:" .env.production | cut -d' ' -f3 || echo "unknown")
+          echo "last_rotation=$LAST_ROTATION" >> $GITHUB_OUTPUT
+          
+          # Calculate days since last rotation (simplified)
+          if [ "$LAST_ROTATION" != "unknown" ]; then
+            DAYS_SINCE=$(( ($(date +%s) - $(date -d "$LAST_ROTATION" +%s)) / 86400 ))
+            echo "days_since=$DAYS_SINCE" >> $GITHUB_OUTPUT
+          else
+            echo "days_since=999" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "last_rotation=never" >> $GITHUB_OUTPUT
+          echo "days_since=999" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Create rotation reminder issue
+      if: steps.check_rotation.outputs.days_since > 90
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `🔐 Quarterly Security Rotation Required - Q${{ github.run_number }}`;
+          const body = `## 🔐 Security Credential Rotation Reminder
+          
+          **Quarterly rotation is due for the following credentials:**
+          
+          - [ ] JWT Secret Key
+          - [ ] API Secret Key  
+          - [ ] PostgreSQL Password
+          - [ ] Redis Password
+          - [ ] Grafana Admin Password
+          
+          **Last Rotation:** ${{ steps.check_rotation.outputs.last_rotation }}
+          **Days Since:** ${{ steps.check_rotation.outputs.days_since }} days
+          
+          ## 📋 Rotation Procedure
+          
+          1. Review [SECURITY_ROTATION_PLAYBOOK.md](./SECURITY_ROTATION_PLAYBOOK.md)
+          2. Notify stakeholders of planned rotation window
+          3. Execute: \`bash scripts/rotate_secrets.sh .env.production\`
+          4. Deploy and verify all services
+          5. Close this issue when rotation is complete
+          
+          ## ⚠️ Security Requirements
+          
+          - [ ] Obtain approval from Security Lead
+          - [ ] Obtain approval from DevOps Lead  
+          - [ ] Schedule maintenance window
+          - [ ] Execute rotation during approved window
+          - [ ] Verify all services post-rotation
+          - [ ] Archive backup files securely
+          
+          **Priority:** High
+          **Assignees:** Security Team, DevOps Team
+          
+          ---
+          
+          🤖 This issue was automatically created by the quarterly rotation reminder workflow.`;
+          
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['security', 'rotation', 'high-priority'],
+            assignees: []  // Add specific assignees if known
+          });
+          
+    - name: Notify security team
+      if: steps.check_rotation.outputs.days_since > 90
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "channel": "#security",
+            "username": "Security Bot",
+            "icon_emoji": ":lock:",
+            "attachments": [
+              {
+                "color": "warning",
+                "title": "🔐 Quarterly Security Rotation Required",
+                "fields": [
+                  {
+                    "title": "Repository",
+                    "value": "${{ github.repository }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Last Rotation",
+                    "value": "${{ steps.check_rotation.outputs.last_rotation }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Days Since",
+                    "value": "${{ steps.check_rotation.outputs.days_since }} days",
+                    "short": true
+                  },
+                  {
+                    "title": "Action Required",
+                    "value": "Review and execute security credential rotation",
+                    "short": false
+                  }
+                ],
+                "actions": [
+                  {
+                    "type": "button",
+                    "text": "View Rotation Playbook",
+                    "url": "https://github.com/${{ github.repository }}/blob/main/SECURITY_ROTATION_PLAYBOOK.md"
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        
+    - name: Summary
+      run: |
+        echo "🔐 Security Rotation Reminder Check Complete"
+        echo "Last rotation: ${{ steps.check_rotation.outputs.last_rotation }}"
+        echo "Days since: ${{ steps.check_rotation.outputs.days_since }}"
+        if [ "${{ steps.check_rotation.outputs.days_since }}" -gt 90 ]; then
+          echo "⚠️ Rotation required - Issue created"
+        else
+          echo "✅ Rotation up to date"
+        fi

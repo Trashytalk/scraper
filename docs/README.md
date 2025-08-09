@@ -2,8 +2,24 @@
 
 ## 📚 Complete Technical Documentation
 
-**Comprehensive documentation for the Business Intelligence Scraper Platform v2.0.0**
+**Comprehensive documentation for the Business Intelligence Scraper Platform v2.0.1-security**
 
+[![Security Hardened](https://img.shields.io/badge/security-hardened%20%E2%9C%85-green)](../SECURITY_ROTATION_PLAYBOOK.md)
+[![CI/CD Secured](https://img.shields.io/badge/cicd-security%20gated-blue)](../.github/workflows/production-cicd.yml)
+
+## 🛡️ **CRITICAL SECURITY UPDATE (August 2025)**
+
+**SECURITY HARDENING COMPLETED:**
+- ✅ All exposed secrets eliminated and credentials rotated
+- ✅ CI/CD pipeline enhanced with vulnerability blocking
+- ✅ Pre-commit security scanning implemented
+- ✅ Quarterly rotation automation configured
+- ✅ Comprehensive security validation passed
+
+**📋 Security Documentation:**
+- [Security Rotation Playbook](../SECURITY_ROTATION_PLAYBOOK.md)
+- [Implementation Summary Report](../IMPLEMENTATION_SUMMARY_REPORT.md)
+- [CI/CD Security Configuration](../.github/workflows/production-cicd.yml)
 
 ---
 
