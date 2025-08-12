@@ -17,7 +17,8 @@
 # Date: July 25, 2025
 # Version: 2.0.0
 
-set -e  # Exit on any error
+# Enable error handling but handle errors gracefully
+set -e
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,23 +38,23 @@ FRONTEND_PORT=5174
 
 # Function to print colored output
 print_step() {
-    echo -e "${BLUE}==>${NC} ${1}"
+    echo -e "${BLUE}==>${NC} ${1}" | tee -a "$LOG_FILE"
 }
 
 print_success() {
-    echo -e "${GREEN}✅${NC} ${1}"
+    echo -e "${GREEN}✅${NC} ${1}" | tee -a "$LOG_FILE"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️${NC} ${1}"
+    echo -e "${YELLOW}⚠️${NC} ${1}" | tee -a "$LOG_FILE"
 }
 
 print_error() {
-    echo -e "${RED}❌${NC} ${1}"
+    echo -e "${RED}❌${NC} ${1}" | tee -a "$LOG_FILE"
 }
 
 print_info() {
-    echo -e "${CYAN}ℹ️${NC} ${1}"
+    echo -e "${CYAN}ℹ️${NC} ${1}" | tee -a "$LOG_FILE"
 }
 
 # Function to check if command exists
@@ -142,19 +143,28 @@ install_dependencies() {
     
     # Install main requirements
     if [ -f "requirements.txt" ]; then
-        pip install -r requirements.txt >/dev/null 2>&1
-        print_success "Installed main dependencies"
+        if pip install -r requirements.txt >/dev/null 2>&1; then
+            print_success "Installed main dependencies"
+        else
+            print_warning "Some main dependencies may have failed to install"
+        fi
     fi
     
     # Install testing requirements if they exist
     if [ -f "requirements-testing.txt" ]; then
-        pip install -r requirements-testing.txt >/dev/null 2>&1
-        print_success "Installed testing dependencies"
+        if pip install -r requirements-testing.txt >/dev/null 2>&1; then
+            print_success "Installed testing dependencies"
+        else
+            print_warning "Some testing dependencies may have failed to install"
+        fi
     fi
     
     # Install additional common dependencies
-    pip install uvicorn[standard] fastapi sqlalchemy redis python-multipart >/dev/null 2>&1
-    print_success "Installed additional web server dependencies"
+    if pip install uvicorn[standard] fastapi sqlalchemy redis python-multipart >/dev/null 2>&1; then
+        print_success "Installed additional web server dependencies"
+    else
+        print_warning "Some additional dependencies may have failed to install"
+    fi
 }
 
 # Function to setup configuration
@@ -563,9 +573,8 @@ main() {
             ;;
     esac
     
-    # Start logging
-    exec > >(tee -a "$LOG_FILE")
-    exec 2>&1
+    # Start logging - create log file but don't redirect stdout yet
+    echo "" > "$LOG_FILE"
     
     echo -e "${PURPLE}"
     echo "🚀 Business Intelligence Scraper - Quick Start"
