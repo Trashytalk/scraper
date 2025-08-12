@@ -84,7 +84,7 @@ def main():
     test_categories = [
         {
             "name": "Environment",
-            "command": f"{venv_prefix}python test_pytest_basic.py'",
+            "command": f"{venv_prefix}python tests/test_pytest_basic.py'",
             "description": "Basic environment and setup validation"
         },
         {
@@ -99,7 +99,7 @@ def main():
         },
         {
             "name": "API Basic",
-            "command": f"{venv_prefix}python test_api_quick.py'",
+            "command": f"{venv_prefix}python tests/api/test_api_quick.py'",
             "description": "Basic API connectivity and endpoint tests"
         },
         {

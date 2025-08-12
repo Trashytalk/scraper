@@ -60,7 +60,7 @@ def main():
     # Test categories to run
     tests = [
         # Basic validation
-        ("python -m pytest test_pytest_basic.py -v", "Basic Environment Tests"),
+        ("python -m pytest tests/test_pytest_basic.py -v", "Basic Environment Tests"),
         
         # Specific working tests
         ("python -m pytest tests/test_advanced_crawling.py -v", "Advanced Crawling Tests"),
@@ -68,7 +68,7 @@ def main():
         ("python -m pytest tests/test_data_models.py -v", "Data Models Tests"),
         
         # Core functionality
-        ("python test_api_quick.py", "Quick API Tests"),
+        ("python tests/api/test_api_quick.py", "Quick API Tests"),
         ("python validate_manual_testing.py", "Manual Testing Validation"),
         
         # Security tests (if available)
