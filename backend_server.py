@@ -2375,7 +2375,7 @@ async def get_network_diagram(job_id: int, current_user: dict = Depends(get_curr
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT j.id, j.name, j.created_at, j.url as root_url
+            SELECT j.id, j.name, j.created_at, j.config
             FROM jobs j
             WHERE j.id = ? AND j.created_by = ?
         """,
@@ -2389,7 +2389,14 @@ async def get_network_diagram(job_id: int, current_user: dict = Depends(get_curr
         
         job_name = job_row[1] or f"Job #{job_id}"
         job_created = job_row[2]
-        root_url = job_row[3]
+        
+        # Extract URL from config JSON
+        import json
+        try:
+            config = json.loads(job_row[3] or '{}')
+            root_url = config.get('url', f'Job-{job_id}')
+        except (json.JSONDecodeError, TypeError):
+            root_url = f'Job-{job_id}'
         
         # Get all scraped data for this job
         cursor.execute(

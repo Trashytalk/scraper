@@ -216,7 +216,7 @@ const PageViewerModal: React.FC<PageViewerModalProps> = ({ show, onHide, jobId, 
       setLoading(true);
       setError('');
       
-      const response = await fetch(`/api/cfpl/page-content`, {
+      const response = await fetch(`http://localhost:8000/api/cfpl/page-content`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -263,7 +263,7 @@ const PageViewerModal: React.FC<PageViewerModalProps> = ({ show, onHide, jobId, 
 
   const loadNetworkDiagram = async () => {
     try {
-      const response = await fetch(`/api/cfpl/network-diagram/${jobId}`, {
+      const response = await fetch(`http://localhost:8000/api/cfpl/network-diagram/${jobId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -1433,7 +1433,7 @@ const PageViewerModal: React.FC<PageViewerModalProps> = ({ show, onHide, jobId, 
             startIcon={<DownloadIcon />}
             onClick={() => {
               // Export page bundle functionality
-              fetch(`/api/cfpl/export-bundle`, {
+              fetch(`http://localhost:8000/api/cfpl/export-bundle`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
