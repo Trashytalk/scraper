@@ -139,7 +139,7 @@ const App: React.FC = () => {
 
   // Test backend connection on mount
   useEffect(() => {
-    fetch("/api/health")
+    fetch("http://localhost:8000/api/health")
       .then(() => setIsBackendConnected(true))
       .catch(() => setIsBackendConnected(false));
   }, []);
@@ -247,7 +247,7 @@ const App: React.FC = () => {
     console.log('🔐 Attempting login with:', { username: loginForm.username, password: '***' });
     
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://localhost:8000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
