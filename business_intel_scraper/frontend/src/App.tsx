@@ -178,11 +178,6 @@ const App: React.FC = () => {
   const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
     // Prefer state token; fall back to localStorage for early calls before state is hydrated
     const effectiveToken = token || localStorage.getItem('token') || '';
-    console.log('🌐 authenticatedFetch debug:', { 
-      url, 
-      method: options.method || 'GET',
-      effectiveToken: effectiveToken ? `${effectiveToken.substring(0, 10)}...` : 'null'
-    });
     
     const headers = {
       'Content-Type': 'application/json',
@@ -242,12 +237,11 @@ const App: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Login successful, response data:', data);
-        console.log('✅ Token to be stored:', data.access_token ? `${data.access_token.substring(0, 10)}...` : 'null');
+        console.log('✅ Login successful');
         setToken(data.access_token);
         setIsAuthenticated(true);
         localStorage.setItem('token', data.access_token);
-        console.log('✅ Authentication complete, localStorage token:', localStorage.getItem('token') ? 'set' : 'not set');
+        console.log('✅ Authentication complete');
       } else {
         const errorData = await response.json();
         console.error('❌ Login failed:', errorData);
@@ -531,15 +525,6 @@ const App: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Debug: Check token availability
-      const stateToken = token;
-      const storageToken = localStorage.getItem('token');
-      console.log('🔐 Submit job debug:', { 
-        stateToken: stateToken ? `${stateToken.substring(0, 10)}...` : 'null',
-        storageToken: storageToken ? `${storageToken.substring(0, 10)}...` : 'null',
-        isAuthenticated 
-      });
-      
       const response = await authenticatedFetch("/api/jobs", {
         method: "POST",
         body: JSON.stringify(newJob),
