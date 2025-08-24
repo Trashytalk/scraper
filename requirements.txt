@@ -36,6 +36,7 @@ passlib[bcrypt]>=1.7.4
 cryptography>=41.0.7
 bcrypt>=4.1.2
 slowapi>=0.1.9
+python-jose[cryptography]>=3.3.0
 
 # ===== PERFORMANCE & CACHING =====
 redis>=5.0.1

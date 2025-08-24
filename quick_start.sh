@@ -12,6 +12,7 @@
 # - Configuration setup
 # - Service health checks
 # - Web server launch
+# - Backend server dependencies (CFPL endpoints support)
 #
 # Author: Business Intelligence Scraper Team
 # Date: July 25, 2025
@@ -163,7 +164,25 @@ install_dependencies() {
     if pip install uvicorn[standard] fastapi sqlalchemy redis python-multipart >/dev/null 2>&1; then
         print_success "Installed additional web server dependencies"
     else
-        print_warning "Some additional dependencies may have failed to install"
+        print_warning "Regular pip install failed, trying with --break-system-packages..."
+        if pip install --break-system-packages uvicorn[standard] fastapi sqlalchemy redis python-multipart >/dev/null 2>&1; then
+            print_success "Installed web server dependencies with system packages override"
+        else
+            print_warning "Some additional dependencies may have failed to install"
+        fi
+    fi
+    
+    # Install backend server dependencies (required for CFPL endpoints)
+    print_step "Installing backend server dependencies..."
+    if pip install slowapi bcrypt python-jose requests beautifulsoup4 >/dev/null 2>&1; then
+        print_success "Installed backend server dependencies (slowapi, bcrypt, python-jose, requests, beautifulsoup4)"
+    else
+        print_warning "Regular pip install failed, trying with --break-system-packages..."
+        if pip install --break-system-packages slowapi bcrypt python-jose requests beautifulsoup4 >/dev/null 2>&1; then
+            print_success "Installed backend server dependencies with system packages override"
+        else
+            print_warning "Some backend server dependencies may have failed to install"
+        fi
     fi
 }
 
