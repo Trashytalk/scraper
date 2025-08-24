@@ -15,7 +15,8 @@ const apiClient = axios.create({
 // Request interceptor for adding auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+  // Standardized token storage key
+  const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -38,7 +39,7 @@ apiClient.interceptors.response.use(
       switch (status) {
         case 401:
           // Handle unauthorized access
-          localStorage.removeItem('auth_token');
+          localStorage.removeItem('token');
           console.error('Authentication failed - redirecting to login');
           // Only redirect if not already on login page
           if (!window.location.pathname.includes('/login')) {
@@ -389,7 +390,8 @@ export const authService = {
       });
       
       if (response.data.access_token) {
-        localStorage.setItem('auth_token', response.data.access_token);
+    // Store under standardized key used across the app
+    localStorage.setItem('token', response.data.access_token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         return response.data;
       }
@@ -403,7 +405,7 @@ export const authService = {
 
   // Logout user
   logout() {
-    localStorage.removeItem('auth_token');
+  localStorage.removeItem('token');
     localStorage.removeItem('user');
     return Promise.resolve();
   },
@@ -421,7 +423,7 @@ export const authService = {
 
   // Check if user is authenticated
   isAuthenticated() {
-    return !!localStorage.getItem('auth_token');
+  return !!localStorage.getItem('token');
   },
 
   // Get stored user data

@@ -176,9 +176,11 @@ const App: React.FC = () => {
 
   // Helper function for authenticated API calls
   const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+    // Prefer state token; fall back to localStorage for early calls before state is hydrated
+    const effectiveToken = token || localStorage.getItem('token') || '';
     const headers = {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(effectiveToken && { 'Authorization': `Bearer ${effectiveToken}` }),
       ...options.headers,
     };
     
