@@ -68,6 +68,25 @@ Rotation: AUTOMATED (Quarterly reminders configured)
 
 ```
 
+### What's New (Aug 2025): CFPL + Advanced Viewer Enhancements
+
+The platform now includes a Capture-First, Process-Later (CFPL) architecture and major UX improvements:
+
+- CFPL architecture: content-addressed storage (RAW/DERIVED zones), immutable manifests, and replayable processing
+- Processing pipeline: HTML parsing, text extraction, and media metadata processors (see `storage/`)
+- Backend updates:
+  - New: `GET /api/jobs/{job_id}/media` aggregates images and videos across a job
+  - Enhanced: `GET /api/cfpl/network-diagram/{job_id}` with cleaner titles, node/edge dedupe, and metadata
+  - More robust: `GET /api/jobs/{job_id}/progress` with smarter heuristics and recent activity
+- Frontend updates:
+  - Advanced Page Viewer now supports a Media Gallery (images + videos) with placeholder/empty filtering
+  - New Job-wide Media Viewer for browsing all media captured in a job
+  - Network Diagram with selectable layouts (hierarchical, force, circular, grid) and improved labeling
+  - Progress bar reliability improvements and clearer error handling
+- Access points: Frontend default at http://localhost:5173, Backend health at `GET /api/health`
+
+Note: Jobs APIs require authentication (Bearer token). See API docs at `/docs` for request/response shapes.
+
 ### Previous Release: v2.0.0 (Complete Enterprise Platform)
 
 **Full-stack business intelligence solution with enterprise-grade security, performance optimization, and comprehensive documentation**
@@ -708,7 +727,7 @@ docker-compose -f business_intel_scraper/docker-compose.yml up -d
 
 # Verify deployment
 
-curl http://localhost:8000/health
+curl http://localhost:8000/api/health
 curl http://localhost:3000
 
 ```
