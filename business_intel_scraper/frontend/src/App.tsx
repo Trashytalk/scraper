@@ -188,10 +188,18 @@ const App: React.FC = () => {
     // If URL starts with /api, make it a full URL to the backend server
     const fullUrl = url.startsWith('/api') ? `http://localhost:8000${url}` : url;
     
-    return fetch(fullUrl, {
+    const response = await fetch(fullUrl, {
       ...options,
       headers,
     });
+    
+    // Handle 401 errors by automatically logging out
+    if (response.status === 401) {
+      console.log('🔒 Token expired or invalid, logging out');
+      handleLogout();
+    }
+    
+    return response;
   };
 
   // Fetch data when authentication state changes
@@ -208,11 +216,26 @@ const App: React.FC = () => {
         })
         .catch(console.error);
 
-      // Fetch analytics with authentication
-      authenticatedFetch("/api/analytics")
-        .then(res => res.json())
+      // Fetch analytics with authentication - use the correct endpoint
+      authenticatedFetch("/api/analytics/dashboard")
+        .then(res => {
+          if (res.ok) {
+            return res.json();
+          } else {
+            throw new Error(`Analytics API returned ${res.status}`);
+          }
+        })
         .then(data => setAnalytics(data))
-        .catch(console.error);
+        .catch(error => {
+          console.warn("Analytics not available:", error);
+          // Set default analytics if endpoint fails
+          setAnalytics({
+            total_jobs: jobs.length,
+            completed_jobs: 0,
+            running_jobs: 0,
+            failed_jobs: 0
+          });
+        });
     }
   }, [isAuthenticated, token]);
 
