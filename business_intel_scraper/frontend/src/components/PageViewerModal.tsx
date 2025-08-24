@@ -1065,19 +1065,13 @@ const PageViewerModal: React.FC<PageViewerModalProps> = ({ show, onHide, jobId, 
           borderRadius: '8px',
           color: textColor,
           width: 140,
+          height: 80,
           fontSize: '11px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }
+        },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
       };
-    });
-            height: 80,
-            fontSize: '10px',
-            boxShadow: node.depth === 0 ? '0 4px 8px rgba(255, 107, 107, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)',
-          },
-          sourcePosition: Position.Bottom,
-          targetPosition: Position.Top,
-        });
-      });
     });
 
     // Create hierarchical edges based on actual crawl relationships
