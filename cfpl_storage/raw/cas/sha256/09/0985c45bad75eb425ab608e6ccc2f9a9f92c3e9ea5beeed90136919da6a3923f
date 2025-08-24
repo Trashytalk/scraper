@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sample Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Welcome to Sample Page</h1>
+    <p>This is a sample page for testing the CFPL viewer.</p>
+    <img src="sample-image.jpg" alt="Sample Image">
+    <a href="https://example.com/page2">Link to Page 2</a>
+</body>
+</html>

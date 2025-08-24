@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "cas": {
+    "hash_algorithm": "sha256",
+    "compression": "gzip",
+    "verification": true
+  },
+  "manifest": {
+    "format_version": "1.0",
+    "include_headers": true,
+    "include_dom_snapshot": false,
+    "include_har_capture": false
+  },
+  "security": {
+    "redact_headers": [
+      "authorization",
+      "cookie",
+      "x-api-key"
+    ],
+    "encrypt_sensitive": false
+  }
+}

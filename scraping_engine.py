@@ -118,6 +118,7 @@ class ScrapingEngine:
         extract_full_html = config.get("extract_full_html", False)
         crawl_entire_domain = config.get("crawl_entire_domain", False)
         include_images = config.get("include_images", False)
+        include_forms = config.get("include_forms", False)
         save_to_database = config.get("save_to_database", True)
 
         # Rate limiting configuration
@@ -152,6 +153,7 @@ class ScrapingEngine:
                 "duplicate_pages_skipped": 0,
                 "errors_encountered": 0,
                 "images_extracted": 0,
+                "forms_extracted": 0,
                 "domains_crawled": set(),
             },
             "crawled_data": [],
@@ -265,6 +267,8 @@ class ScrapingEngine:
                         if include_images:
                             enhanced_config["include_all_images"] = True
                             enhanced_config["include_images"] = True
+                        if include_forms:
+                            enhanced_config["include_forms"] = True
 
                         page_data = await self.scrape_url(
                             current_url, scraper_type, enhanced_config
@@ -325,6 +329,22 @@ class ScrapingEngine:
                         else:
                             print(
                                 f"DEBUG: include_images={include_images} for {current_url}"
+                            )
+
+                        # Count forms if extracted
+                        if include_forms and "forms" in page_data:
+                            form_count = len(page_data.get("forms", []))
+                            crawl_results["summary"]["forms_extracted"] += form_count
+                            print(
+                                f"DEBUG: Found {form_count} forms on page {current_url}, total now: {crawl_results['summary']['forms_extracted']}"
+                            )
+                        elif include_forms:
+                            print(
+                                f"DEBUG: include_forms=True but no 'forms' key in page_data for {current_url}"
+                            )
+                        else:
+                            print(
+                                f"DEBUG: include_forms={include_forms} for {current_url}"
                             )
 
                         # Track domain coverage
@@ -644,14 +664,31 @@ class ScrapingEngine:
                 "headings": self._extract_headings(soup),
                 "links": self._extract_links(soup, url),
                 "text_content": self._extract_text_content(soup),
-                "images": self._extract_images(
-                    soup, url, config.get("include_all_images", False)
-                ),
                 "word_count": len(soup.get_text().split()),
                 "status": "success",
                 "timestamp": datetime.now().isoformat(),
                 "response_time": response.elapsed.total_seconds(),
             }
+            
+            # Only extract images if requested
+            if config.get("include_images", False):
+                data["images"] = self._extract_images(
+                    soup, url, config.get("include_all_images", False)
+                )
+            else:
+                data["images"] = []
+            
+            # NEW: Extract videos if requested
+            if config.get("extract_videos", True):
+                data["videos"] = self._extract_videos(soup, url)
+            else:
+                data["videos"] = []
+            
+            # Only extract forms if requested
+            if config.get("include_forms", False):
+                data["forms"] = self._extract_forms(soup, url)
+            else:
+                data["forms"] = []
 
             # NEW: Add full HTML if requested
             if config.get("extract_full_html", False):
@@ -695,7 +732,6 @@ class ScrapingEngine:
                 "availability": self._extract_availability(soup),
                 "rating": self._extract_rating(soup),
                 "description": self._extract_product_description(soup),
-                "images": self._extract_product_images(soup, url),
                 "specifications": self._extract_specifications(soup),
                 "reviews_count": self._extract_reviews_count(soup),
                 "category": self._extract_category(soup),
@@ -703,6 +739,12 @@ class ScrapingEngine:
                 "status": "success",
                 "timestamp": datetime.now().isoformat(),
             }
+            
+            # Only extract images if requested
+            if config.get("include_images", False):
+                data["images"] = self._extract_product_images(soup, url)
+            else:
+                data["images"] = []
 
             return data
 
@@ -729,6 +771,10 @@ class ScrapingEngine:
                 "status": "success",
                 "timestamp": datetime.now().isoformat(),
             }
+
+            # Add link extraction for crawling support
+            if config.get('crawl_links', False):
+                data["links"] = self._extract_links(soup, url)
 
             return data
 
@@ -799,16 +845,69 @@ class ScrapingEngine:
             raise Exception(f"API scraping failed: {str(e)}")
 
     def _fetch_url(self, url: str) -> requests.Response:
-        """Fetch URL with retry logic"""
+        """Fetch URL with enhanced retry logic and better error handling"""
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
         for attempt in range(3):
             try:
-                response = self.session.get(url, timeout=30)
-                response.raise_for_status()
+                logger.debug(f"Attempting to fetch {url} (attempt {attempt + 1}/3)")
+                response = self.session.get(
+                    url, 
+                    timeout=(10, 30),  # (connection timeout, read timeout)
+                    headers=headers,
+                    allow_redirects=True,
+                    stream=False
+                )
+                
+                # Check if we got a response
+                if response.status_code == 0:
+                    raise requests.exceptions.ConnectionError("Received HTTP status code 0 - connection failed")
+                
+                # Log non-200 responses but don't necessarily fail
+                if response.status_code != 200:
+                    logger.warning(f"Non-200 response from {url}: HTTP {response.status_code}")
+                    
+                    # For some error codes, don't retry
+                    if response.status_code in [403, 404, 410, 451]:
+                        raise Exception(f"HTTP {response.status_code}: {response.reason}")
+                
+                # Check content length
+                if len(response.content) == 0:
+                    logger.warning(f"Empty response from {url}")
+                
                 return response
+                
+            except requests.exceptions.Timeout as e:
+                logger.warning(f"Timeout on attempt {attempt + 1} for {url}: {e}")
+                if attempt == 2:  # Last attempt
+                    raise Exception(f"Timeout after 3 attempts: {e}")
+                    
+            except requests.exceptions.ConnectionError as e:
+                logger.warning(f"Connection error on attempt {attempt + 1} for {url}: {e}")
+                if attempt == 2:  # Last attempt
+                    raise Exception(f"Connection failed after 3 attempts: {e}")
+                    
             except requests.exceptions.RequestException as e:
+                logger.warning(f"Request error on attempt {attempt + 1} for {url}: {e}")
+                if attempt == 2:  # Last attempt
+                    raise Exception(f"Request failed after 3 attempts: {e}")
+                    
+            except Exception as e:
+                logger.warning(f"Unexpected error on attempt {attempt + 1} for {url}: {e}")
                 if attempt == 2:  # Last attempt
                     raise e
-                time.sleep(1)  # Wait before retry
+            
+            # Wait before retry with exponential backoff
+            wait_time = (2 ** attempt) + 1  # 2, 5, 9 seconds
+            logger.debug(f"Waiting {wait_time} seconds before retry...")
+            time.sleep(wait_time)
         
         # This should never be reached due to the exception handling above
         raise Exception("Failed to fetch URL after all retries")
@@ -936,6 +1035,147 @@ class ScrapingEngine:
         # Limit images based on mode
         limit = 100 if include_all_images else 20
         return images[:limit]
+
+    def _extract_forms(self, soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
+        """Extract form information from the page"""
+        forms = []
+        
+        for form_tag in soup.find_all("form"):
+            if isinstance(form_tag, Tag):
+                form_data = {
+                    "action": urljoin(base_url, safe_get_attr(form_tag, "action") or ""),
+                    "method": safe_get_attr(form_tag, "method") or "GET",
+                    "name": safe_get_attr(form_tag, "name"),
+                    "id": safe_get_attr(form_tag, "id"),
+                    "class": " ".join(safe_get_class_list(form_tag)),
+                    "enctype": safe_get_attr(form_tag, "enctype"),
+                    "target": safe_get_attr(form_tag, "target"),
+                    "fields": []
+                }
+                
+                # Extract form fields
+                for field in form_tag.find_all(["input", "select", "textarea", "button"]):
+                    if isinstance(field, Tag):
+                        field_data = {
+                            "tag": field.name,
+                            "type": safe_get_attr(field, "type"),
+                            "name": safe_get_attr(field, "name"),
+                            "id": safe_get_attr(field, "id"),
+                            "value": safe_get_attr(field, "value"),
+                            "placeholder": safe_get_attr(field, "placeholder"),
+                            "required": field.has_attr("required"),
+                            "class": " ".join(safe_get_class_list(field))
+                        }
+                        
+                        # For select fields, extract options
+                        if field.name == "select":
+                            options = []
+                            for option in field.find_all("option"):
+                                if isinstance(option, Tag):
+                                    options.append({
+                                        "value": safe_get_attr(option, "value"),
+                                        "text": safe_get_text(option),
+                                        "selected": option.has_attr("selected")
+                                    })
+                            field_data["options"] = options
+                        
+                        form_data["fields"].append(field_data)
+                
+                forms.append(form_data)
+        
+        return forms
+
+    def _extract_videos(self, soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
+        """Extract video information from the page"""
+        videos = []
+        
+        # Extract HTML5 video tags
+        for video_tag in soup.find_all('video'):
+            if isinstance(video_tag, Tag):
+                src = safe_get_attr(video_tag, 'src')
+                if not src:
+                    # Look for source tags within video
+                    source = video_tag.find('source')
+                    if source:
+                        src = safe_get_attr(source, 'src')
+                
+                if src:
+                    absolute_url = urljoin(base_url, src)
+                    video_data = {
+                        'url': absolute_url,
+                        'type': 'video',
+                        'title': safe_get_attr(video_tag, 'title') or '',
+                        'poster': safe_get_attr(video_tag, 'poster') or '',
+                        'controls': video_tag.has_attr('controls'),
+                        'autoplay': video_tag.has_attr('autoplay'),
+                        'muted': video_tag.has_attr('muted'),
+                        'loop': video_tag.has_attr('loop'),
+                        'width': safe_get_attr(video_tag, 'width'),
+                        'height': safe_get_attr(video_tag, 'height'),
+                        'duration': safe_get_attr(video_tag, 'duration'),
+                        'platform': 'html5'
+                    }
+                    videos.append(video_data)
+        
+        # Extract embedded videos from iframes (YouTube, Vimeo, etc.)
+        iframe_selectors = [
+            'iframe[src*="youtube.com"]',
+            'iframe[src*="youtu.be"]',
+            'iframe[src*="vimeo.com"]',
+            'iframe[src*="dailymotion.com"]',
+            'iframe[src*="twitch.tv"]',
+            'iframe[src*="facebook.com/video"]',
+            'iframe[src*="tiktok.com"]'
+        ]
+        
+        for selector in iframe_selectors:
+            for iframe in soup.select(selector):
+                if isinstance(iframe, Tag):
+                    src = safe_get_attr(iframe, 'src')
+                    if src:
+                        # Determine platform
+                        platform = 'unknown'
+                        if 'youtube' in src:
+                            platform = 'youtube'
+                        elif 'vimeo' in src:
+                            platform = 'vimeo'
+                        elif 'dailymotion' in src:
+                            platform = 'dailymotion'
+                        elif 'twitch' in src:
+                            platform = 'twitch'
+                        elif 'facebook' in src:
+                            platform = 'facebook'
+                        elif 'tiktok' in src:
+                            platform = 'tiktok'
+                        
+                        video_data = {
+                            'url': urljoin(base_url, src),
+                            'type': 'embedded',
+                            'title': safe_get_attr(iframe, 'title') or '',
+                            'width': safe_get_attr(iframe, 'width'),
+                            'height': safe_get_attr(iframe, 'height'),
+                            'platform': platform,
+                            'frameborder': safe_get_attr(iframe, 'frameborder'),
+                            'allowfullscreen': iframe.has_attr('allowfullscreen')
+                        }
+                        videos.append(video_data)
+        
+        # Also look for video links in anchor tags
+        for link in soup.find_all('a', href=True):
+            if isinstance(link, Tag):
+                href = safe_get_attr(link, 'href')
+                if href and any(ext in href.lower() for ext in ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.mkv']):
+                    absolute_url = urljoin(base_url, href)
+                    video_data = {
+                        'url': absolute_url,
+                        'type': 'link',
+                        'title': safe_get_text(link) or safe_get_attr(link, 'title') or '',
+                        'platform': 'direct_link'
+                    }
+                    videos.append(video_data)
+        
+        # Limit to 20 videos to avoid overwhelming the response
+        return videos[:20]
 
     def _extract_custom_data(
         self, soup: BeautifulSoup, selectors: Dict[str, str]
@@ -1254,7 +1494,7 @@ async def execute_scraping_job(
             raise ValueError("No URL provided for scraping")
 
         # Handle different job types
-        if job_type == "intelligent_crawling":
+        if job_type == "intelligent":
             result = await scraping_engine.intelligent_crawl(url, scraper_type, config)
         else:  # single_page or legacy types
             result = await scraping_engine.scrape_url(url, scraper_type, config)

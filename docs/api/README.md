@@ -33,15 +33,18 @@ This folder contains all API-related documentation for the Business Intelligence
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/login` - User authentication
 - `GET /api/auth/me` - Current user information
 
 ### Core Features
+
 - `GET /api/jobs` - Job management
 - `POST /api/jobs` - Create new jobs
 - `GET /api/performance/metrics` - Performance monitoring
 
 ### Real-time
+
 - `WebSocket /ws` - Real-time updates and notifications
 
 ## Related Files
@@ -50,7 +53,9 @@ This folder contains all API-related documentation for the Business Intelligence
 - **Security Config**: `/secure_config.py`
 - **API Explorer**: `/docs/api_explorer.html`
 
+
 ---
 
-**Last Updated:** August 9, 2025  
+
+**Last Updated:** August 9, 2025
 **Version:** v2.0.1-security

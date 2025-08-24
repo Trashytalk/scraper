@@ -74,25 +74,25 @@ docker-compose -f docker-compose.prod.yml ps
 
 ### Environment Variables
 
-|     Variable | Description | Default     |
-|    ----------|-------------|---------    |
-|     `ENVIRONMENT` | Deployment environment | `production`     |
-|     `DATABASE_PATH` | SQLite database path | `/app/data/scraper.db`     |
-|     `REDIS_URL` | Redis connection URL | `redis://redis:6379/0`     |
-|     `JWT_SECRET` | JWT signing secret | Auto-generated     |
-|     `CORS_ORIGINS` | Allowed CORS origins | `http://localhost:3000`     |
+|      Variable | Description | Default      |
+|     ----------|-------------|---------     |
+|      `ENVIRONMENT` | Deployment environment | `production`      |
+|      `DATABASE_PATH` | SQLite database path | `/app/data/scraper.db`      |
+|      `REDIS_URL` | Redis connection URL | `redis://redis:6379/0`      |
+|      `JWT_SECRET` | JWT signing secret | Auto-generated      |
+|      `CORS_ORIGINS` | Allowed CORS origins | `http://localhost:3000`      |
 
 ### Service Ports
 
-|     Service | Port | Description     |
-|    ---------|------|-------------    |
-|     API Server | 8000 | Main application API     |
-|     Frontend | 3000 | Web interface     |
-|     Grafana | 3001 | Monitoring dashboard     |
-|     Prometheus | 9090 | Metrics collection     |
-|     Redis | 6379 | Cache and sessions     |
-|     PostgreSQL | 5432 | Database     |
-|     Nginx | 80/443 | Reverse proxy     |
+|      Service | Port | Description      |
+|     ---------|------|-------------     |
+|      API Server | 8000 | Main application API      |
+|      Frontend | 3000 | Web interface      |
+|      Grafana | 3001 | Monitoring dashboard      |
+|      Prometheus | 9090 | Metrics collection      |
+|      Redis | 6379 | Cache and sessions      |
+|      PostgreSQL | 5432 | Database      |
+|      Nginx | 80/443 | Reverse proxy      |
 
 ## 📊 Monitoring & Performance
 

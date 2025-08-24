@@ -1,0 +1,33 @@
+{
+  "manifest_version": "1.0",
+  "url": "https://example.com/sample",
+  "final_url": "https://example.com/sample",
+  "fetch_start": "2025-08-18T10:30:00Z",
+  "fetch_end": "2025-08-18T10:30:02Z",
+  "status": 200,
+  "request_headers": {
+    "user-agent": "CFPL-Scraper/1.0"
+  },
+  "response_headers": {
+    "content-type": "text/html; charset=utf-8",
+    "content-length": "345"
+  },
+  "content": {
+    "sha256": "0985c45bad75eb425ab608e6ccc2f9a9f92c3e9ea5beeed90136919da6a3923f",
+    "size": 345,
+    "content_type": "text/html",
+    "encoding": "utf-8"
+  },
+  "assets": [
+    {
+      "url": "https://example.com/style.css",
+      "sha256": "42ff0272264998e6d700cf5d8d8cba0495d9c409c9681e857588d89c7fb42f61",
+      "size": 100,
+      "content_type": "text/css",
+      "discovered_via": "html_link"
+    }
+  ],
+  "tools": {
+    "scraper_version": "1.0.0"
+  }
+}

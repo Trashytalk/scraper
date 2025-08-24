@@ -29,7 +29,9 @@ This folder contains all deployment and infrastructure documentation for the Bus
 - **Deployment Scripts**: `/scripts/deploy.sh`, `/scripts/setup-staging.sh`
 - **Environment Templates**: `/.env.production.template`, `/.env.example`
 
+
 ---
 
-**Last Updated:** August 9, 2025  
+
+**Last Updated:** August 9, 2025
 **Version:** v2.0.1-security

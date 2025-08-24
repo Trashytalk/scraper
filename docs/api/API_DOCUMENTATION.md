@@ -446,16 +446,16 @@ Content-Type: application/json
 
 ### **HTTP Status Codes**
 
-|   Code | Description   |
-|  ------|-------------  |
-|   200 | Success   |
-|   201 | Created   |
-|   400 | Bad Request   |
-|   401 | Unauthorized   |
-|   403 | Forbidden   |
-|   404 | Not Found   |
-|   429 | Rate Limit Exceeded   |
-|   500 | Internal Server Error   |
+|    Code | Description    |
+|   ------|-------------   |
+|    200 | Success    |
+|    201 | Created    |
+|    400 | Bad Request    |
+|    401 | Unauthorized    |
+|    403 | Forbidden    |
+|    404 | Not Found    |
+|    429 | Rate Limit Exceeded    |
+|    500 | Internal Server Error    |
 
 
 ---
@@ -490,12 +490,12 @@ ws.onmessage = function(event) {
 
 ## 📊 **RATE LIMITS**
 
-|   Endpoint Category | Rate Limit | Window   |
-|  ------------------|------------|---------  |
-|   Authentication | 10 requests | 1 minute   |
-|   Data Operations | 100 requests | 1 minute   |
-|   AI Processing | 50 requests | 1 minute   |
-|   Admin Operations | 30 requests | 1 minute   |
+|    Endpoint Category | Rate Limit | Window    |
+|   ------------------|------------|---------   |
+|    Authentication | 10 requests | 1 minute    |
+|    Data Operations | 100 requests | 1 minute    |
+|    AI Processing | 50 requests | 1 minute    |
+|    Admin Operations | 30 requests | 1 minute    |
 
 
 ---

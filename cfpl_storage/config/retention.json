@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "policies": {
+    "raw": {
+      "retention_days": 730,
+      "cleanup_frequency": "weekly"
+    },
+    "derived": {
+      "retention_days": 90,
+      "cleanup_frequency": "daily"
+    },
+    "temp": {
+      "retention_hours": 24,
+      "cleanup_frequency": "hourly"
+    }
+  },
+  "compression": {
+    "enabled": true,
+    "threshold_mb": 10,
+    "algorithm": "gzip"
+  }
+}

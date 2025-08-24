@@ -58,12 +58,14 @@
 - **Compliance Ready**: Comprehensive audit trails and security documentation
 
 #### Security Scan Results
+
 ```
 Secrets Exposure: CLEAN (No hardcoded secrets detected)
-Bandit Security: PASSED (No HIGH severity vulnerabilities)  
+Bandit Security: PASSED (No HIGH severity vulnerabilities)
 CI/CD Security: ENHANCED (Vulnerability blocking active)
 Pre-commit: ACTIVE (Security scanning on every commit)
 Rotation: AUTOMATED (Quarterly reminders configured)
+
 ```
 
 ### Previous Release: v2.0.0 (Complete Enterprise Platform)
@@ -103,15 +105,20 @@ Rotation: AUTOMATED (Quarterly reminders configured)
 Get your Business Intelligence Platform running in 2-3 minutes:
 
 ```bash
+
 # 1. Clone the repository
+
 git clone https://github.com/Trashytalk/scraper.git
 cd scraper
 
 # 2. Make the script executable (first time only)
+
 chmod +x quick_start.sh
 
 # 3. Start everything with one command
+
 ./quick_start.sh
+
 ```
 
 ### What the Quick Start Script Does
@@ -130,6 +137,7 @@ The automated setup process includes:
 ### Expected Output
 
 ```text
+
 Business Intelligence Scraper - Quick Start
 ==============================================
 
@@ -147,48 +155,63 @@ API Docs: http://localhost:8000/docs
 Admin Panel: http://localhost:8000/admin
 
 Press Ctrl+C to stop all services
+
 ```
 
 ### Advanced Setup Options
 
 ```bash
+
 # Development mode with hot reload
+
 ./quick_start.sh --dev
 
 # Production mode with optimizations
+
 ./quick_start.sh --production
 
 # Clean install (removes existing environment)
+
 ./quick_start.sh --clean
 
 # Check system status
+
 ./quick_start.sh --status
 
 # Stop all services
+
 ./quick_start.sh --stop
 
 # Show help and all options
+
 ./quick_start.sh --help
+
 ```
 
 ### Production Deployment
 
 ```bash
+
 # Clone the repository
+
 git clone https://github.com/Trashytalk/scraper.git
 cd scraper
 
 # Production deployment with Docker
+
 docker-compose up --build -d
 
 # Development setup
+
 cd business_intel_scraper/frontend
 npm install
 npm run dev
 
 # In another terminal
+
 cd /path/to/scraper
 python backend_server.py
+
 ```
 
 ### Access Points
@@ -215,6 +238,7 @@ python backend_server.py
 ### Production Stack
 
 ```text
+
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │  React Frontend │◄──►│  FastAPI Backend │◄──►│  PostgreSQL DB  │
 │  (Port 5173)    │    │   (Port 8000)    │    │  (Port 5432)    │
@@ -229,11 +253,13 @@ python backend_server.py
     │         Performance & Monitoring Stack                   │
     │  Prometheus (9090) + Grafana (3000) + Nginx (80)       │
     └─────────────────────────────────────────────────────────┘
+
 ```
 
 ### Security & Performance Flow
 
 ```text
+
 Internet ──► Nginx Proxy ──► Rate Limiter ──► JWT Auth ──► FastAPI
                 │                 │              │           │
                 │                 │              │           ▼
@@ -244,11 +270,13 @@ Internet ──► Nginx Proxy ──► Rate Limiter ──► JWT Auth ──�
                 │                 │              │           │
                 ▼                 ▼              ▼           ▼
             HTTPS/TLS     Threat Detection   Data Validation  Real-time Metrics
+
 ```
 
 ### Data Processing Pipeline
 
 ```text
+
 Data Sources ──► Crawler Stage ──► Scraper Stage ──► Processing ──► Analytics
      │              │                │                │             │
      │              │                │                │             │
@@ -256,6 +284,7 @@ Data Sources ──► Crawler Stage ──► Scraper Stage ──► Processin
 Web URLs ──► URL Discovery ──► Content Extraction ──► AI Analysis ──► Dashboard
 API Sources ──► Link Analysis ──► Data Parsing ──► Relationships ──► Visualizations
 RSS Feeds ──► Content Filter ──► Quality Check ──► Enrichment ──► Alerts
+
 ```
 
 ## Key Features
@@ -341,6 +370,7 @@ The platform now includes 6 major enhancements to intelligent crawling for compr
 - **Configuration**: Set `extract_full_html: true` in crawling config
 
 ```python
+
 config = {
     'extract_full_html': True,
     'max_depth': 3,
@@ -348,6 +378,7 @@ config = {
 }
 
 # Result: 646,849+ characters of HTML extracted per test
+
 ```
 
 #### 2. Domain Crawling
@@ -358,6 +389,7 @@ config = {
 - **Domain Analytics**: Track coverage across multiple domain levels
 
 ```python
+
 config = {
     'crawl_entire_domain': True,
     'follow_internal_links': True,
@@ -365,6 +397,7 @@ config = {
 }
 
 # Result: Multi-domain crawling with subdomain support
+
 ```
 
 #### 3. Comprehensive Status Summaries
@@ -375,11 +408,17 @@ config = {
 - **Domain Coverage**: Analysis of crawl coverage across domains and pages
 
 ```python
+
 # Automatic status tracking includes
+
 # - Total execution time and performance metrics
+
 # - Success rates and error tracking
+
 # - Pages processed and URLs discovered
+
 # - Domain coverage and duplicate detection
+
 ```
 
 #### 4. Enhanced Image Extraction
@@ -390,12 +429,14 @@ config = {
 - **Image Analytics**: Track image counts and processing statistics
 
 ```python
+
 config = {
     'include_images': True,
     'extract_full_html': True
 }
 
 # Result: 201+ images extracted including metadata
+
 ```
 
 #### 5. Data Centralization & Quality Assessment
@@ -474,7 +515,9 @@ results = await engine.intelligent_crawl('https://example.com', 'enhanced', conf
 ### Core Entity Model
 
 ```sql
+
 -- Entities: Core business objects (companies, people, locations)
+
 CREATE TABLE entities (
     id UUID PRIMARY KEY,
     label VARCHAR(255) NOT NULL,
@@ -489,6 +532,7 @@ CREATE TABLE entities (
 );
 
 -- Connections: Relationships between entities
+
 CREATE TABLE connections (
     id UUID PRIMARY KEY,
     source_id UUID REFERENCES entities(id),
@@ -503,6 +547,7 @@ CREATE TABLE connections (
 );
 
 -- Events: Timeline events associated with entities
+
 CREATE TABLE events (
     id UUID PRIMARY KEY,
     entity_id UUID REFERENCES entities(id),
@@ -1771,7 +1816,9 @@ npm run type-check
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+
 ---
+
 
 ## Production Ready Status
 
@@ -1785,6 +1832,8 @@ This is a complete, production-ready enterprise Business Intelligence Platform w
 
 **Ready for deployment and real-world business intelligence use cases.**
 
+
 ---
+
 
 *Transform your business intelligence with our enterprise-ready Business Intelligence Platform - from data collection to actionable insights.*

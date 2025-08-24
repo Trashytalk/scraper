@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.1-security] - 2025-08-09
 
 ### Security
+
 - **CRITICAL**: Complete remediation of exposed secrets vulnerability
 - **ENHANCED**: CI/CD security gating with Safety vulnerability blocking
 - **AUTOMATED**: Pre-commit security scanning (Bandit, detect-secrets)
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **VALIDATED**: Comprehensive security scan confirms clean state
 
 ### Added
+
 - Quarterly rotation reminder workflow with Slack notifications
 - Pre-commit hooks for security scanning and secret detection
 - `.secrets.baseline` for ongoing secret detection
@@ -22,15 +24,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive security documentation and playbooks
 
 ### Changed
+
 - Python version targeting updated to 3.12 for consistency
 - Security headers and badges updated to reflect current status
 - Documentation updated to include security procedures and links
 
 ### Removed
+
 - **CRITICAL**: Complete removal of `secrets/` directory with exposed credentials
 - All hardcoded secrets and sensitive configuration files
 
 ### Fixed
+
 - All exposed JWT keys, database passwords, and API credentials
 - Security vulnerabilities detected by automated scanning tools
 - CI/CD pipeline security gaps and missing vulnerability checks
@@ -50,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Critical security vulnerability: Removed exposed secrets from repository
-- Test collection errors in compliance.py (indentation issues) 
+- Test collection errors in compliance.py (indentation issues)
 - Test infrastructure reliability issues
 - Missing rollback implementation in deployment script
 

@@ -20,19 +20,21 @@ JWT secret, API secret key, Postgres password, Redis password, Grafana admin pas
 5. Invalidate sessions:
    - Force JWT reissue (restart app pods/services)
    - Clear Redis session/cache: `redis-cli FLUSHALL` (if acceptable) or delete targeted keys
+
 6. Verify:
    - `/api/health` returns 200
    - Authentication endpoints issue new tokens
+
 7. Archive backup file created by rotation script to secure storage, then securely delete local copy if policy mandates.
 
 ## Post-Rotation Validation
 
-| Check | Command | Expected |
-|-------|---------|----------|
-| App Health | `curl -f http://localhost:8000/api/health` | 200 OK |
-| DB Access | `psql -h localhost -U $POSTGRES_USER -d business_intelligence -c 'SELECT 1;'` | 1 row |
-| Redis Auth | `redis-cli -a $REDIS_PASSWORD PING` | PONG |
-| Grafana Login | Web UI | Success |
+|  Check | Command | Expected  |
+| -------|---------|---------- |
+|  App Health | `curl -f http://localhost:8000/api/health` | 200 OK  |
+|  DB Access | `psql -h localhost -U $POSTGRES_USER -d business_intelligence -c 'SELECT 1;'` | 1 row  |
+|  Redis Auth | `redis-cli -a $REDIS_PASSWORD PING` | PONG  |
+|  Grafana Login | Web UI | Success  |
 
 ## Rollback
 
@@ -58,7 +60,9 @@ If rotation causes failures:
 
 All rotations require approval from: Security Lead + DevOps Lead.
 
+
 ---
+
 
 Document owner: DevOps / Security Team
 Last updated: 2025-08-09

@@ -226,12 +226,12 @@ Use these presets as starting points for different crawling scenarios:
 
 ### Resource Usage Estimation
 
-|     Configuration | CPU Usage | Memory Usage | Network Usage | Speed     |
-|    ---------------|-----------|--------------|---------------|-------    |
-|     Conservative  | Low       | 200-500 MB   | Low           | 30-60 pages/min     |
-|     Balanced      | Medium    | 500-1 GB     | Medium        | 60-120 pages/min     |
-|     Aggressive    | High      | 1-2 GB       | High          | 120-300 pages/min     |
-|     JS Enabled    | Very High | 1-3 GB       | Medium        | 20-80 pages/min     |
+|      Configuration | CPU Usage | Memory Usage | Network Usage | Speed      |
+|     ---------------|-----------|--------------|---------------|-------     |
+|      Conservative  | Low       | 200-500 MB   | Low           | 30-60 pages/min      |
+|      Balanced      | Medium    | 500-1 GB     | Medium        | 60-120 pages/min      |
+|      Aggressive    | High      | 1-2 GB       | High          | 120-300 pages/min      |
+|      JS Enabled    | Very High | 1-3 GB       | Medium        | 20-80 pages/min      |
 
 ### Best Practices
 

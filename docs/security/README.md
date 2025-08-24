@@ -28,7 +28,9 @@ This folder contains all security-related documentation for the Business Intelli
 - **Pre-commit Hooks**: `/.pre-commit-config.yaml`
 - **Security Scripts**: `/scripts/security-scan.sh`, `/scripts/rotate_secrets.sh`
 
+
 ---
 
-**Last Updated:** August 9, 2025  
+
+**Last Updated:** August 9, 2025
 **Version:** v2.0.1-security

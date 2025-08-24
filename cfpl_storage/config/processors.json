@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "processors": {
+    "html_parser": {
+      "enabled": true,
+      "extract_text": true,
+      "extract_links": true,
+      "extract_images": true
+    },
+    "media_analyzer": {
+      "enabled": true,
+      "extract_metadata": true,
+      "generate_thumbnails": true
+    },
+    "search_indexer": {
+      "enabled": true,
+      "full_text_search": true,
+      "faceted_search": true
+    }
+  },
+  "concurrency": {
+    "max_workers": 4,
+    "batch_size": 10
+  }
+}

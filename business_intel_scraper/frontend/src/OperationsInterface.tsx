@@ -1,4 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { JobMediaViewer } from "./components/JobMediaViewer";
+
+interface JobProgress {
+  job_id: number;
+  status: string;
+  progress_percentage: number;
+  current_results: number;
+  estimated_target: number;
+  runtime_seconds: number;
+  eta_seconds?: number;
+  recent_activity: Array<{
+    url: string;
+    timestamp: string;
+  }>;
+  last_updated: string;
+}
 
 interface OperationsProps {
   jobs: any[];
@@ -20,6 +36,7 @@ interface OperationsProps {
   getJobResults: (id: number) => void;
   startJob: (id: number) => void;
   resetOperationsConfig: () => void;
+  deleteJob: (id: number) => void;
 }
 
 const OperationsInterface: React.FC<OperationsProps> = ({
@@ -32,10 +49,15 @@ const OperationsInterface: React.FC<OperationsProps> = ({
   getJobDetails,
   getJobResults,
   startJob,
+  deleteJob,
 }) => {
   const [activeJobType, setActiveJobType] = useState("intelligent_crawling");
   const [showResults, setShowResults] = useState<{[key: number]: boolean}>({});
   const [jobResults, setJobResults] = useState<{[key: number]: any}>({});
+  const [jobProgress, setJobProgress] = useState<{[key: number]: JobProgress}>({});
+  const [progressIntervals, setProgressIntervals] = useState<{[key: number]: NodeJS.Timeout}>({});
+  const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
+  const [selectedJobForMedia, setSelectedJobForMedia] = useState<number | null>(null);
 
   const updateJobConfig = (key: string, value: any) => {
     setNewJob({
@@ -45,6 +67,153 @@ const OperationsInterface: React.FC<OperationsProps> = ({
         [key]: value,
       },
     });
+  };
+
+  // Progress tracking functions
+  const fetchJobProgress = async (jobId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No auth token found for progress tracking');
+        return;
+      }
+
+      const response = await fetch(`/api/jobs/${jobId}/progress`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (response.ok) {
+        const progress = await response.json();
+        console.log(`Progress for job ${jobId}:`, progress.progress_percentage + '%');
+        setJobProgress(prev => ({
+          ...prev,
+          [jobId]: progress
+        }));
+      } else {
+        console.error(`Progress API error for job ${jobId}:`, response.status, response.statusText);
+        // If unauthorized, stop tracking this job
+        if (response.status === 401) {
+          stopProgressTracking(jobId);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch progress for job', jobId, error);
+    }
+  };
+
+  const startProgressTracking = (jobId: number) => {
+    // Clear existing interval if any
+    if (progressIntervals[jobId]) {
+      clearInterval(progressIntervals[jobId]);
+    }
+
+    // Start tracking progress every 3 seconds
+    const interval = setInterval(() => {
+      fetchJobProgress(jobId);
+    }, 3000);
+
+    setProgressIntervals(prev => ({
+      ...prev,
+      [jobId]: interval
+    }));
+
+    // Fetch immediately
+    fetchJobProgress(jobId);
+  };
+
+  const stopProgressTracking = (jobId: number) => {
+    if (progressIntervals[jobId]) {
+      clearInterval(progressIntervals[jobId]);
+      setProgressIntervals(prev => {
+        const updated = { ...prev };
+        delete updated[jobId];
+        return updated;
+      });
+    }
+  };
+
+  // Monitor job status changes to start/stop progress tracking
+  useEffect(() => {
+    jobs.forEach(job => {
+      if (job.status === "running" && !progressIntervals[job.id]) {
+        startProgressTracking(job.id);
+      } else if (job.status !== "running" && progressIntervals[job.id]) {
+        stopProgressTracking(job.id);
+      }
+    });
+
+    // Cleanup intervals for deleted jobs
+    Object.keys(progressIntervals).forEach(jobIdStr => {
+      const jobId = parseInt(jobIdStr);
+      if (!jobs.find(job => job.id === jobId)) {
+        stopProgressTracking(jobId);
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      Object.values(progressIntervals).forEach(interval => {
+        clearInterval(interval);
+      });
+    };
+  }, [jobs]);
+
+  const handleDeleteJob = async (jobId: number) => {
+    const job = jobs.find(j => j.id === jobId);
+    const jobName = job?.name || `Job #${jobId}`;
+
+    if (!confirm(`Are you sure you want to delete "${jobName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteJob(jobId);
+      
+      // Clean up local state
+      stopProgressTracking(jobId);
+      setJobProgress(prev => {
+        const updated = { ...prev };
+        delete updated[jobId];
+        return updated;
+      });
+      setJobResults(prev => {
+        const updated = { ...prev };
+        delete updated[jobId];
+        return updated;
+      });
+      setShowResults(prev => {
+        const updated = { ...prev };
+        delete updated[jobId];
+        return updated;
+      });
+
+      // Refresh the jobs list
+      fetchJobs();
+    } catch (error) {
+      console.error('Failed to delete job:', error);
+      alert(`Failed to delete job: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const formatTime = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ${minutes % 60}m`;
+  };
+
+  const formatETA = (seconds?: number): string => {
+    if (!seconds || seconds <= 0) return "Calculating...";
+    return `~${formatTime(seconds)} remaining`;
+  };
+
+  const handleViewJobMedia = (jobId: number) => {
+    setSelectedJobForMedia(jobId);
+    setMediaViewerOpen(true);
   };
 
   const handleGetResults = async (jobId: number) => {
@@ -684,6 +853,30 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                       </p>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      {/* Progress Bar for Running Jobs */}
+                      {job.status === "running" && jobProgress[job.id] && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginRight: "10px" }}>
+                          <div style={{
+                            width: "120px",
+                            height: "8px",
+                            backgroundColor: "#e9ecef",
+                            borderRadius: "4px",
+                            overflow: "hidden"
+                          }}>
+                            <div style={{
+                              width: `${jobProgress[job.id].progress_percentage}%`,
+                              height: "100%",
+                              backgroundColor: "#ffc107",
+                              borderRadius: "4px",
+                              transition: "width 0.3s ease"
+                            }} />
+                          </div>
+                          <span style={{ fontSize: "11px", color: "#666", minWidth: "35px" }}>
+                            {jobProgress[job.id].progress_percentage.toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
+
                       <span style={{ 
                         padding: "4px 12px", 
                         backgroundColor: job.status === "completed" ? "#28a745" : job.status === "running" ? "#ffc107" : job.status === "failed" ? "#dc3545" : "#6c757d",
@@ -694,6 +887,25 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                       }}>
                         {job.status?.toUpperCase() || "PENDING"}
                       </span>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => handleDeleteJob(job.id)}
+                        disabled={job.status === "running"}
+                        style={{
+                          padding: "4px 8px",
+                          backgroundColor: job.status === "running" ? "#6c757d" : "#dc3545",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          fontSize: "12px",
+                          cursor: job.status === "running" ? "not-allowed" : "pointer",
+                          opacity: job.status === "running" ? 0.6 : 1
+                        }}
+                        title={job.status === "running" ? "Cannot delete running job" : "Delete this job"}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
 
@@ -706,14 +918,59 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                       marginBottom: "15px",
                       border: "1px solid #ffeaa7"
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "13px", color: "#856404" }}>
-                          ⏳ Processing... {job.progress || "Starting"}
-                        </span>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                          Started: {job.started_at ? new Date(job.started_at).toLocaleString() : "Just now"}
+                      {jobProgress[job.id] ? (
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                            <span style={{ fontSize: "13px", color: "#856404", fontWeight: "bold" }}>
+                              ⏳ Processing {jobProgress[job.id].current_results}/{jobProgress[job.id].estimated_target} items
+                            </span>
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              Runtime: {formatTime(jobProgress[job.id].runtime_seconds)}
+                            </div>
+                          </div>
+                          
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+                            <div style={{
+                              flex: 1,
+                              height: "6px",
+                              backgroundColor: "#e9ecef",
+                              borderRadius: "3px",
+                              overflow: "hidden"
+                            }}>
+                              <div style={{
+                                width: `${jobProgress[job.id].progress_percentage}%`,
+                                height: "100%",
+                                backgroundColor: "#ffc107",
+                                borderRadius: "3px",
+                                transition: "width 0.5s ease"
+                              }} />
+                            </div>
+                            <span style={{ fontSize: "12px", color: "#856404", fontWeight: "bold", minWidth: "40px" }}>
+                              {jobProgress[job.id].progress_percentage.toFixed(1)}%
+                            </span>
+                          </div>
+
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "11px", color: "#666" }}>
+                              {formatETA(jobProgress[job.id].eta_seconds)}
+                            </span>
+                            {jobProgress[job.id].recent_activity.length > 0 && (
+                              <span style={{ fontSize: "11px", color: "#666" }}>
+                                Last: {new URL(jobProgress[job.id].recent_activity[0].url).hostname}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: "13px", color: "#856404" }}>
+                            ⏳ Processing... {job.progress || "Starting"}
+                          </span>
+                          <div style={{ fontSize: "12px", color: "#666" }}>
+                            Started: {job.started_at ? new Date(job.started_at).toLocaleString() : "Just now"}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -792,26 +1049,44 @@ const OperationsInterface: React.FC<OperationsProps> = ({
                     </button>
 
                     {job.status === "completed" && (
-                      <button
-                        onClick={() => {
-                          if (showResults[job.id]) {
-                            toggleResults(job.id);
-                          } else {
-                            handleGetResults(job.id);
-                          }
-                        }}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: showResults[job.id] ? "#6c757d" : "#007bff",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                        }}
-                      >
-                        {showResults[job.id] ? "📤 Hide Data" : "📥 Show Collected Data"}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            if (showResults[job.id]) {
+                              toggleResults(job.id);
+                            } else {
+                              handleGetResults(job.id);
+                            }
+                          }}
+                          style={{
+                            padding: "8px 16px",
+                            backgroundColor: showResults[job.id] ? "#6c757d" : "#007bff",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "13px",
+                            marginRight: "8px"
+                          }}
+                        >
+                          {showResults[job.id] ? "📤 Hide Data" : "📥 Show Collected Data"}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleViewJobMedia(job.id)}
+                          style={{
+                            padding: "8px 16px",
+                            backgroundColor: "#28a745",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "13px",
+                          }}
+                        >
+                          🖼️ View All Media
+                        </button>
+                      </>
                     )}
                   </div>
 
@@ -976,6 +1251,18 @@ const OperationsInterface: React.FC<OperationsProps> = ({
           )}
         </div>
       </div>
+      
+      {/* Job Media Viewer Modal */}
+      {selectedJobForMedia && (
+        <JobMediaViewer
+          open={mediaViewerOpen}
+          onClose={() => {
+            setMediaViewerOpen(false);
+            setSelectedJobForMedia(null);
+          }}
+          jobId={selectedJobForMedia}
+        />
+      )}
     </div>
   );
 };

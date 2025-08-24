@@ -13,6 +13,7 @@ import sqlite3
 import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
+from urllib.parse import urlparse
 
 import jwt
 import uvicorn
@@ -349,32 +350,34 @@ class PerformanceMiddleware:
 
 
 def cached(cache_type: str = "ttl", ttl: int = 300, key_prefix: str = ""):
-        def decorator(func):
-            async def wrapper(*args, **kwargs):
-                # Simple caching decorator
-                cache_key = (
-                    f"{key_prefix}:{func.__name__}:{hash(str(args) + str(kwargs))}"
-                )
+    def decorator(func):
+        import functools
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Simple caching decorator
+            cache_key = (
+                f"{key_prefix}:{func.__name__}:{hash(str(args) + str(kwargs))}"
+            )
 
-                if hasattr(func, "_cache_manager"):
-                    cached_result = func._cache_manager.get(cache_key, cache_type)
-                    if cached_result is not None:
-                        return cached_result
+            if hasattr(func, "_cache_manager"):
+                cached_result = func._cache_manager.get(cache_key, cache_type)
+                if cached_result is not None:
+                    return cached_result
 
-                result = (
-                    await func(*args, **kwargs)
-                    if asyncio.iscoroutinefunction(func)
-                    else func(*args, **kwargs)
-                )
+            result = (
+                await func(*args, **kwargs)
+                if asyncio.iscoroutinefunction(func)
+                else func(*args, **kwargs)
+            )
 
-                if hasattr(func, "_cache_manager"):
-                    func._cache_manager.set(cache_key, result, cache_type, ttl)
+            if hasattr(func, "_cache_manager"):
+                func._cache_manager.set(cache_key, result, cache_type, ttl)
 
-                return result
+            return result
 
-            return wrapper
+        return wrapper
 
-        return decorator
+    return decorator
 
 
 def init_performance_system(db_path: str, redis_url: Optional[str] = None) -> tuple[Any, Any, Any]:
@@ -1348,6 +1351,1346 @@ async def simulate_job_execution(job_id: int):
             }
         )
     )
+
+
+# CFPL Page Viewer API Endpoints
+class PageContentRequest(BaseModel):
+    url: str
+    render_html: bool = True
+
+class ExportBundleRequest(BaseModel):
+    url: str
+    output_format: str = "zip"
+
+@app.post("/api/cfpl/page-content")
+async def get_page_content(request: PageContentRequest, current_user: dict = Depends(get_current_user)):
+    """Get full page content with rendered HTML and assets from scraped data"""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Find the scraped data for this URL
+        cursor.execute(
+            """
+            SELECT jr.data, j.id as job_id 
+            FROM job_results jr 
+            JOIN jobs j ON jr.job_id = j.id 
+            WHERE j.created_by = ?
+            ORDER BY jr.created_at DESC
+        """,
+            (current_user["id"],),
+        )
+        
+        page_data = None
+        found_url = None
+        
+        for row in cursor.fetchall():
+            try:
+                data = json.loads(row[0])
+                job_id = row[1]
+                
+                # Handle both old and new data formats
+                crawled_items = []
+                if 'crawled_data' in data:
+                    crawled_items = data['crawled_data']
+                elif 'url' in data:
+                    crawled_items = [data]
+                
+                # Look for the requested URL
+                for item in crawled_items:
+                    if item.get('url') == request.url:
+                        found_url = item['url']
+                        
+                        # Build page data structure
+                        page_data = {
+                            'url': item['url'],
+                            'status': 200,  # Default status since not stored
+                            'content_type': 'text/html',
+                            'manifest': {
+                                'job_id': job_id,
+                                'scraped_at': item.get('timestamp', ''),
+                                'size': len(item.get('article_content', '')) if item.get('article_content') else 0,
+                                'word_count': item.get('word_count', 0),
+                                'reading_time': item.get('reading_time', ''),
+                                'headline': item.get('headline', ''),
+                                'author': item.get('author', ''),
+                                'publish_date': item.get('publish_date', '')
+                            },
+                            'main_content': '',
+                            'assets': []
+                        }
+                        
+                        # Create HTML content from extracted data
+                        article_content = item.get('article_content', '')
+                        headline = item.get('headline', '')
+                        author = item.get('author', '')
+                        publish_date = item.get('publish_date', '')
+                        word_count = item.get('word_count', 0)
+                        
+                        # Build a proper HTML page with enhanced styling
+                        html_content = f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>{headline}</title>
+                            <meta charset="utf-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <style>
+                                /* Enhanced styling for better offline viewing */
+                                body {{ 
+                                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; 
+                                    margin: 20px; 
+                                    line-height: 1.6; 
+                                    color: #333;
+                                    background: #fff;
+                                    max-width: 1200px;
+                                    margin: 0 auto;
+                                    padding: 20px;
+                                }}
+                                .header {{ 
+                                    border-bottom: 3px solid #007bff; 
+                                    padding-bottom: 25px; 
+                                    margin-bottom: 30px; 
+                                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                                    padding: 25px;
+                                    border-radius: 8px;
+                                }}
+                                .headline {{ 
+                                    font-size: 2.5em; 
+                                    font-weight: 700; 
+                                    margin-bottom: 20px; 
+                                    color: #1a1a1a;
+                                    line-height: 1.2;
+                                }}
+                                .meta {{ 
+                                    color: #666; 
+                                    font-size: 0.95em; 
+                                    margin-bottom: 10px; 
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                }}
+                                .meta .icon {{ 
+                                    font-size: 1.1em; 
+                                }}
+                                .content {{ 
+                                    margin-top: 30px; 
+                                    font-size: 1.1em;
+                                    line-height: 1.8;
+                                }}
+                                .content p {{
+                                    margin-bottom: 1.2em;
+                                }}
+                                .content h1, .content h2, .content h3 {{
+                                    margin-top: 2em;
+                                    margin-bottom: 1em;
+                                    color: #2c3e50;
+                                }}
+                                .stats {{ 
+                                    background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%); 
+                                    padding: 25px; 
+                                    border-radius: 12px; 
+                                    margin: 30px 0; 
+                                    border-left: 5px solid #2196f3;
+                                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                }}
+                                .links {{ 
+                                    margin-top: 40px; 
+                                    background: #f8f9fa;
+                                    padding: 25px;
+                                    border-radius: 12px;
+                                    border-left: 5px solid #28a745;
+                                }}
+                                .link-item {{ 
+                                    margin: 12px 0; 
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #dee2e6;
+                                }}
+                                .link-item:last-child {{
+                                    border-bottom: none;
+                                }}
+                                .link-item a {{ 
+                                    color: #0066cc; 
+                                    text-decoration: none; 
+                                    font-weight: 500;
+                                }}
+                                .link-item a:hover {{ 
+                                    text-decoration: underline; 
+                                    color: #004499;
+                                }}
+                                .cfpl-viewer-badge {{
+                                    position: fixed;
+                                    top: 15px;
+                                    right: 15px;
+                                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                    color: white;
+                                    padding: 15px 20px;
+                                    border-radius: 10px;
+                                    font-size: 12px;
+                                    z-index: 9999;
+                                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                                    min-width: 200px;
+                                }}
+                                .media-gallery {{
+                                    margin-top: 30px;
+                                    background: #f8f9fa;
+                                    padding: 25px;
+                                    border-radius: 12px;
+                                }}
+                                .media-item {{
+                                    display: inline-block;
+                                    margin: 10px;
+                                    max-width: 200px;
+                                    text-align: center;
+                                }}
+                                .media-item img {{
+                                    max-width: 100%;
+                                    height: auto;
+                                    border-radius: 8px;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                                }}
+                                img {{ max-width: 100%; height: auto; }}
+                                /* Responsive design */
+                                @media (max-width: 768px) {{
+                                    body {{ margin: 10px; padding: 10px; }}
+                                    .headline {{ font-size: 2em; }}
+                                    .cfpl-viewer-badge {{ position: relative; margin-bottom: 20px; }}
+                                }}
+                                .quality-indicator {{
+                                    display: inline-block;
+                                    padding: 4px 8px;
+                                    border-radius: 4px;
+                                    font-size: 0.8em;
+                                    font-weight: bold;
+                                    margin-left: 10px;
+                                }}
+                                .quality-high {{ background: #d4edda; color: #155724; }}
+                                .quality-medium {{ background: #fff3cd; color: #856404; }}
+                                .quality-low {{ background: #f8d7da; color: #721c24; }}
+                            </style>
+                            <base href="{item['url']}">
+                        </head>
+                        <body>
+                            <div class="cfpl-viewer-badge">
+                                <div>📄 <strong>CFPL Offline Archive</strong></div>
+                                <div>🌐 {item['url'][:40]}{'...' if len(item['url']) > 40 else ''}</div>
+                                <div>📸 {len(page_data['assets'])} assets captured</div>
+                                <div>⚡ Processed: {item.get('crawl_metadata', {}).get('processing_time', 0):.1f}s</div>
+                            </div>
+                            
+                            <div class="header">
+                                <div class="headline">{headline}</div>
+                                {f'<div class="meta"><span class="icon">👤</span> By: <strong>{author}</strong></div>' if author else ''}
+                                {f'<div class="meta"><span class="icon">📅</span> Published: <strong>{publish_date}</strong></div>' if publish_date else ''}
+                                <div class="meta"><span class="icon">📊</span> Words: <strong>{word_count:,}</strong> | 🕒 Read time: <strong>{word_count//200 + 1} min</strong></div>
+                                <div class="meta"><span class="icon">🔗</span> Source: <a href="{item['url']}" target="_blank">{item['url']}</a></div>
+                                {f'<div class="meta"><span class="icon">⭐</span> Quality Score: <strong>{item.get("quality_score", "N/A")}</strong><span class="quality-indicator quality-{"high" if item.get("quality_score", 0) > 0.8 else "medium" if item.get("quality_score", 0) > 0.5 else "low"}">{"Excellent" if item.get("quality_score", 0) > 0.8 else "Good" if item.get("quality_score", 0) > 0.5 else "Basic"}</span></div>' if item.get('quality_score') else ''}
+                            </div>
+                            
+                            <div class="stats">
+                                <strong>📊 Crawl Intelligence Report:</strong><br>
+                                🔍 Discovery Order: <strong>#{item.get('crawl_metadata', {}).get('discovery_order', 'N/A')}</strong><br>
+                                🌊 Crawl Depth: <strong>{item.get('crawl_metadata', {}).get('depth', 'N/A')}</strong><br>
+                                ⚡ Processing Time: <strong>{item.get('crawl_metadata', {}).get('processing_time', 0):.2f}s</strong><br>
+                                🌐 Domain: <strong>{item.get('crawl_metadata', {}).get('domain', 'N/A')}</strong><br>
+                                📏 Content Size: <strong>{len(article_content):,} characters</strong><br>
+                                🔗 Links Found: <strong>{len(item.get('links', []))}</strong><br>
+                                📸 Images Found: <strong>{len(item.get('images', []))}</strong><br>
+                                🎥 Videos Found: <strong>{len(item.get('videos', []))}</strong>
+                            </div>
+                            
+                            <div class="content">
+                                {article_content if article_content else '<p><em>📄 Processing raw HTML content for comprehensive offline viewing...</em></p>'}
+                            </div>
+                        """
+                        
+                        # Add links section if available
+                        if 'links' in item and item['links']:
+                            html_content += f"""
+                            <div class="links">
+                                <h3>🔗 Discovered Links ({len(item['links'])})</h3>
+                            """
+                            for link in item['links'][:20]:  # Show first 20 links
+                                if link.get('text') and link.get('url'):
+                                    html_content += f'<div class="link-item"><a href="{link["url"]}" target="_blank">{link["text"]}</a></div>'
+                            
+                            if len(item['links']) > 20:
+                                html_content += f"<div class='meta'>... and {len(item['links']) - 20} more links</div>"
+                            
+                            html_content += "</div>"
+                        
+                        html_content += """
+                        </body>
+                        </html>
+                        """
+                        
+                        page_data['main_content'] = html_content
+                        
+                        # Add images from the dedicated images array (primary source)
+                        if 'images' in item and item['images']:
+                            for img in item['images']:
+                                # Determine content type from URL extension
+                                img_url = img.get('src', '')
+                                content_type = 'image/jpeg'  # Default
+                                if img_url:
+                                    if '.png' in img_url.lower():
+                                        content_type = 'image/png'
+                                    elif '.gif' in img_url.lower():
+                                        content_type = 'image/gif'
+                                    elif '.svg' in img_url.lower():
+                                        content_type = 'image/svg+xml'
+                                    elif '.webp' in img_url.lower():
+                                        content_type = 'image/webp'
+                                
+                                asset = {
+                                    'url': img_url,
+                                    'content_type': content_type,
+                                    'size': img.get('file_size', 0),  # Size if available
+                                    'data_url': img_url,  # Use original URL for display
+                                    'discovered_via': 'image_extraction',
+                                    'alt_text': img.get('alt', ''),
+                                    'title': img.get('title', ''),
+                                    'width': img.get('width', ''),
+                                    'height': img.get('height', ''),
+                                    'css_class': img.get('class', '')
+                                }
+                                page_data['assets'].append(asset)
+                        
+                        # Add videos from video extraction (NEW FEATURE)
+                        if 'videos' in item and item['videos']:
+                            for video in item['videos']:
+                                video_url = video.get('url', '')
+                                if video_url:
+                                    asset = {
+                                        'url': video_url,
+                                        'content_type': 'video/mp4' if video.get('type') == 'video' else 'text/html',
+                                        'size': 0,
+                                        'data_url': video_url,
+                                        'discovered_via': 'video_extraction',
+                                        'title': video.get('title', ''),
+                                        'video_type': video.get('type', 'video'),
+                                        'platform': video.get('platform', 'unknown')
+                                    }
+                                    page_data['assets'].append(asset)
+                        
+                        # Also extract images from links as fallback (for backwards compatibility)
+                        if 'links' in item:
+                            for link in item['links']:
+                                if link.get('url') and any(ext in link['url'].lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.svg']):
+                                    # Check if this image URL is already in assets (avoid duplicates)
+                                    existing_urls = [asset['url'] for asset in page_data['assets']]
+                                    if link['url'] not in existing_urls:
+                                        asset = {
+                                            'url': link['url'],
+                                            'content_type': 'image/jpeg',  # Default
+                                            'size': 0,
+                                            'data_url': link['url'],  # Use original URL
+                                            'discovered_via': 'link'
+                                        }
+                                        page_data['assets'].append(asset)
+                        
+                        # If render_html is requested, inject viewer controls
+                        if request.render_html and page_data['main_content']:
+                            # Add basic viewer controls CSS
+                            viewer_css = """
+                            <style>
+                                .cfpl-viewer-controls {
+                                    position: fixed;
+                                    top: 10px;
+                                    right: 10px;
+                                    background: rgba(0,0,0,0.8);
+                                    color: white;
+                                    padding: 10px;
+                                    border-radius: 5px;
+                                    font-family: Arial, sans-serif;
+                                    z-index: 9999;
+                                }
+                                .cfpl-viewer-info {
+                                    margin: 5px 0;
+                                    font-size: 12px;
+                                }
+                            </style>
+                            <div class="cfpl-viewer-controls">
+                                <div class="cfpl-viewer-info">📄 CFPL Page Viewer</div>
+                                <div class="cfpl-viewer-info">🌐 {}</div>
+                                <div class="cfpl-viewer-info">📊 Status: {}</div>
+                                <div class="cfpl-viewer-info">📸 Images: {}</div>
+                            </div>
+                            """.format(
+                                item['url'][:50] + '...' if len(item['url']) > 50 else item['url'],
+                                page_data['status'],
+                                len(page_data['assets'])
+                            )
+                            
+                            page_data['main_content'] = viewer_css + page_data['main_content']
+                        
+                        break
+                
+                if page_data:
+                    break
+                    
+            except (json.JSONDecodeError, KeyError):
+                continue
+        
+        conn.close()
+        
+        if not page_data:
+            raise HTTPException(status_code=404, detail=f"Page not found in scraped data: {request.url}")
+        
+        return page_data
+        
+    except Exception as e:
+        logger.error(f"Error getting page content for {request.url}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get page content: {str(e)}")
+
+@app.get("/api/jobs/{job_id}/urls")
+async def get_job_urls(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Get all URLs scraped in a specific job"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Check job exists and belongs to user
+    cursor.execute(
+        """
+        SELECT id FROM jobs 
+        WHERE id = ? AND created_by = ?
+    """,
+        (job_id, current_user["id"]),
+    )
+
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Get all URLs from job results
+    cursor.execute(
+        """
+        SELECT data FROM job_results 
+        WHERE job_id = ?
+        ORDER BY created_at DESC
+    """,
+        (job_id,),
+    )
+
+    urls = set()
+    for row in cursor.fetchall():
+        try:
+            data = json.loads(row[0])
+            # Handle both old and new data formats
+            if 'crawled_data' in data:
+                for item in data['crawled_data']:
+                    if 'url' in item:
+                        urls.add(item['url'])
+            elif 'url' in data:
+                urls.add(data['url'])
+        except (json.JSONDecodeError, KeyError):
+            continue
+
+    conn.close()
+    return sorted(list(urls))
+
+@app.get("/api/jobs/{job_id}/debug")
+async def get_job_debug_info(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Get debug information for a job including error logs and failure analysis"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Check job exists and belongs to user
+    cursor.execute(
+        """
+        SELECT id, status, error_message, created_at, config 
+        FROM jobs 
+        WHERE id = ? AND created_by = ?
+    """,
+        (job_id, current_user["id"]),
+    )
+
+    job_row = cursor.fetchone()
+    if not job_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job_status = job_row[1] or "unknown"
+    job_error = job_row[2]
+    job_created = job_row[3]
+    job_config = job_row[4]
+
+    # Get crawl statistics
+    cursor.execute(
+        """
+        SELECT data FROM job_results 
+        WHERE job_id = ?
+    """,
+        (job_id,),
+    )
+
+    total_attempted = 0
+    total_successful = 0
+    total_failed = 0
+    domains_attempted = set()
+    domains_successful = set()
+    failed_urls = []
+    error_logs = []
+
+    for row in cursor.fetchall():
+        try:
+            data = json.loads(row[0])
+            
+            # Handle different data formats
+            if 'crawled_data' in data:
+                for item in data['crawled_data']:
+                    if 'url' in item:
+                        total_attempted += 1
+                        url = item['url']
+                        domain = url.split('/')[2] if '//' in url else url.split('/')[0]
+                        domains_attempted.add(domain)
+                        
+                        status_code = item.get('status_code', 0)
+                        if status_code >= 200 and status_code < 300:
+                            total_successful += 1
+                            domains_successful.add(domain)
+                        else:
+                            total_failed += 1
+                            error_msg = item.get('error', f'HTTP {status_code}')
+                            failed_urls.append({
+                                'url': url,
+                                'error': error_msg,
+                                'status_code': status_code if status_code > 0 else None,
+                                'timestamp': item.get('timestamp', job_created)
+                            })
+                            
+                            # Add to error logs
+                            error_logs.append({
+                                'timestamp': item.get('timestamp', job_created),
+                                'level': 'ERROR',
+                                'message': f'Failed to crawl {url}: {error_msg}',
+                                'url': url,
+                                'error_code': str(status_code) if status_code > 0 else None
+                            })
+            
+            elif 'url' in data:
+                # Single URL result
+                total_attempted += 1
+                url = data['url']
+                domain = url.split('/')[2] if '//' in url else url.split('/')[0]
+                domains_attempted.add(domain)
+                
+                status_code = data.get('status_code', 0)
+                if status_code >= 200 and status_code < 300:
+                    total_successful += 1
+                    domains_successful.add(domain)
+                else:
+                    total_failed += 1
+                    error_msg = data.get('error', f'HTTP {status_code}')
+                    failed_urls.append({
+                        'url': url,
+                        'error': error_msg,
+                        'status_code': status_code if status_code > 0 else None,
+                        'timestamp': data.get('timestamp', job_created)
+                    })
+                    
+                    error_logs.append({
+                        'timestamp': data.get('timestamp', job_created),
+                        'level': 'ERROR',
+                        'message': f'Failed to crawl {url}: {error_msg}',
+                        'url': url,
+                        'error_code': str(status_code) if status_code > 0 else None
+                    })
+        
+        except (json.JSONDecodeError, KeyError, IndexError) as e:
+            error_logs.append({
+                'timestamp': job_created,
+                'level': 'ERROR',
+                'message': f'Failed to parse job result data: {str(e)}',
+                'error_code': 'PARSE_ERROR'
+            })
+
+    # Add job-level errors if present
+    if job_error:
+        error_logs.append({
+            'timestamp': job_created,
+            'level': 'ERROR',
+            'message': f'Job-level error: {job_error}',
+            'error_code': 'JOB_ERROR'
+        })
+
+    # If no results at all, provide helpful debugging
+    if total_attempted == 0:
+        error_logs.append({
+            'timestamp': job_created,
+            'level': 'WARNING',
+            'message': 'No crawl attempts recorded. Job may have failed to start or configuration issue.',
+            'error_code': 'NO_ATTEMPTS'
+        })
+
+        # Parse config to provide more specific guidance
+        try:
+            if job_config:
+                config_data = json.loads(job_config)
+                start_url = config_data.get('start_url', 'Unknown')
+                error_logs.append({
+                    'timestamp': job_created,
+                    'level': 'INFO',
+                    'message': f'Job was configured to start at: {start_url}',
+                    'error_code': 'CONFIG_INFO'
+                })
+        except:
+            pass
+
+    conn.close()
+
+    return {
+        'job_id': job_id,
+        'status': job_status,
+        'error_logs': sorted(error_logs, key=lambda x: x['timestamp'], reverse=True),
+        'crawl_stats': {
+            'total_attempted': total_attempted,
+            'total_successful': total_successful,
+            'total_failed': total_failed,
+            'domains_attempted': len(domains_attempted),
+            'domains_successful': len(domains_successful)
+        },
+        'failed_urls': sorted(failed_urls, key=lambda x: x['timestamp'], reverse=True)
+    }
+
+@app.post("/api/jobs/{job_id}/terminate")
+async def terminate_job(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Terminate a running job"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    # Check if job exists and belongs to user
+    cursor.execute(
+        "SELECT id, status FROM jobs WHERE id = ? AND created_by = ?",
+        (job_id, current_user["id"])
+    )
+    
+    job_row = cursor.fetchone()
+    if not job_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job_row[1] != 'running':
+        conn.close()
+        raise HTTPException(status_code=400, detail="Job is not running")
+    
+    # Update job status to failed
+    cursor.execute(
+        """
+        UPDATE jobs 
+        SET status = 'failed', 
+            completed_at = ?, 
+            error_message = 'Job terminated by user'
+        WHERE id = ?
+        """,
+        (datetime.now().isoformat(), job_id)
+    )
+    
+    conn.commit()
+    conn.close()
+    
+    return {"message": f"Job {job_id} terminated successfully"}
+
+
+@app.delete("/api/jobs/{job_id}")
+async def delete_job(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Delete a job and all its results"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    # Check if job exists and belongs to user
+    cursor.execute(
+        "SELECT id FROM jobs WHERE id = ? AND created_by = ?",
+        (job_id, current_user["id"])
+    )
+    
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Delete job results first
+    cursor.execute("DELETE FROM job_results WHERE job_id = ?", (job_id,))
+    results_deleted = cursor.rowcount
+    
+    # Delete job
+    cursor.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return {"message": f"Job {job_id} and {results_deleted} results deleted successfully"}
+
+
+@app.get("/api/admin/database-stats")
+async def get_database_stats(current_user: dict = Depends(get_current_user)):
+    """Get comprehensive database statistics (admin only)"""
+    # For now, allow all authenticated users. In production, add role check:
+    # if current_user.get("role") != "admin":
+    #     raise HTTPException(status_code=403, detail="Admin access required")
+    
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    stats = {}
+    
+    # Job statistics
+    cursor.execute("SELECT status, COUNT(*) FROM jobs GROUP BY status")
+    stats['jobs_by_status'] = dict(cursor.fetchall())
+    
+    # Total counts
+    cursor.execute("SELECT COUNT(*) FROM jobs")
+    stats['total_jobs'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM job_results")
+    stats['total_results'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM users")
+    stats['total_users'] = cursor.fetchone()[0]
+    
+    # Database size
+    cursor.execute("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")
+    stats['database_size_bytes'] = cursor.fetchone()[0]
+    
+    # Recent activity
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE created_at > datetime('now', '-24 hours')")
+    stats['jobs_last_24h'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE status = 'running'")
+    stats['currently_running'] = cursor.fetchone()[0]
+    
+    # Find stuck jobs (running for more than 2 hours)
+    cursor.execute("""
+        SELECT COUNT(*) FROM jobs 
+        WHERE status = 'running' 
+        AND started_at < datetime('now', '-2 hours')
+    """)
+    stats['stuck_jobs'] = cursor.fetchone()[0]
+    
+    conn.close()
+    return stats
+
+
+@app.get("/api/jobs/{job_id}/progress")
+async def get_job_progress(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Get real-time progress information for a running job"""
+    print(f"PROGRESS DEBUG: Called for job {job_id}")  # This should definitely show up
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Check job exists and belongs to user
+    cursor.execute(
+        """
+        SELECT id, status, created_at, config, results_count 
+        FROM jobs 
+        WHERE id = ? AND created_by = ?
+    """,
+        (job_id, current_user["id"]),
+    )
+
+    job_row = cursor.fetchone()
+    if not job_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job_status = job_row[1] or "unknown"
+    job_created = job_row[2]
+    job_config = job_row[3]
+    results_count = job_row[4] or 0
+
+    # Calculate progress based on job results and estimated targets
+    cursor.execute(
+        """
+        SELECT COUNT(*) FROM job_results 
+        WHERE job_id = ?
+    """,
+        (job_id,),
+    )
+    
+    current_results = cursor.fetchone()[0] or 0
+    
+    # Estimate target based on job configuration
+    estimated_target = 100  # Default estimate
+    try:
+        if job_config:
+            config_data = json.loads(job_config)
+            if 'max_pages' in config_data:
+                estimated_target = int(config_data['max_pages'])
+            elif 'crawl_depth' in config_data:
+                # Estimate based on depth (exponential growth assumption)
+                depth = int(config_data.get('crawl_depth', 2))
+                estimated_target = min(1000, 10 ** depth)  # Cap at 1000
+    except:
+        pass
+
+    # Calculate runtime
+    runtime_seconds = 0
+    if job_created:
+        try:
+            start_time = datetime.fromisoformat(job_created.replace('Z', '+00:00'))
+            runtime_seconds = (datetime.now() - start_time.replace(tzinfo=None)).total_seconds()
+        except:
+            pass
+
+    # Calculate progress percentage
+    print(f"PROGRESS CALC: job_status={job_status}, current_results={current_results}, runtime_seconds={runtime_seconds}")
+    
+    if job_status == "completed":
+        progress_percentage = 100
+        eta_seconds = 0
+        print(f"PROGRESS CALC: Job completed, setting 100%")
+    elif job_status == "running":
+        # Debug logging
+        print(f"PROGRESS CALC: Job running, checking conditions...")
+        logger.info(f"DEBUG: Job {job_id} - current_results={current_results}, estimated_target={estimated_target}, runtime_seconds={runtime_seconds}")
+        
+        if current_results > 0 and estimated_target > 0:
+            # Results-based progress
+            progress_percentage = min(95, (current_results / estimated_target) * 100)
+            print(f"PROGRESS CALC: Using results-based progress: {progress_percentage}%")
+            logger.info(f"DEBUG: Using results-based progress: {progress_percentage}%")
+        elif runtime_seconds > 0:
+            # Time-based progress estimation for jobs with no results yet
+            # Show increasing progress based on time, but cap at 85% until we get results
+            print(f"PROGRESS CALC: Using time-based progress, runtime={runtime_seconds}")
+            if runtime_seconds < 60:  # First minute: 0-20%
+                progress_percentage = (runtime_seconds / 60) * 20
+                print(f"PROGRESS CALC: First minute calculation: {progress_percentage}%")
+            elif runtime_seconds < 300:  # Next 4 minutes: 20-50%
+                progress_percentage = 20 + ((runtime_seconds - 60) / 240) * 30
+                print(f"PROGRESS CALC: Next 4 minutes calculation: {progress_percentage}%")
+            elif runtime_seconds < 600:  # Next 5 minutes: 50-70%
+                progress_percentage = 50 + ((runtime_seconds - 300) / 300) * 20
+                print(f"PROGRESS CALC: Next 5 minutes calculation: {progress_percentage}%")
+            else:  # After 10 minutes: slowly approach 85%
+                progress_percentage = min(85, 70 + ((runtime_seconds - 600) / 600) * 15)
+                print(f"PROGRESS CALC: After 10 minutes calculation: {progress_percentage}%")
+            logger.info(f"DEBUG: Using time-based progress: {progress_percentage}% (runtime: {runtime_seconds}s)")
+        else:
+            progress_percentage = 0
+            print(f"PROGRESS CALC: No progress calculation method available")
+            logger.info(f"DEBUG: No progress calculation method available")
+        
+        # Calculate ETA
+        if current_results > 5 and runtime_seconds > 30:
+            eta_seconds = max(0, (runtime_seconds / (current_results / estimated_target)) - runtime_seconds)
+        elif runtime_seconds > 300:  # After 5 minutes, estimate completion time
+            eta_seconds = max(0, 1200 - runtime_seconds)  # Estimate 20 minutes total
+        else:
+            eta_seconds = None
+    else:
+        progress_percentage = 0
+        eta_seconds = None
+
+    # Get recent activity
+    cursor.execute(
+        """
+        SELECT data, created_at FROM job_results 
+        WHERE job_id = ?
+        ORDER BY created_at DESC 
+        LIMIT 3
+    """,
+        (job_id,),
+    )
+    
+    recent_activity = []
+    for row in cursor.fetchall():
+        try:
+            data = json.loads(row[0])
+            url = data.get('url', 'Unknown URL')
+            recent_activity.append({
+                'url': url,
+                'timestamp': row[1]
+            })
+        except:
+            pass
+
+    conn.close()
+
+    return {
+        'job_id': job_id,
+        'status': job_status,
+        'progress_percentage': round(progress_percentage, 1),
+        'current_results': current_results,
+        'estimated_target': estimated_target,
+        'runtime_seconds': int(runtime_seconds),
+        'eta_seconds': int(eta_seconds) if eta_seconds is not None else None,
+        'recent_activity': recent_activity,
+        'last_updated': datetime.now().isoformat()
+    }
+
+
+@app.get("/api/jobs/{job_id}/media")
+async def get_job_media(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Get all media assets from all pages in a job"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Check job exists and belongs to user
+    cursor.execute(
+        """
+        SELECT id, status FROM jobs 
+        WHERE id = ? AND created_by = ?
+    """,
+        (job_id, current_user["id"]),
+    )
+
+    job_row = cursor.fetchone()
+    if not job_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Get all results for this job
+    cursor.execute(
+        """
+        SELECT data FROM job_results 
+        WHERE job_id = ?
+        ORDER BY created_at ASC
+    """,
+        (job_id,),
+    )
+
+    all_assets = []
+    page_count = 0
+
+    for row in cursor.fetchall():
+        try:
+            result_data = json.loads(row[0])
+            page_url = result_data.get('url', 'Unknown URL')
+            page_count += 1
+
+            # Extract images
+            if 'images' in result_data:
+                for img in result_data['images']:
+                    asset = {
+                        'url': img.get('url', ''),
+                        'content_type': img.get('content_type', 'image/unknown'),
+                        'size': img.get('size', 0),
+                        'data_url': img.get('data_url', ''),
+                        'alt_text': img.get('alt_text', ''),
+                        'title': img.get('title', ''),
+                        'width': img.get('width', ''),
+                        'height': img.get('height', ''),
+                        'page_url': page_url,
+                        'discovered_via': img.get('discovered_via', 'image_extraction')
+                    }
+                    all_assets.append(asset)
+
+            # Extract videos
+            if 'videos' in result_data:
+                for vid in result_data['videos']:
+                    asset = {
+                        'url': vid.get('url', ''),
+                        'content_type': vid.get('content_type', 'video/unknown'),
+                        'size': vid.get('size', 0),
+                        'data_url': vid.get('data_url', ''),
+                        'video_type': vid.get('video_type', 'unknown'),
+                        'platform': vid.get('platform', ''),
+                        'title': vid.get('title', ''),
+                        'width': vid.get('width', ''),
+                        'height': vid.get('height', ''),
+                        'page_url': page_url,
+                        'discovered_via': vid.get('discovered_via', 'video_extraction')
+                    }
+                    all_assets.append(asset)
+
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.warning(f"Could not parse result data for job {job_id}: {e}")
+            continue
+
+    conn.close()
+
+    # Deduplicate assets by URL
+    unique_assets = {}
+    for asset in all_assets:
+        url = asset['url']
+        if url and url not in unique_assets:
+            unique_assets[url] = asset
+
+    return {
+        'job_id': job_id,
+        'pages_processed': page_count,
+        'total_assets': len(unique_assets),
+        'assets': list(unique_assets.values())
+    }
+
+@app.delete("/api/jobs/{job_id}")
+async def delete_job(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Delete a job and all its associated data"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Check job exists and belongs to user
+    cursor.execute(
+        """
+        SELECT id, status, name FROM jobs 
+        WHERE id = ? AND created_by = ?
+    """,
+        (job_id, current_user["id"]),
+    )
+
+    job_row = cursor.fetchone()
+    if not job_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job_name = job_row[2]
+    job_status = job_row[1]
+
+    # Don't allow deletion of running jobs
+    if job_status == "running":
+        conn.close()
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete a running job. Please stop it first."
+        )
+
+    try:
+        # Delete job results first (foreign key constraint)
+        cursor.execute("DELETE FROM job_results WHERE job_id = ?", (job_id,))
+        results_deleted = cursor.rowcount
+
+        # Delete the job
+        cursor.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+        
+        conn.commit()
+        conn.close()
+
+        return {
+            'message': f'Job "{job_name}" deleted successfully',
+            'job_id': job_id,
+            'results_deleted': results_deleted
+        }
+
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"Failed to delete job: {str(e)}")
+
+@app.get("/api/cfpl/network-diagram/{job_id}")
+async def get_network_diagram(job_id: int, current_user: dict = Depends(get_current_user)):
+    """Generate enhanced network diagram for a crawl job using scraped data"""
+    try:
+        # Verify job belongs to user
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT j.id, j.name, j.created_at, j.url as root_url
+            FROM jobs j
+            WHERE j.id = ? AND j.created_by = ?
+        """,
+            (job_id, current_user["id"]),
+        )
+
+        job_row = cursor.fetchone()
+        if not job_row:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        job_name = job_row[1] or f"Job #{job_id}"
+        job_created = job_row[2]
+        root_url = job_row[3]
+        
+        # Get all scraped data for this job
+        cursor.execute(
+            """
+            SELECT data FROM job_results 
+            WHERE job_id = ?
+            ORDER BY created_at ASC
+        """,
+            (job_id,),
+        )
+        
+        nodes = []
+        edges = []
+        url_to_node_id = {}  # Map URLs to node IDs for deduplication
+        node_counter = 0
+        domains = set()
+        total_size = 0
+        max_depth = 0
+        
+        for row in cursor.fetchall():
+            try:
+                data = json.loads(row[0])
+                
+                # Handle both old and new data formats
+                crawled_items = []
+                if 'crawled_data' in data:
+                    crawled_items = data['crawled_data']
+                elif 'url' in data:
+                    crawled_items = [data]
+                
+                for item in crawled_items:
+                    url = item.get('url', '').strip()
+                    if not url or url in url_to_node_id:
+                        continue
+                    
+                    # Parse domain and URL info
+                    from urllib.parse import urlparse
+                    parsed = urlparse(url)
+                    domain = parsed.netloc or 'unknown'
+                    domains.add(domain)
+                    
+                    # Calculate depth more accurately
+                    if url == root_url:
+                        depth = 0
+                    else:
+                        # Count path segments, excluding root
+                        path_segments = [seg for seg in parsed.path.split('/') if seg]
+                        depth = len(path_segments)
+                    max_depth = max(max_depth, depth)
+                    
+                    # Extract better title
+                    title = item.get('title', '').strip()
+                    if not title:
+                        # Use URL segments for title
+                        if parsed.path and parsed.path != '/':
+                            title = parsed.path.split('/')[-1] or parsed.netloc
+                        else:
+                            title = parsed.netloc
+                    
+                    # Truncate title appropriately
+                    if len(title) > 50:
+                        title = title[:47] + '...'
+                    
+                    # Calculate node size
+                    html_size = len(item.get('html_content', ''))
+                    total_size += html_size
+                    
+                    # Determine node type and color
+                    node_type = 'root' if url == root_url else 'page'
+                    if depth == 0:
+                        node_color = '#ff6b6b'  # Red for root
+                    elif depth == 1:
+                        node_color = '#4ecdc4'  # Teal for first level
+                    elif depth == 2:
+                        node_color = '#45b7d1'  # Blue for second level
+                    else:
+                        node_color = '#96ceb4'  # Green for deeper levels
+                    
+                    # Create enhanced node
+                    node_id = f"page_{node_counter}"
+                    node = {
+                        'id': node_id,
+                        'data': {
+                            'label': title,
+                            'url': url,
+                            'domain': domain,
+                            'status': item.get('status_code', 200),
+                            'depth': depth,
+                            'size': html_size,
+                            'type': node_type
+                        },
+                        'position': {
+                            'x': (node_counter % 10) * 200,  # Basic grid layout
+                            'y': depth * 150
+                        },
+                        'style': {
+                            'backgroundColor': node_color,
+                            'color': '#ffffff',
+                            'border': '2px solid #333',
+                            'borderRadius': '8px',
+                            'fontSize': '12px',
+                            'width': min(200, max(100, len(title) * 8)),
+                            'height': 60
+                        }
+                    }
+                    nodes.append(node)
+                    url_to_node_id[url] = node_id
+                    
+                    # Create edges for links found in this page
+                    if 'links' in item:
+                        processed_links = set()  # Avoid duplicate edges
+                        link_count = 0
+                        
+                        for link in item['links']:
+                            if link_count >= 10:  # Increased limit for better connectivity
+                                break
+                            
+                            target_url = (link.get('url', '') or link.get('href', '')).strip()
+                            link_text = (link.get('text', '') or link.get('title', '')).strip()
+                            
+                            if not target_url or target_url in processed_links:
+                                continue
+                            
+                            processed_links.add(target_url)
+                            
+                            # Check if target is already crawled
+                            if target_url in url_to_node_id:
+                                # Internal link to crawled page
+                                edge = {
+                                    'id': f"edge_{node_id}_{url_to_node_id[target_url]}",
+                                    'source': node_id,
+                                    'target': url_to_node_id[target_url],
+                                    'type': 'smoothstep',
+                                    'data': {
+                                        'label': link_text[:20] if link_text else 'link',
+                                        'type': 'internal'
+                                    },
+                                    'style': {
+                                        'stroke': '#2196f3',
+                                        'strokeWidth': 2
+                                    },
+                                    'markerEnd': {
+                                        'type': 'arrowclosed',
+                                        'color': '#2196f3'
+                                    }
+                                }
+                            else:
+                                # External link - create placeholder node
+                                target_node_id = f"external_{node_counter}_{link_count}"
+                                target_parsed = urlparse(target_url)
+                                target_domain = target_parsed.netloc or 'unknown'
+                                
+                                # Create external node
+                                external_node = {
+                                    'id': target_node_id,
+                                    'data': {
+                                        'label': link_text[:30] if link_text else target_domain,
+                                        'url': target_url,
+                                        'domain': target_domain,
+                                        'status': 0,
+                                        'depth': depth + 1,
+                                        'size': 0,
+                                        'type': 'external'
+                                    },
+                                    'position': {
+                                        'x': (node_counter + link_count) * 180,
+                                        'y': (depth + 1) * 150
+                                    },
+                                    'style': {
+                                        'backgroundColor': '#e9ecef',
+                                        'color': '#6c757d',
+                                        'border': '1px dashed #adb5bd',
+                                        'borderRadius': '4px',
+                                        'fontSize': '10px',
+                                        'width': 120,
+                                        'height': 40
+                                    }
+                                }
+                                nodes.append(external_node)
+                                
+                                # Create edge to external node
+                                edge = {
+                                    'id': f"edge_{node_id}_{target_node_id}",
+                                    'source': node_id,
+                                    'target': target_node_id,
+                                    'type': 'straight',
+                                    'data': {
+                                        'label': link_text[:15] if link_text else 'ext',
+                                        'type': 'external'
+                                    },
+                                    'style': {
+                                        'stroke': '#ff9800',
+                                        'strokeWidth': 1,
+                                        'strokeDasharray': '5,5'
+                                    },
+                                    'markerEnd': {
+                                        'type': 'arrow',
+                                        'color': '#ff9800'
+                                    }
+                                }
+                            
+                            edges.append(edge)
+                            link_count += 1
+                    
+                    node_counter += 1
+                    
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.warning(f"Could not parse job result for network diagram: {e}")
+                continue
+        
+        conn.close()
+        
+        # Calculate layout suggestions
+        layout_algorithms = [
+            {
+                'name': 'hierarchical',
+                'label': 'Hierarchical (by depth)',
+                'description': 'Organizes nodes by crawl depth'
+            },
+            {
+                'name': 'force',
+                'label': 'Force-directed',
+                'description': 'Physics-based layout with attraction/repulsion'
+            },
+            {
+                'name': 'circular',
+                'label': 'Circular',
+                'description': 'Arranges nodes in concentric circles'
+            },
+            {
+                'name': 'grid',
+                'label': 'Grid',
+                'description': 'Regular grid arrangement'
+            }
+        ]
+        
+        # Build enhanced network diagram response
+        diagram = {
+            'nodes': nodes,
+            'edges': edges,
+            'metadata': {
+                'run_id': f"job_{job_id}",
+                'total_pages': len([n for n in nodes if n['data']['type'] in ['root', 'page']]),
+                'total_external_links': len([n for n in nodes if n['data']['type'] == 'external']),
+                'total_domains': len(domains),
+                'crawl_depth': max_depth,
+                'total_size': total_size,
+                'job_name': job_name,
+                'root_url': root_url,
+                'created_at': job_created,
+                'layout_algorithms': layout_algorithms
+            }
+        }
+        
+        return diagram
+        
+    except Exception as e:
+        logger.error(f"Error generating network diagram for job {job_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate network diagram: {str(e)}")
+
+@app.post("/api/cfpl/export-bundle")
+async def export_page_bundle(request: ExportBundleRequest, current_user: dict = Depends(get_current_user)):
+    """Export complete page bundle as downloadable archive"""
+    try:
+        from cfpl_page_viewer import CFPLPageViewer
+        import tempfile
+        import zipfile
+        import shutil
+        from fastapi.responses import FileResponse
+        
+        viewer = CFPLPageViewer()
+        
+        # Create temporary directory for export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            export_path = os.path.join(temp_dir, "page_bundle")
+            success = viewer.export_page_bundle(request.url, export_path)
+            
+            if not success:
+                raise HTTPException(status_code=404, detail="Failed to export page bundle")
+            
+            # Create zip file
+            zip_path = os.path.join(temp_dir, "page_bundle.zip")
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(export_path):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arc_path = os.path.relpath(file_path, export_path)
+                        zipf.write(file_path, arc_path)
+            
+            # Return zip file as download
+            return FileResponse(
+                zip_path,
+                media_type='application/zip',
+                filename=f"page_bundle_{hashlib.md5(request.url.encode()).hexdigest()[:8]}.zip"
+            )
+        
+    except ImportError:
+        raise HTTPException(status_code=500, detail="CFPL Page Viewer not available")
+    except Exception as e:
+        logger.error(f"Error exporting bundle for {request.url}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to export bundle: {str(e)}")
 
 
 @app.get("/api/analytics/dashboard")

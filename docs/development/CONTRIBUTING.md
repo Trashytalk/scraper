@@ -17,7 +17,7 @@ Thank you for your interest in contributing to the Business Intelligence Scraper
 
 **📋 Security Resources:**
 - [Security Rotation Playbook](SECURITY_ROTATION_PLAYBOOK.md)
-- [Security Status Summary](SECURITY_STATUS_SUMMARY.md) 
+- [Security Status Summary](SECURITY_STATUS_SUMMARY.md)
 - [Pre-commit Configuration](.pre-commit-config.yaml)
 
 ## 🚀 **Quick Start for Contributors**

@@ -34,7 +34,7 @@ PYTHON_MIN_VERSION="3.8"
 VENV_DIR=".venv"
 LOG_FILE="quick_start.log"
 BACKEND_PORT=8000
-FRONTEND_PORT=5174
+FRONTEND_PORT=5173
 
 # Function to print colored output
 print_step() {
@@ -323,15 +323,20 @@ start_web_server() {
     
     # Wait for server to start
     print_info "Waiting for server to start..."
-    for i in {1..30}; do
-        if curl -f http://localhost:$BACKEND_PORT/health >/dev/null 2>&1 || \
+    for i in {1..20}; do
+        if curl -f http://localhost:$BACKEND_PORT/api/health >/dev/null 2>&1 || \
            curl -f http://localhost:$BACKEND_PORT/ >/dev/null 2>&1 || \
            curl -f http://localhost:$BACKEND_PORT/docs >/dev/null 2>&1; then
             print_success "Backend server is running!"
             break
         fi
-        if [ $i -eq 30 ]; then
-            print_error "Server failed to start within 30 seconds"
+        if [ $i -eq 20 ]; then
+            print_error "Server failed to start within 20 seconds"
+            print_info "Check logs/backend.log for more details"
+            if [ -f "logs/backend.log" ]; then
+                print_info "Last few lines of backend log:"
+                tail -10 logs/backend.log
+            fi
             return 1
         fi
         sleep 1
@@ -387,13 +392,18 @@ start_frontend_server() {
     
     # Wait for frontend server to start
     print_info "Waiting for frontend server to start..."
-    for i in {1..20}; do
+    for i in {1..15}; do
         if curl -f http://localhost:$FRONTEND_PORT/ >/dev/null 2>&1; then
             print_success "Frontend server is running!"
             break
         fi
-        if [ $i -eq 20 ]; then
+        if [ $i -eq 15 ]; then
             print_warning "Frontend server may not be ready yet (this is normal)"
+            print_info "Check logs/frontend.log for more details"
+            if [ -f "logs/frontend.log" ]; then
+                print_info "Last few lines of frontend log:"
+                tail -5 logs/frontend.log
+            fi
             break
         fi
         sleep 2
@@ -419,7 +429,7 @@ show_access_info() {
     echo -e "   ${BLUE}🎨 Web Interface:${NC}   http://localhost:$FRONTEND_PORT/"
     echo -e "   ${BLUE}🔗 Main API:${NC}        http://localhost:$BACKEND_PORT/"
     echo -e "   ${BLUE}📚 API Docs:${NC}       http://localhost:$BACKEND_PORT/docs"
-    echo -e "   ${BLUE}🔍 Health Check:${NC}   http://localhost:$BACKEND_PORT/health"
+    echo -e "   ${BLUE}🔍 Health Check:${NC}   http://localhost:$BACKEND_PORT/api/health"
     echo -e "   ${BLUE}📊 Metrics:${NC}        http://localhost:$BACKEND_PORT/metrics"
     echo ""
     echo -e "${YELLOW}📋 Quick Commands:${NC}"
@@ -427,7 +437,7 @@ show_access_info() {
     echo -e "   open http://localhost:$FRONTEND_PORT/"
     echo ""
     echo -e "   ${CYAN}# Test the API${NC}"
-    echo -e "   curl http://localhost:$BACKEND_PORT/health"
+    echo -e "   curl http://localhost:$BACKEND_PORT/api/health"
     echo ""
     echo -e "   ${CYAN}# View API documentation${NC}"
     echo -e "   open http://localhost:$BACKEND_PORT/docs"
@@ -515,7 +525,7 @@ show_status() {
         echo -e "Backend Server: ${RED}NOT STARTED${NC}"
     fi
     
-    if curl -f http://localhost:$BACKEND_PORT/health >/dev/null 2>&1; then
+    if curl -f http://localhost:$BACKEND_PORT/api/health >/dev/null 2>&1; then
         echo -e "Health Check: ${GREEN}PASSED${NC}"
     else
         echo -e "Health Check: ${RED}FAILED${NC}"
