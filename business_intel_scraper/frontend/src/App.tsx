@@ -242,11 +242,12 @@ const App: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Login successful, setting token');
+        console.log('✅ Login successful, response data:', data);
+        console.log('✅ Token to be stored:', data.access_token ? `${data.access_token.substring(0, 10)}...` : 'null');
         setToken(data.access_token);
         setIsAuthenticated(true);
         localStorage.setItem('token', data.access_token);
-        console.log('✅ Authentication complete');
+        console.log('✅ Authentication complete, localStorage token:', localStorage.getItem('token') ? 'set' : 'not set');
       } else {
         const errorData = await response.json();
         console.error('❌ Login failed:', errorData);
